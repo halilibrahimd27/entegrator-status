@@ -11,7 +11,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MIN_SECRET_BYTES = 32
 MIN_DISTINCT_CHARS = 8
-SECRET_FIELDS = ("session_key", "token_hash_key", "webhook_signing_key", "ingest_hmac_key")
+SECRET_FIELDS = (
+    "session_key",
+    "token_hash_key",
+    "webhook_signing_key",
+    "ingest_hmac_key",
+    "totp_encryption_key",
+)
 
 # Compared against the value lower-cased with separators removed, so "Change_Me",
 # "change-me" and "CHANGEME" all match. Markers are long enough that a random
@@ -66,11 +72,29 @@ class Settings(BaseSettings):
     web_port: int = 8000
     web_reload: bool = False
 
+    # Connection strings may carry passwords, so they are secrets too (not validated
+    # for randomness: the password part is checked by the database itself).
+    database_url: SecretStr
+    redis_url: SecretStr
+
     # One key, one purpose: these must all be different.
     session_key: SecretStr
     token_hash_key: SecretStr
     webhook_signing_key: SecretStr
     ingest_hmac_key: SecretStr
+    totp_encryption_key: SecretStr
+
+    signup_enabled: bool = True
+    session_idle_minutes: int = 120
+    session_max_hours: int = 24 * 7
+
+    mail_backend: Literal["smtp", "memory"] = "smtp"
+    mail_from: str = ""  # address only; the display name is the site name
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_security: Literal["starttls", "ssl", "none"] = "starttls"
+    smtp_username: str = ""
+    smtp_password: SecretStr = SecretStr("")
 
     @field_validator(*SECRET_FIELDS)
     @classmethod
@@ -78,6 +102,20 @@ class Settings(BaseSettings):
         problem = secret_problem(value.get_secret_value())
         if problem:
             raise ValueError(problem)
+        return value
+
+    @field_validator("database_url")
+    @classmethod
+    def _database_is_postgres(cls, value: SecretStr) -> SecretStr:
+        if not value.get_secret_value().startswith("postgresql+asyncpg://"):
+            raise ValueError("must start with postgresql+asyncpg://")
+        return value
+
+    @field_validator("redis_url")
+    @classmethod
+    def _redis_url_scheme(cls, value: SecretStr) -> SecretStr:
+        if not value.get_secret_value().startswith(("redis://", "rediss://")):
+            raise ValueError("must start with redis:// or rediss://")
         return value
 
     @field_validator("contact_email")
@@ -94,9 +132,25 @@ class Settings(BaseSettings):
             raise ValueError(f"{', '.join(SECRET_FIELDS)} must all be different")
         return self
 
+    @model_validator(mode="after")
+    def _mail_is_deliverable(self) -> Settings:
+        if self.mail_backend == "memory" and self.environment == "prod":
+            raise ValueError("MAIL_BACKEND=memory is not allowed in production")
+        if self.mail_backend == "smtp" and not (self.smtp_host and self.mail_from):
+            raise ValueError("SMTP_HOST and MAIL_FROM are required when MAIL_BACKEND=smtp")
+        if self.mail_from and not _EMAIL_RE.match(self.mail_from):
+            raise ValueError("MAIL_FROM must be an e-mail address")
+        if self.smtp_security == "none" and self.environment == "prod":
+            raise ValueError("SMTP_SECURITY=none is not allowed in production")
+        return self
+
     @property
     def public_base(self) -> str:
         return str(self.public_base_url).rstrip("/")
+
+    @property
+    def cookies_secure(self) -> bool:
+        return self.public_base.startswith("https://") or self.environment == "prod"
 
 
 def load_settings() -> Settings:

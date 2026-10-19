@@ -5,10 +5,20 @@ description = "Status and change tracking for everything a software product depe
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic",
+    "argon2-cffi",
+    "asyncpg",
+    "cryptography",
     "fastapi",
     "httpx",
+    "jinja2",
     "pydantic-settings",
+    "pyotp",
+    "python-multipart",
     "pyyaml",
+    "redis",
+    "segno",
+    "sqlalchemy[asyncio]",
     "uvicorn",
 ]
 

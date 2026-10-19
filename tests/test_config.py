@@ -108,3 +108,52 @@ def test_services_fail_closed(monkeypatch: pytest.MonkeyPatch, service: str) -> 
     with pytest.raises(SystemExit) as caught:
         run_service(service)
     assert caught.value.code == 2
+
+
+@pytest.mark.usefixtures("valid_env")
+@pytest.mark.parametrize(
+    ("name", "value", "message"),
+    [
+        ("DATABASE_URL", "postgresql://u@h/db", "postgresql\\+asyncpg"),
+        ("DATABASE_URL", "sqlite:///x.db", "postgresql\\+asyncpg"),
+        ("REDIS_URL", "http://redis:6379", "redis://"),
+    ],
+)
+def test_connection_urls_are_checked(
+    monkeypatch: pytest.MonkeyPatch, name: str, value: str, message: str
+) -> None:
+    monkeypatch.setenv(name, value)
+    with pytest.raises(ConfigError, match=message):
+        load_settings()
+
+
+@pytest.mark.usefixtures("valid_env")
+@pytest.mark.parametrize(
+    ("env", "message"),
+    [
+        ({"ENVIRONMENT": "prod", "MAIL_BACKEND": "memory"}, "not allowed in production"),
+        ({"MAIL_BACKEND": "smtp"}, "SMTP_HOST and MAIL_FROM are required"),
+        (
+            {
+                "ENVIRONMENT": "prod",
+                "MAIL_BACKEND": "smtp",
+                "SMTP_HOST": "smtp.example.invalid",
+                "MAIL_FROM": "a@example.invalid",
+                "SMTP_SECURITY": "none",
+            },
+            "SMTP_SECURITY=none",
+        ),
+        ({"MAIL_FROM": "not-an-address"}, "MAIL_FROM must be an e-mail address"),
+    ],
+)
+def test_mail_settings_fail_closed(
+    monkeypatch: pytest.MonkeyPatch, env: dict[str, str], message: str
+) -> None:
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+    with pytest.raises(ConfigError, match=message):
+        load_settings()
+
+
+def test_cookies_are_secure_on_https(valid_env: dict[str, str]) -> None:
+    assert load_settings().cookies_secure

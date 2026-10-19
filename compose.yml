@@ -1,13 +1,18 @@
 # Development stack: `make env` once, then `make dev`.
 # PostgreSQL and Redis are reachable only on the internal network (no host ports).
-# The web service is published on 127.0.0.1 only.
+# The web service and the mail catcher UI are published on 127.0.0.1 only.
 
 name: entegrator-status
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql+asyncpg://sentinel:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (make env)}@postgres:5432/sentinel
+  REDIS_URL: redis://redis:6379/0
 
 x-app: &app
   build: .
   image: entegrator-status:dev
   env_file: .env
+  environment: *app-env
   read_only: true
   tmpfs:
     - /tmp
@@ -17,17 +22,26 @@ x-app: &app
   volumes:
     - ./src:/app/src:ro # hot reload
   depends_on:
-    postgres:
-      condition: service_healthy
+    migrate:
+      condition: service_completed_successfully
     redis:
       condition: service_healthy
   restart: unless-stopped
 
 services:
+  migrate:
+    <<: *app
+    command: ["python", "-m", "sentinel.db", "upgrade"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   web:
     <<: *app
     command: ["python", "-m", "sentinel.web"]
     environment:
+      <<: *app-env
       WEB_HOST: 0.0.0.0 # inside the container; published on 127.0.0.1 below
       WEB_RELOAD: "true"
     ports:
@@ -73,6 +87,12 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
+
+  mailpit: # dev-only mail catcher: SMTP on the internal network, UI on 127.0.0.1:8025
+    image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+    ports:
+      - "127.0.0.1:8025:8025"
     restart: unless-stopped
 
 volumes:

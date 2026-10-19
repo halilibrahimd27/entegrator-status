@@ -6,8 +6,12 @@ VENV ?= .venv
 BIN := $(VENV)/bin
 # Lock files never pick a release younger than this (supply-chain cool-down).
 LOCK_COOLDOWN_DAYS ?= 14
+# Throwaway services from compose.test.yml (CI provides its own service containers).
+TEST_DATABASE_URL ?= postgresql+asyncpg://sentinel@127.0.0.1:55432/sentinel_test
+TEST_REDIS_URL ?= redis://127.0.0.1:56379/0
+export TEST_DATABASE_URL TEST_REDIS_URL
 
-.PHONY: help install lock env dev test lint security migrate check
+.PHONY: help install lock env dev test-services test lint security migrate check
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -32,9 +36,15 @@ dev: ## docker compose up (web, prober, engine, postgres, redis) with hot reload
 	@test -f .env || { echo "No .env — run 'make env' first."; exit 1; }
 	docker compose up --build
 
-test: ## pytest (no network) + coverage gate for sentinel.security
+test-services: ## Start the throwaway test Postgres/Redis (skipped in CI)
+	@if [ -z "$$CI" ]; then docker compose -f compose.test.yml up -d --wait --quiet-pull >/dev/null; fi
+
+test: test-services ## pytest (no network) + coverage gates
 	$(BIN)/pytest --cov --cov-report=term-missing
-	$(BIN)/coverage report --include='src/sentinel/security/*' --fail-under=85
+	@for pkg in security tenancy; do \
+		echo "coverage gate: sentinel.$$pkg"; \
+		$(BIN)/coverage report --include="src/sentinel/$$pkg/*" --fail-under=85 > /dev/null || exit 1; \
+	done
 
 lint: ## ruff, ruff format --check, mypy --strict
 	$(BIN)/ruff check .
@@ -46,7 +56,7 @@ security: ## bandit, pip-audit, gitleaks
 	$(BIN)/pip-audit --progress-spinner off --require-hashes --disable-pip -r requirements/dev.txt
 	gitleaks git --redact --no-banner .
 
-migrate: ## alembic upgrade head
-	@echo "No migrations yet; Alembic arrives in Phase 1."
+migrate: ## alembic upgrade head (dev stack)
+	docker compose run --rm migrate
 
 check: lint security test ## Everything CI runs; must pass before every commit

@@ -16,11 +16,19 @@ GENERATED = {
     "TOKEN_HASH_KEY",
     "WEBHOOK_SIGNING_KEY",
     "INGEST_HMAC_KEY",
+    "TOTP_ENCRYPTION_KEY",
     "POSTGRES_PASSWORD",
 }
 DEV_VALUES = {
     "PUBLIC_BASE_URL": "http://localhost:8000",
     "CONTACT_EMAIL": "dev@entegrator-status.invalid",
+    # compose.yml runs mailpit (UI on http://127.0.0.1:8025)
+    "MAIL_FROM": "bildirim@entegrator-status.invalid",
+    "SMTP_HOST": "mailpit",
+    "SMTP_PORT": "1025",
+    "SMTP_SECURITY": "none",
+    "SMTP_USERNAME": "",
+    "SMTP_PASSWORD": "",
 }
 
 
