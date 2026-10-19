@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: make check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GITLEAKS_VERSION: "8.30.1"
+      GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # gitleaks scans the whole history
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install gitleaks (checksum verified)
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "/tmp/${archive}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  /tmp/${archive}" | sha256sum --check --strict
+          sudo tar -xzf "/tmp/${archive}" -C /usr/local/bin gitleaks
+
+      - name: Install hashed dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet --require-hashes --no-deps -r requirements/dev.txt
+
+      - name: make check
+        run: make check PYTHON=python
+
+  image:
+    name: docker build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build image
+        run: docker build --pull -t entegrator-status:ci .
+      - name: Image runs as non-root and fails closed without secrets
+        run: |
+          test "$(docker run --rm entegrator-status:ci id -u)" = "10001"
+          set +e
+          docker run --rm entegrator-status:ci python -m sentinel.web 2> /tmp/err.txt
+          code=$?
+          set -e
+          cat /tmp/err.txt
+          test "$code" = "2"
+          grep -q "Refusing to start" /tmp/err.txt

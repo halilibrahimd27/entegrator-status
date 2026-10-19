@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/halilibrahimd27/entegrator-status/security/advisories/new
+    about: Report privately; see SECURITY.md.
+  - name: Correction request for a provider's status
+    url: https://github.com/halilibrahimd27/entegrator-status/blob/main/docs/METHODOLOGY.md#corrections
+    about: Providers request corrections through the public form, not through issues.

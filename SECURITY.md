@@ -1,0 +1,29 @@
+# Security policy
+
+Entegratör Status fetches URLs that other people configure and publishes the results,
+so it is itself an attack surface. Please report problems privately.
+
+## How to report
+
+Use GitHub's **private vulnerability reporting** on this repository
+(Security → Report a vulnerability). Do not open a public issue.
+
+Please include the affected component, steps to reproduce and the impact you expect.
+You will get an acknowledgement within 7 days.
+
+## In scope
+
+- SSRF: any way to make the prober or webhook sender reach a private, loopback,
+  link-local, CGNAT or metadata address (including via DNS rebinding or redirects)
+- XML parsing (XXE, entity expansion, oversized documents)
+- Authentication, session or CSRF weaknesses in the admin panel
+- Forged or replayed probe result batches; webhook signature bypass
+- XSS or content injection on public pages (e.g. through provider names)
+- Leaks of subscriber contact data (KVKK)
+- Secrets in the repository or in logs; insecure defaults
+
+## Out of scope
+
+- Findings that require a compromised host or a malicious maintainer
+- Rate limits on public pages that do not lead to resource exhaustion
+- Reports about the integrators we monitor; contact them directly

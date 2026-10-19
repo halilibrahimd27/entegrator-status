@@ -1,0 +1,6 @@
+# Allowlist: the image only needs the runtime lock file and the source tree.
+*
+!requirements/runtime.txt
+!src/
+**/__pycache__
+**/*.py[cod]

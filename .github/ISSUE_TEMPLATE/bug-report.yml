@@ -1,0 +1,42 @@
+name: Bug report
+description: Something in Entegratör Status does not work as described
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Public pages / JSON API
+        - Prober (checks, rate limits, robots)
+        - Engine (status, incidents, uptime)
+        - Contract drift (WSDL/XSD)
+        - Alerts (e-mail, Telegram, webhooks)
+        - Admin panel
+        - Catalog
+        - Docker / deployment
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "main @ abc1234"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (remove secrets, tokens and webhook URLs first)
+      render: shell

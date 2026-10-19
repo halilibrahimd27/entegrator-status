@@ -1,0 +1,74 @@
+[project]
+name = "entegrator-status"
+version = "0.1.0"
+description = "Independent status page for Turkey's e-invoice ecosystem (GİB and private integrators)."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi",
+    "httpx",
+    "pydantic-settings",
+    "pyyaml",
+    "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "bandit",
+    "mypy",
+    "pip-audit",
+    "pre-commit",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "httpx2",  # Starlette's TestClient; the product itself uses httpx (ADR 0001)
+    "ruff",
+    "types-pyyaml",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sentinel"]
+
+# --- quality -----------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = ["legacy"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC", "RUF", "SIM", "PT", "C4", "N"]
+# Turkish copy uses dotless/dotted i on purpose.
+allowed-confusables = ["ı", "İ"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S104", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+files = ["src/sentinel", "tests", "tools"]
+explicit_package_bases = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-q --strict-markers"
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["src/sentinel"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

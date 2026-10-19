@@ -1,0 +1,15 @@
+# Türkçe arayüz metinleri. Şablonlar metni buradan okur; şablona metin gömülmez.
+# Ölçülü ve olgusal dil: "X çöktü" değil, "Erişim sorunu tespit edildi".
+
+site:
+  name: "Entegratör Status"
+  tagline: "e-Fatura ekosistemi için bağımsız durum sayfası"
+  disclaimer: "Bağımsız ölçümdür, resmî değildir"
+  methodology_link: "Yöntem"
+
+status:
+  operational: "Çalışıyor"
+  degraded: "Yavaşlama var"
+  down: "Erişim sorunu"
+  unverified: "Doğrulanmadı"
+  maintenance: "Planlı bakım"
