@@ -16,14 +16,18 @@ You will get an acknowledgement within 7 days.
 - SSRF: any way to make the prober or webhook sender reach a private, loopback,
   link-local, CGNAT or metadata address (including via DNS rebinding or redirects)
 - XML parsing (XXE, entity expansion, oversized documents)
-- Authentication, session or CSRF weaknesses in the admin panel
+- Cross-tenant access: reading or changing another organisation's graph, results,
+  credentials, alerts or subscribers
+- Credential vault: any way to read back, log or exfiltrate stored credentials, or to
+  make them reach a host other than the configured one
+- Authentication, session or CSRF weaknesses in the panel or platform admin
 - Forged or replayed probe result batches; webhook signature bypass
 - XSS or content injection on public pages (e.g. through provider names)
-- Leaks of subscriber contact data (KVKK)
+- Leaks of personal data: accounts, members, alert recipients, subscribers (KVKK)
 - Secrets in the repository or in logs; insecure defaults
 
 ## Out of scope
 
 - Findings that require a compromised host or a malicious maintainer
 - Rate limits on public pages that do not lead to resource exhaustion
-- Reports about the integrators we monitor; contact them directly
+- Problems in the third-party services we observe; contact the vendor directly

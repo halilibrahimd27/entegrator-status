@@ -1,7 +1,7 @@
 [project]
 name = "entegrator-status"
 version = "0.1.0"
-description = "Independent status page for Turkey's e-invoice ecosystem (GİB and private integrators)."
+description = "Status and change tracking for everything a software product depends on."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [

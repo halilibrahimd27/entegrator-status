@@ -9,26 +9,33 @@ into slices (`2a`, `2b`), each leaving `main` green.
 
 ## Why this exists (context for decisions)
 
-- Turkish e-invoicing runs through GİB-authorised private integrators. When an
-  integrator or GİB has a problem, accounting firms, ERP vendors and e-commerce sellers
-  find out from angry customers. There is no independent place to check "is it them or
-  me?" and no early warning when the rules change.
-- The rules change often and upstream of everyone. Examples:
-  - **Dec 2024:** GİB's planned cutover (14 Dec 2024) of e-Fatura/e-İrsaliye to a new
-    central application came with a new WSDL and SOAP 1.2 only (1.0/1.1 dropped).
-    Every integrator had to adapt.
-  - **12 Jan 2026:** GİB announced a UBL-TR 1.2.1 package update (new XML field for
-    investment-incentive invoices).
+- Every product runs on other people's systems: payment APIs, e-invoice integrators,
+  shipping and marketplace APIs, cloud services, open-source packages, container images.
+  They change upstream, often quietly, and the team finds out from a production error
+  or an angry customer.
+- The cause is often two or three hops away. The vendor is fine; its upstream changed.
+  Turkish e-invoicing is a clean example (end user → accounting software → private
+  integrator → GİB):
+  - **Dec 2024:** GİB's cutover of e-Fatura/e-İrsaliye to a new central application came
+    with a new WSDL and SOAP 1.2 only. Every integrator had to adapt.
+  - **12 Jan 2026:** UBL-TR 1.2.1 package update (new XML field for investment-incentive
+    invoices).
   - **14 Sep 2026:** updated e-Fatura / e-Arşiv packages and UBL-TR code lists went live.
-- These upstream changes are third-degree dependencies for end users (their software →
-  their integrator → GİB). Making them visible, per provider, is the core of this product.
-- Integrators rarely publish test endpoints openly (some hand them out via support), so
-  many providers will only have a public portal check. That's fine: the catalog must
-  allow components without probes.
+- Other domains have the same shape: a payment provider changing its 3-D Secure flow, a
+  cloud region incident behind a SaaS, a library major release with breaking changes, an
+  API version sunset announced only in a changelog, a certificate expiring.
+- Teams handle this with toil (reading changelogs, following status pages, checking
+  expiry dates, watching release feeds) and things still slip through.
+- The product: map dependencies once (imports make it fast, the shared catalog fills in
+  the upstream), then get told once, early and classified when something upstream breaks
+  or changes, with the path that connects it to your product.
+- Many vendors publish no test endpoints and no machine-readable status. That is fine:
+  components may exist without sources so the graph and impact still work, and
+  announcements can be entered by hand.
 
 ---
 
-## Phase 0 — Foundation
+## Phase 0 — Foundation ✅
 
 Goal: an empty but production-shaped repo where security rules are already enforced.
 
@@ -62,246 +69,330 @@ Acceptance
 
 ---
 
-## Phase 1 — Catalog and data model
+## Phase 1 — Accounts and tenancy
 
-Goal: providers, components, checks and dependencies exist, curated by a human.
+Goal: people sign up, form organisations, and can trust that their data stays theirs.
 
 Tasks
-- [ ] SQLAlchemy models + Alembic migration for: Provider, Component, Check, Dependency,
-      ProbeNode, CheckResult, Incident, IncidentUpdate, MaintenanceWindow,
-      ContractSnapshot, Announcement, Subscriber, Subscription, AdminUser, AuditLog,
-      CorrectionRequest. Indices for time-range queries on CheckResult.
-- [ ] Catalog file `catalog/providers.yaml` (+ JSON Schema) and CLI:
+- [ ] SQLAlchemy models + first Alembic migration: Organization, User, Membership
+      (`owner | admin | member | viewer`), Invitation, ApiToken, AuditLog; platform-admin
+      flag on User.
+- [ ] Sign-up with e-mail verification, login (argon2id), rate limiting and lockout,
+      password reset (single-use, expiring token; the link opens a form that POSTs the
+      token, page sends `Referrer-Policy: no-referrer`).
+- [ ] Server-side sessions (`Secure; HttpOnly; SameSite=Strict`), CSRF on every form,
+      session rotation on login, TOTP (optional for members, mandatory for platform
+      admins).
+- [ ] Tenancy layer `sentinel/tenancy`: a `TenantScope` that every repository function
+      requires; query helpers that refuse to run unscoped. Decide in an ADR whether
+      PostgreSQL row-level security is added as a second layer.
+- [ ] Permission matrix in one module (role × action), used by every route.
+- [ ] Org API tokens: scoped, expiring, shown once, stored hashed with `TOKEN_HASH_KEY`.
+- [ ] Audit log: auth events, membership and role changes, token and credential operations.
+- [ ] KVKK: aydınlatma metni at sign-up, data export and account / org deletion
+      (org purge after 30 days).
+- [ ] Minimal server-rendered pages (Turkish copy from `tr.yaml`): sign-up, login, org
+      switcher, members, tokens.
+
+Acceptance
+- Two-tenant harness: every route and repository function returns 404 for another
+  org's objects; unscoped queries raise.
+- Auth tests: lockout, reset token single-use and expiring, CSRF required on every POST,
+  session fixation prevented, TOTP enforced for platform admins, viewer cannot write.
+- No secret, token or password hash ever appears in logs (canary test).
+
+---
+
+## Phase 2 — Catalog and dependency graph
+
+Goal: an org describes what it depends on in minutes; the shared catalog fills in the
+upstream.
+
+Tasks
+- [ ] Models + migration: Product, Service (`visibility: shared | private`, `kind`),
+      Component, Source (`kind`, per-adapter config validated by JSON Schema, `interval_s`,
+      `timeout_s`, flags `allow_http`, `availability_ignores_robots`), Dependency
+      (Product|Component → Component, optional `usage`: pinned version, operations used).
+- [ ] Shared catalog as YAML packs `catalog/packs/*.yaml` (+ JSON Schema) and CLI:
       `sentinel catalog validate`, `sentinel catalog import` (idempotent upsert, dry-run
-      by default, prints a diff).
-- [ ] Every check URL is validated through the SSRF guard at import time.
-- [ ] Flags per check: `availability_ignores_robots` (default false), `allow_http`
-      (default false), `interval_s`, `timeout_s`, `expected_status`, optional
-      `body_must_contain`, `latency_degraded_ms`.
-- [ ] Ship **only example entries** using `*.example.invalid` hosts, plus a GİB authority
-      provider with components but **no URLs filled in**. Do not invent real endpoints.
-- [ ] `docs/CATALOG.md`: the human curation workflow:
-  1. Take provider names from GİB's official list
-     (`https://ebelge.gib.gov.tr/efaturaozelentegratorlerlistesi.html`), opened by hand
-     in a browser — the site disallows automated access, never scrape it.
-  2. For each provider, add only endpoints that are **public without credentials**,
-     verified by hand (portal home/login page, publicly documented WSDL, public
-     announcement or blog page).
-  3. Endpoints meant for integrators only are out of scope. Treat GİB's central
-     e-Fatura service that way unless it is verified to be public and intended for
-     public use. Model such services as components with no checks so dependencies
-     still work.
-  4. Record the source of every URL in the catalog entry (`source:` field).
-- [ ] Default dependency edges: every integrator component tagged `efatura_service`
-      depends on the GİB central e-Fatura component.
+      by default, prints a diff, audit-logged). Every URL validated through the SSRF guard
+      at import time, every URL records its `source:`.
+- [ ] Ship **only example entries** using `*.example.invalid` hosts, plus a `tr-efatura`
+      pack skeleton: GİB as authority with components and **no URLs filled in**, and the
+      edge template "integrator `efatura_service` → GİB central e-Fatura". Do not invent
+      real endpoints. `docs/CATALOG.md` documents the human curation workflow (official
+      lists opened by hand in a browser, never scraped; public endpoints only; source of
+      every URL recorded; integrator-only services modelled as components without sources).
+- [ ] Graph rules: cycles rejected on write, impact depth ≤ 3, shared edges editable only
+      by platform admins; orgs add their own edges from their products and private services.
+- [ ] Imports that fill a graph fast (preview → confirm): CycloneDX JSON and SPDX JSON
+      SBOMs, `package-lock.json`, `requirements.txt` / `poetry.lock`, container images from
+      a `compose.yml`, an OpenAPI spec URL (→ API component + contract source). Imported
+      packages map to catalog entries by purl.
+- [ ] Propose a private service for the shared catalog; review queue for platform admins.
+- [ ] Panel pages: products, services, add from catalog, dependency view (server-rendered
+      SVG, depth ≤ 3).
 
 Acceptance
 - `sentinel catalog validate` rejects: duplicate slugs, non-https URLs without
-  `allow_http`, private IPs, intervals below the minimums, unknown dependency targets.
+  `allow_http`, private IPs, intervals below the minimums, unknown dependency targets,
+  cycles.
 - Import is idempotent (running twice changes nothing) and audit-logged.
+- SBOM/lockfile fixtures produce the expected nodes; oversized, deeply nested and YAML-bomb
+  uploads are rejected without crashing.
+- Private services and edges are invisible to other orgs (two-tenant harness).
 
 ---
 
-## Phase 2 — Prober
+## Phase 3 — Prober (availability)
 
-Goal: polite, correct measurements shipped safely to the core.
+Goal: polite, correct availability measurements shipped safely to the core.
 
 Tasks
-- [ ] Check runners: `http` (status, latency, optional body assertion, TLS info) and
-      `tls_cert` (days to expiry, issuer, chain validity).
-- [ ] Scheduler with jitter; respects per-check interval, per-host concurrency = 1,
-      per-host budget, `Retry-After`/backoff.
-- [ ] robots.txt module: cached per host (≤ 24 h), `Crawl-delay` honoured, used by
-      `page_watch` (Phase 6) and by `http` checks unless `availability_ignores_robots`.
-- [ ] Error classification: `dns`, `connect_timeout`, `read_timeout`, `tls`,
-      `http_4xx`, `http_5xx`, `assertion`, `blocked_by_robots`, `rate_limited_by_us`.
-- [ ] Node self-health: each node checks 3 control targets (configurable, stable public
-      sites); failing ≥ 2 marks the node unhealthy in its batch.
-- [ ] Ingest: results buffered locally (SQLite or file queue) and shipped in batches to
-      `POST /ingest/v1/results` with HMAC signature + timestamp; at-least-once delivery,
-      idempotent on the server (result UUIDs).
+- [ ] Source adapter interface (`fetch → normalise → snapshot → diff → classify`) and
+      registry; shared contract tests every adapter must pass.
+- [ ] Availability adapters: `http` (status, latency, optional body assertion, TLS info,
+      `Deprecation` / `Sunset` headers recorded), `tls_cert` (days to expiry, issuer,
+      chain validity), `dns`, `domain_expiry` (RDAP).
+- [ ] Scheduler with jitter; per-source interval, per-host concurrency = 1, global per-host
+      budget across tenants, `Retry-After` / backoff. Shared sources scheduled once and
+      fanned out.
+- [ ] robots.txt module: cached per host (≤ 24 h), `Crawl-delay` honoured.
+- [ ] Error classification: `dns`, `connect_timeout`, `read_timeout`, `tls`, `http_4xx`,
+      `http_5xx`, `assertion`, `blocked_by_robots`, `rate_limited_by_us`.
+- [ ] Node self-health: 3 configurable control targets; failing ≥ 2 marks the node
+      unhealthy for the batch.
+- [ ] Ingest: local buffer (SQLite or file queue), batches to `POST /ingest/v1/results`
+      with HMAC signature + timestamp, at-least-once delivery, idempotent on the server.
 - [ ] `sentinel node register <name> <location>` prints a one-time token (stored hashed).
 
 Acceptance
-- Tests with local fake servers cover every error class, Retry-After, the rate limiter
-  (never two concurrent requests to one host), robots disallow and crawl-delay, replay
-  rejection (old timestamp, reused batch id, bad signature) and buffering while ingest
-  is down.
+- Local fake servers cover every error class, Retry-After, the rate limiter (never two
+  concurrent requests to one host), robots disallow and crawl-delay, replay rejection
+  (old timestamp, reused batch id, bad signature) and buffering while ingest is down.
+- Two orgs depending on the same shared source → exactly one probe per interval.
 
 ---
 
-## Phase 3 — Status engine
+## Phase 4 — Status engine
 
 Goal: trustworthy state, incidents and uptime.
 
 Tasks
-- [ ] Consensus per component per round (see "Status semantics" in CLAUDE.md):
-      `operational | degraded | down | unverified | maintenance`.
+- [ ] Consensus per component per round: `operational | degraded | down | unverified |
+      maintenance` (CLAUDE.md "Status semantics").
 - [ ] Incident lifecycle: auto-open after N failing rounds with ≥ 2 healthy nodes,
-      auto-resolve after M successes, merge flaps within 10 minutes, root-cause hint
-      from error classes ("TLS sertifika hatası", "zaman aşımı", "HTTP 5xx").
+      auto-resolve after M successes, merge flaps within 10 minutes, root-cause hint from
+      error classes ("TLS sertifika hatası", "zaman aşımı", "HTTP 5xx").
 - [ ] Maintenance windows (manual or from announcements) suppress incidents and are
-      excluded from uptime.
-- [ ] Rollups: minute state buckets → hourly latency p50/p95 → daily uptime; uptime
+      excluded from uptime. Orgs may add manual incidents for their own products.
+- [ ] Rollups: minute buckets → hourly latency p50/p95 → daily uptime; uptime
       24 h / 7 d / 30 d / 90 d from consensus only.
-- [ ] Retention jobs: raw results 30 days, minute buckets 120 days, daily forever.
+- [ ] Retention: raw observations 30 days, minute buckets 120 days, daily forever.
 
 Acceptance
 - Table-driven tests: 1 node failing → `unverified`; 2 nodes failing 3 rounds → `down`;
   alternating results → no incident spam; unhealthy node excluded; maintenance excluded
-  from uptime; uptime math verified on hand-computed timelines (including DST-free UTC
-  day boundaries rendered in Europe/Istanbul).
+  from uptime; uptime verified on hand-computed timelines (UTC days rendered in
+  Europe/Istanbul).
 
 ---
 
-## Phase 4 — Public site
+## Phase 5 — Change sources: status pages, feeds, announcements
 
-Goal: fast, honest, no-JS status pages.
+Goal: vendor statements and announcements arrive classified, without anyone reading them.
 
-Pages (Turkish copy from `tr.yaml`)
-- [ ] `/` — all providers: current state, 90-day uptime bar, last incident; filter by
-      state; GİB shown first as the upstream.
-- [ ] `/e/{slug}` — provider: components with state, uptime 24h/7d/30d/90d, latency
-      sparkline, open and past incidents, contract changes, announcements, **"Bağlı
-      olduğu servisler"** (dependencies) and current upstream impact banner.
-- [ ] `/olay/{id}` — incident timeline.
-- [ ] `/yontem` — methodology: probe locations, intervals, consensus rule, what we
-      do *not* measure, robots policy, how to request a correction.
-- [ ] `/hakkinda/bot` — what our bot does, rate limits, contact, opt-out for providers.
-- [ ] `/duzeltme` — correction request form (CSRF, rate limited, honeypot; no third-party
-      captcha or trackers).
-- [ ] JSON API: `/api/v1/status`, `/api/v1/providers/{slug}`, `/api/v1/incidents`.
-- [ ] Atom feeds: global and per provider. Embeddable SVG badge `/badge/{slug}.svg`.
-- [ ] SEO: titles/descriptions per provider, sitemap.xml, canonical URLs.
-- [ ] Caching: `Cache-Control` + `ETag`; pages render in < 150 ms from warm cache.
-- [ ] Footer on every page: "Bağımsız ölçümdür, resmî değildir" + methodology link.
+Tasks
+- [ ] `status_page` adapter: Atlassian Statuspage (`/api/v2/summary.json`), Instatus,
+      generic RSS/Atom incident feeds; map vendor components to ours; vendor status shown
+      next to our consensus, never merged.
+- [ ] `feed` adapter: RSS/Atom with `ETag` / `If-Modified-Since`.
+- [ ] `page_watch` adapter: robots-checked every cycle, items extracted with a
+      configurable CSS selector (title, date, link only — never article bodies), new items
+      detected (port `legacy/api-sentinel/watchers`).
+- [ ] Announcement classifier with Turkish + English keyword tables: `maintenance`
+      (bakım, kesinti, erişim, maintenance), `deprecation` (sunset, deprecated, kullanımdan
+      kaldırılacak), `security`, `package_update` (UBL-TR, şematron, paket, kod listesi,
+      XSLT, SDK), `incident`, `other`. Effective dates extracted when present.
+- [ ] `Deprecation` / `Sunset` headers seen by `http` sources become Risks with dates.
+- [ ] Manual announcement form for sources that disallow automation (fields: service,
+      title, link, published date, effective date, kind, affected components).
+
+Acceptance
+- Adapter contract tests pass for every new adapter.
+- robots disallow disables the watcher and shows the reason; a selector change that yields
+  zero items flags the watcher `needs_attention` instead of silently "no news".
+- A Statuspage fixture maps components and incidents correctly; a `Sunset` header yields a
+  dated Risk; keyword tables are unit-tested in both languages.
+
+---
+
+## Phase 6 — Releases, advisories and lifecycle
+
+Goal: "a dependency update broke production" stops being a surprise.
+
+Tasks
+- [ ] `release` adapters: GitHub releases/tags (optional platform `GITHUB_TOKEN` for rate
+      limits), npm registry, PyPI JSON, OCI / Docker Hub tags; conditional requests.
+- [ ] Version classification: `major | minor | patch | prerelease` (semver), calver and
+      non-semver tags handled explicitly; changelog / release-notes link extracted; release
+      notes scanned for "breaking" markers.
+- [ ] Pinned vs. latest for imported dependencies (from `usage.version`): drift shown,
+      unadopted majors become Risks with the release notes link.
+- [ ] `advisory` adapter: OSV.dev for package@version → security Risks with severity.
+- [ ] `eol` adapter: endoflife.date for runtimes, frameworks and databases → Risk N days
+      before end of life.
+
+Acceptance
+- Registry fixtures for each ecosystem; semver edge cases (pre-releases, build metadata,
+  calver, `v`-prefixed tags); `304 Not Modified` creates no new snapshot; an OSV fixture
+  produces a Risk only for affected versions.
+
+---
+
+## Phase 7 — API contract drift and authenticated checks
+
+Goal: detect when an API a product uses changes shape, and say how much it matters.
+
+Tasks
+- [ ] Credential vault: AES-256-GCM envelope encryption with per-org data keys and
+      `CREDENTIALS_MASTER_KEY` (new fail-closed secret); write-only API; rotation; audit.
+- [ ] Auth methods for sources: API key in a header, bearer, basic, OAuth2 client
+      credentials (token URL through the SSRF guard; POST allowed only there). Credentials
+      dropped when a redirect leaves the configured host. API keys in query strings are
+      refused.
+- [ ] `api_contract` adapters, each with a normaliser to a structural model:
+  - OpenAPI 3.x spec URL (paths, operations, parameters, request/response schemas).
+  - JSON response shape inferred from sample responses (port `legacy/api-sentinel/contracts`).
+  - WSDL/XSD: services, ports/addresses, bindings with SOAP version, operations,
+    messages, element and complex types with cardinality (hardened parser, imports same
+    host, depth ≤ 3).
+- [ ] Classifier: `breaking` (operation/path removed or renamed, required field or
+      parameter added/removed, type changed, cardinality narrowed, enum value removed,
+      SOAP version or endpoint address changed), `non_breaking` (optional field added, new
+      operation, enum value added), `cosmetic` (documentation only). Usage-aware: severity
+      per product from `usage.operations`.
+- [ ] Snapshots store the normalised model + hash + readable diff; never response bodies
+      with personal data or secrets.
+- [ ] Synthetic fixtures: SOAP 1.1 → 1.2, removed operation, added optional element,
+      doc-only change, OpenAPI removed path / new required parameter / enum removal, XXE,
+      billion laughs, oversized document, cross-host import.
+
+Acceptance
+- Every fixture classified correctly; XXE, billion laughs, oversized and cross-host
+  imports rejected without crashing the source.
+- A canary credential never appears in logs, API responses, error messages, snapshots or
+  diffs; a cross-host redirect strips credentials; credentials are tenant-isolated.
+
+---
+
+## Phase 8 — Impact and risk
+
+Goal: every incident, change and risk lands on the products it affects, with the reason.
+
+Tasks
+- [ ] Propagation along dependency edges up to depth 3 with a reason path, e.g.
+      "Fatura modülü → Entegratör X e-Fatura API → GİB merkezi e-Fatura: UBL-TR kod
+      listesi güncellemesi (14.09.2026)".
+- [ ] Severity model: change class × usage match × depth attenuation.
+- [ ] Risk register per org: open risks ordered by due date (certificate/domain expiry,
+      end of life, sunset, advisories, unadopted majors); states `open | snoozed |
+      accepted | resolved`, audit-logged.
+- [ ] Planned-changes calendar from effective dates (announcements, sunset headers, EOL).
+- [ ] Correlated-failure hint: if ≥ 40 % (configurable) of the dependants of one upstream
+      go `down` within the same 10-minute window, show "Ortak bir kaynaktan kaynaklanıyor
+      olabilir" — a hint, never an assertion.
+- [ ] Weekly digest per org: what changed upstream, what is due.
+
+Acceptance
+- Two- and three-hop propagation tests; usage-aware severity (used operation removed →
+  breaking, unused → possibly affected); risk lifecycle transitions; the hint fires at the
+  threshold and not below.
+
+---
+
+## Phase 9 — Alerts
+
+Goal: the right people get told once, on the channel they chose.
+
+Tasks
+- [ ] Channels per org: e-mail (double opt-in for external recipients, `List-Unsubscribe`),
+      Telegram (deep-link `/start <token>`, `/abonelikler`, `/iptal`), Slack-compatible
+      webhooks, signed webhooks (`X-Sentinel-Signature`: HMAC-SHA256 over timestamp + body,
+      retries, auto-disable, SSRF guard) — port and fix `legacy/api-sentinel/alerts`.
+- [ ] Alert rules: by product, service, kind (incident, change, risk), minimum severity;
+      `breaking` changes only by default.
+- [ ] Fan-out through Redis; dedup + cooldown per recipient/event; quiet hours; daily digest.
+- [ ] KVKK retention jobs (unconfirmed 48 h, unsubscribed 30 days).
+
+Acceptance
+- One event → exactly one message per matching recipient per channel; unconfirmed
+  recipients get nothing; unsubscribe works without login and is single-use-safe; webhook
+  signature verifiable with the reference snippet in the docs; private-IP webhook rejected;
+  rules cannot route one org's events to another org.
+
+---
+
+## Phase 10 — Panel and public status pages
+
+Goal: one screen that answers "is anything upstream about to hurt us?", plus an optional
+public page for an org's own customers.
+
+Tasks
+- [ ] Org dashboard: products with derived state, open incidents, recent changes, due
+      risks, upcoming planned changes; filters; HTMX only as enhancement.
+- [ ] Optional public status page per org (`/s/{org}`): chosen products and components,
+      incidents, subscribe (double opt-in), Atom feed, SVG badge, disclaimer and
+      methodology link for third-party measurements.
+- [ ] JSON API v1 with org API tokens (read scopes first).
+- [ ] Bot and methodology pages: `/yontem`, `/hakkinda/bot` (what the bot does, rate
+      limits, contact, opt-out for providers), `/duzeltme` correction form (CSRF, rate
+      limited, honeypot; no third-party captcha or trackers).
+- [ ] SEO for public pages, `Cache-Control` + `ETag`, render < 150 ms from warm cache.
 
 Acceptance
 - All pages render with JavaScript disabled. CSP has no `unsafe-inline`.
-- Template tests: every dynamic value escaped; provider names with `<script>` render
-  inert.
-- Accessibility: semantic HTML, labelled form fields, sufficient contrast. Run axe-core
-  or Lighthouse by hand on `/` and a provider page; record the scores in the phase report.
+- Template tests: every dynamic value escaped; names containing `<script>` render inert.
+- Accessibility: semantic HTML, labelled form fields, sufficient contrast; axe-core or
+  Lighthouse scores for the dashboard and a public page recorded in the phase report.
 
 ---
 
-## Phase 5 — Contract drift (WSDL / XSD)
-
-Goal: detect when a public contract changes and say how much it matters.
-
-Tasks
-- [ ] `wsdl_contract` check: fetch WSDL (+ imported XSDs, same host, depth ≤ 3) through
-      the SSRF guard with the hardened XML parser.
-- [ ] Normaliser → structural model: services, ports/addresses, bindings with **SOAP
-      version**, operations, input/output messages, element and complex types with
-      cardinality and type. Ignore whitespace, ordering and documentation.
-- [ ] Classifier:
-  - `breaking`: operation removed/renamed, required element added or removed, type
-    changed, cardinality narrowed, binding SOAP version changed, endpoint address changed.
-  - `non_breaking`: optional element added, new operation, enum value added.
-  - `cosmetic`: documentation/annotation only.
-- [ ] Store `ContractSnapshot` (normalised model + hash + diff); public change log per
-      provider with a readable diff.
-- [ ] Fixtures (synthetic, written for tests): SOAP 1.1 → 1.2 binding change, removed
-      operation, added optional element, doc-only change, XXE payload, billion-laughs,
-      oversized WSDL, import pointing to another host.
-
-Acceptance
-- Every fixture classified correctly; XXE/billion-laughs/oversized/cross-host import are
-  rejected without crashing the check.
-
----
-
-## Phase 6 — Upstream watchers and impact (the third-degree layer)
-
-Goal: when the upstream changes, every affected provider page shows it — before users
-find out the hard way.
-
-Tasks
-- [ ] `page_watch` check: fetch an announcement page (robots-checked every cycle),
-      extract items with a configurable CSS selector (title, date, link), store only
-      title + date + link (never copy article bodies), detect new items.
-- [ ] Classifier for announcements (Turkish keywords + rules): `maintenance`
-      (bakım, kesinti, erişim), `package_update` (UBL-TR, şematron, paket, kod listesi,
-      XSLT), `test_env` (test ortamı), `regulation` (tebliğ, VUK). Unit-tested keyword
-      tables.
-- [ ] Manual announcement form in admin for sources whose robots.txt disallows us
-      (e.g. GİB e-Belge). Fields: provider, title, link, published date, effective date,
-      kind, affected components.
-- [ ] Impact mapping: an `authority` announcement or incident propagates along
-      Dependency edges and shows a "Yukarı akış etkisi / olası etki" banner on every
-      dependent provider page, plus a planned-changes calendar on `/` (e.g.
-      "14.09.2026 — UBL-TR kod listeleri güncellemesi").
-- [ ] Correlated-failure hint: if ≥ 40 % (configurable) of integrators' `efatura_service`
-      components go `down` within the same 10-minute window, show "Ortak bir kaynaktan
-      kaynaklanıyor olabilir" on `/`. It is a hint, worded as such, never an assertion.
-
-Acceptance
-- Tests: robots disallow disables the watcher and surfaces the reason; selector change
-  yields zero items → watcher flagged `needs_attention` instead of silently "no news";
-  impact propagates two hops (authority → integrator component → provider page);
-  correlated-failure hint fires at the threshold and not below.
-
----
-
-## Phase 7 — Subscriptions and alerts
-
-Goal: people get told, once, on the channel they chose.
-
-Tasks
-- [ ] Subscription scopes: provider, component, "GİB değişiklikleri" (authority
-      announcements + impact), everything. Event types: incident open/resolve, degraded,
-      contract change (`breaking` only by default), announcement.
-- [ ] E-mail: double opt-in, one-click unsubscribe (`List-Unsubscribe` header +
-      link), plain-text + HTML templates.
-- [ ] Telegram: bot with deep-link subscription (`/start <token>`), `/abonelikler`,
-      `/iptal`. Webhook mode in production, long polling in dev.
-- [ ] Webhooks: JSON payload, `X-Sentinel-Signature` (HMAC-SHA256 over body + timestamp),
-      retries with backoff, auto-disable after repeated failures, SSRF guard on target.
-- [ ] Fan-out through Redis; dedup + cooldown per subscriber/event; optional daily digest.
-- [ ] KVKK: aydınlatma metni page, explicit consent checkbox, retention job deletes
-      unconfirmed sign-ups after 48 h and unsubscribed contacts after 30 days.
-- [ ] Rate limits on subscribe endpoints; honeypot field.
-
-Acceptance
-- Tests: one incident → exactly one message per matching subscriber per channel;
-  unconfirmed e-mail receives nothing; unsubscribe link works without login and is
-  single-use-safe; webhook signature verifiable with a reference snippet in the docs;
-  private-IP webhook rejected.
-
----
-
-## Phase 8 — Admin and production
+## Phase 11 — Production
 
 Goal: run it for real, safely, with two probe nodes.
 
 Tasks
-- [ ] Admin panel (server-rendered + HTMX): catalog CRUD (SSRF-validated), incidents
-      (manual updates, public notes), maintenance windows, announcements, correction
-      requests, subscriber counts (no bulk export), audit log viewer. Optional TOTP.
+- [ ] Platform admin: shared catalog CRUD (SSRF-validated), promotion queue, per-org
+      quotas, incidents and public notes, correction requests, audit log viewer.
 - [ ] `compose.prod.yml` + Caddy (automatic HTTPS, security headers, cache for public
-      pages), `/metrics` reachable only on the internal network.
-- [ ] Backups: nightly `pg_dump` to off-site storage + a documented, tested restore drill.
+      pages), Redis with ACL, `/metrics` only on the internal network.
+- [ ] Backups: nightly `pg_dump` off-site, documented and tested restore drill;
+      `CREDENTIALS_MASTER_KEY` backup and rotation drill.
 - [ ] Remote probe node runbook (`docs/PROBE_NODE.md`): minimal container, outbound-only,
       token provisioning, clock sync requirement (HMAC window).
-- [ ] `docs/LAUNCH.md` checklist: two healthy nodes in different networks (prefer both
-      in Turkey — some Turkish public services restrict foreign IPs; verify), catalog
-      reviewed, methodology published, contact e-mail live, KVKK texts live.
+- [ ] `docs/LAUNCH.md`: two healthy nodes in different networks (prefer both in Turkey —
+      some Turkish public services restrict foreign IPs; verify), catalog reviewed,
+      methodology published, contact e-mail live, KVKK texts and terms live.
 - [ ] README (EN + TR): what it is, screenshots, architecture diagram, methodology link,
       self-hosting guide, and a **"How it was built"** section: designed and reviewed by
       the maintainer, implemented with Claude Code.
 
 Acceptance
 - Fresh VM: follow README → stack up with HTTPS in < 30 minutes.
-- Restore drill restores yesterday's backup into a clean database and the site renders.
-- Security review pass: no secret defaults, no host-published DB/Redis ports, CSP
-  strict, all forms CSRF-protected, all outbound fetches through the guard.
+- Restore drill restores yesterday's backup into a clean database and the site renders;
+  credentials decrypt after restore.
+- Security review pass: no secret defaults, no host-published DB/Redis ports, CSP strict,
+  all forms CSRF-protected, all outbound fetches through the guard, tenant harness green.
 
 ---
 
 ## Backlog (not in the MVP — don't build, don't scaffold)
-- Paid tier (more subscriptions, webhooks, history export) — likely iyzico.
-- Opt-in authenticated synthetic checks using a customer's own test credentials.
-- e-Arşiv / e-İrsaliye / e-Defter specific components and contracts.
-- English locale for public pages.
-- Integrator comparison reports (factual uptime only; needs legal review first).
+- Paid tiers (more sources, shorter intervals, longer history) — likely iyzico.
+- Sign-in with Google / GitHub (OIDC).
+- More ecosystems: Maven, Go modules, NuGet, Composer, RubyGems, Helm charts,
+  Terraform providers.
+- Reading lockfiles straight from a repository (GitHub App) instead of uploads.
+- Multi-step synthetic flows.
+- English locale for the UI.
+- Provider comparison reports (factual uptime only; needs legal review first).

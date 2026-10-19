@@ -3,7 +3,7 @@
 
 site:
   name: "Entegratör Status"
-  tagline: "e-Fatura ekosistemi için bağımsız durum sayfası"
+  tagline: "Bağımlılıkların için durum ve değişiklik takibi"
   disclaimer: "Bağımsız ölçümdür, resmî değildir"
   methodology_link: "Yöntem"
 

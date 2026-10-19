@@ -1,21 +1,27 @@
 # Entegratör Status
 
-Independent, public status page for Turkey's e-invoice ecosystem: GİB-authorised private
-integrators (özel entegratörler) and GİB's own public services.
+Status and change tracking for everything your product depends on.
 
-It answers two questions on one page:
+Map your dependencies (third-party APIs, SaaS vendors, integrators, cloud services,
+packages, container images, certificates, domains) and the shared catalog adds the
+dependencies of those dependencies. Entegratör Status watches every node and tells you,
+once and early, when something upstream breaks or changes in a way that can break you.
 
-1. **Is it up?** Availability and latency from at least two probe locations, with
-   consensus, so one bad network never declares an outage.
-2. **Did the contract change?** Structural drift in public WSDL/XSD contracts, plus
-   upstream (GİB) announcements mapped to every provider that depends on them.
+1. **Is it up?** Availability from at least two probe locations with consensus, next to
+   what the vendor's status page claims.
+2. **Did it change?** API contract drift (OpenAPI, JSON, WSDL/XSD), releases, advisories,
+   end-of-life dates, announcements and deprecation notices, classified by impact.
+3. **Does it affect me?** Impact follows the dependency graph up to the third degree:
+   *your product → your vendor → your vendor's upstream*.
 
-> Independent measurement, not official. / *Bağımsız ölçümdür, resmî değildir.*
+Example: GİB updates the UBL-TR code lists → your e-invoice integrator has to adapt →
+your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phase 0 (foundation) of the [build plan](docs/PLAN.md): configuration that fails closed,
-the SSRF-guarded outbound HTTP client, CI and the container setup. No checks run yet.
+Phase 0 (foundation) of the [build plan](docs/PLAN.md) is done: configuration that fails
+closed, the SSRF-guarded outbound HTTP client, CI and the container setup. Next: accounts
+and tenancy (Phase 1).
 
 ## Quick start
 
@@ -48,9 +54,9 @@ legacy/            reference code from api-sentinel, ported phase by phase (ADR 
 
 ## Docs
 
-- [CLAUDE.md](CLAUDE.md): ground rules (probing ethics, KVKK, security baseline, stack)
+- [CLAUDE.md](CLAUDE.md): ground rules (tenancy, credentials, probing ethics, KVKK, security, stack)
 - [docs/PLAN.md](docs/PLAN.md): phased build plan
-- [docs/METHODOLOGY.md](docs/METHODOLOGY.md): what we measure and how
+- [docs/METHODOLOGY.md](docs/METHODOLOGY.md): what we observe and how
 - [docs/adr/](docs/adr/): architecture decisions
 - [SECURITY.md](SECURITY.md): reporting vulnerabilities
 
@@ -58,15 +64,23 @@ legacy/            reference code from api-sentinel, ported phase by phase (ADR 
 
 ## Türkçe
 
-Türkiye e-Fatura ekosistemi için bağımsız durum sayfası: GİB'in yetkilendirdiği özel
-entegratörler ve GİB'in herkese açık servisleri.
+Ürününün bağımlı olduğu her şey için durum ve değişiklik takibi.
 
-- **Çalışıyor mu?** En az iki ölçüm noktasından erişilebilirlik ve gecikme; tek bir
-  ağdaki sorun "kesinti" ilan ettirmez.
-- **Sözleşme değişti mi?** Herkese açık WSDL/XSD sözleşmelerindeki yapısal değişiklikler
-  ve GİB duyurularının bağlı entegratörlere etkisi.
+Bağımlılıklarını tanımla (üçüncü parti API'ler, SaaS, entegratörler, bulut servisleri,
+paketler, container image'ları, sertifikalar, domain'ler); ortak katalog onların
+bağımlılıklarını ekler. Entegratör Status her düğümü izler ve yukarıda bir şey bozulduğunda
+ya da seni bozacak şekilde değiştiğinde haber verir: bir kez, erken ve sınıflandırılmış
+olarak.
 
-Ölçümler yalnızca herkese açık, kimlik doğrulaması gerektirmeyen adreslere yapılır;
-istekler düşük frekanslıdır ve kendini tanıtır. Ayrıntılar: [Yöntem](docs/METHODOLOGY.md).
+- **Çalışıyor mu?** En az iki ölçüm noktasından erişilebilirlik; vendor'ın kendi durum
+  sayfasıyla yan yana.
+- **Değişti mi?** API sözleşme değişiklikleri, sürümler, güvenlik bildirimleri, destek
+  sonu tarihleri, duyurular ve kullanımdan kaldırma notları.
+- **Beni etkiler mi?** Etki bağımlılık grafında üç dereceye kadar izlenir:
+  *ürünün → vendor'ın → vendor'ın bağımlılığı*.
+
+Amaç, düzenli yapılan angaryayı (changelog okumak, durum sayfalarını takip etmek, bitiş
+tarihlerini elle kontrol etmek) ortadan kaldırmak ve gözden kaçan riskleri (bir
+bağımlılığın güncellemesiyle ürünün bozulması gibi) sıfırlamak.
 
 Hızlı başlangıç yukarıdaki komutlarla aynıdır: `make install`, `make env`, `make dev`.
