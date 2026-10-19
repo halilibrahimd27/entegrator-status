@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "invoice_number": "INV-2026-001",
+  "statusCode": 1,
+  "totalAmount": 1500.50,
+  "items": [
+    {
+      "productCode": "ABC-123",
+      "qty": 2,
+      "unitPrice": 750.25,
+      "currency": "TRY"
+    }
+  ],
+  "created": 1740564000
+}

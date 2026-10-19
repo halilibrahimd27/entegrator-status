@@ -18,9 +18,13 @@ before the previous one meets its acceptance criteria.
 
 ## Ground rules (non-negotiable)
 
-### Clean-room
-- This is a fresh codebase. Do **not** copy code from `api-sentinel` or any employer
-  repository. Ideas described in this file and `docs/PLAN.md` are the only carry-over.
+### Carry-over from api-sentinel
+- The maintainer owns `api-sentinel`; selected files live in `legacy/api-sentinel/`
+  (inventory and known problems in its README). They are reference material: never
+  imported, packaged, linted or tested.
+- Port a legacy piece only in the phase that needs it, rewritten into `src/sentinel/`
+  under this file's rules, and delete the legacy file in the same change (ADR 0002).
+- Never copy code from any employer repository.
 
 ### Good-citizen probing (ethics + legal)
 - Probe **only public, unauthenticated** endpoints. Never use anyone else's credentials.

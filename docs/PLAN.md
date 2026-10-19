@@ -49,7 +49,7 @@ Tasks
 - [ ] `Makefile` targets from CLAUDE.md. Pre-commit: ruff, ruff-format, mypy, gitleaks.
 - [ ] GitHub Actions `ci.yml`: lint, type check, tests, bandit, pip-audit, gitleaks.
       Every action pinned by commit SHA; `permissions: contents: read`.
-- [ ] `docs/adr/0001-stack.md`, `0002-clean-room.md`, `0003-probing-ethics.md`.
+- [ ] `docs/adr/0001-stack.md`, `0002-api-sentinel-carry-over.md`, `0003-probing-ethics.md`.
 - [ ] `README.md` skeleton (English first, Turkish section), `docs/METHODOLOGY.md` stub,
       `sentinel/web/i18n/tr.yaml`.
 
