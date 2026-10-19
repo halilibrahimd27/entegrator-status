@@ -33,24 +33,24 @@ into slices (`2a`, `2b`), each leaving `main` green.
 Goal: an empty but production-shaped repo where security rules are already enforced.
 
 Tasks
-- [ ] src-layout Python package `sentinel`, `pyproject.toml`, pinned dependencies with hashes.
-- [ ] `sentinel/config.py`: typed settings (pydantic-settings). Fail closed: missing,
+- [x] src-layout Python package `sentinel`, `pyproject.toml`, pinned dependencies with hashes.
+- [x] `sentinel/config.py`: typed settings (pydantic-settings). Fail closed: missing,
       short (< 32 bytes) or placeholder secrets abort startup with a clear message.
       Separate keys: `SESSION_KEY`, `TOKEN_HASH_KEY`, `WEBHOOK_SIGNING_KEY`, `INGEST_HMAC_KEY`.
-- [ ] `sentinel/security/http.py`: the only outbound HTTP client.
+- [x] `sentinel/security/http.py`: the only outbound HTTP client.
   - SSRF guard as described in CLAUDE.md (https only by default, DNS resolve + IP
     pinning, blocked ranges incl. 100.64.0.0/10, 169.254.0.0/16, ::1, fc00::/7, fe80::/10,
     redirects ≤ 3 re-validated, size caps, timeouts).
   - Per-host concurrency limiter and token-bucket rate limiter (in-process, testable).
   - Standard User-Agent.
-- [ ] A test that fails if any module outside `sentinel/security` imports `httpx`.
-- [ ] Docker: multi-stage `Dockerfile` (non-root), `compose.yml` for dev (web, prober,
+- [x] A test that fails if any module outside `sentinel/security` imports `httpx`.
+- [x] Docker: multi-stage `Dockerfile` (non-root), `compose.yml` for dev (web, prober,
       engine, postgres, redis; DB/Redis **not** published on host ports).
-- [ ] `Makefile` targets from CLAUDE.md. Pre-commit: ruff, ruff-format, mypy, gitleaks.
-- [ ] GitHub Actions `ci.yml`: lint, type check, tests, bandit, pip-audit, gitleaks.
+- [x] `Makefile` targets from CLAUDE.md. Pre-commit: ruff, ruff-format, mypy, gitleaks.
+- [x] GitHub Actions `ci.yml`: lint, type check, tests, bandit, pip-audit, gitleaks.
       Every action pinned by commit SHA; `permissions: contents: read`.
-- [ ] `docs/adr/0001-stack.md`, `0002-api-sentinel-carry-over.md`, `0003-probing-ethics.md`.
-- [ ] `README.md` skeleton (English first, Turkish section), `docs/METHODOLOGY.md` stub,
+- [x] `docs/adr/0001-stack.md`, `0002-api-sentinel-carry-over.md`, `0003-probing-ethics.md`.
+- [x] `README.md` skeleton (English first, Turkish section), `docs/METHODOLOGY.md` stub,
       `sentinel/web/i18n/tr.yaml`.
 
 Acceptance
