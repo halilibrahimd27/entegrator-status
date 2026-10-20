@@ -9,6 +9,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from sentinel.models.catalog import ServiceKind, SourceKind
+from sentinel.security import yamlsafe
 from sentinel.security.addresses import parse_target
 from sentinel.security.errors import URLPolicyError
 from sentinel.sources.config import KIND_CONFIG, SourceConfigError, validate_source
@@ -92,20 +93,11 @@ class Pack(_Model):
     tag_rules: list[PackTagRule] = []
 
 
-class _NoAliasLoader(yaml.SafeLoader):
-    """SafeLoader that refuses aliases (no entity-expansion style "YAML bombs")."""
-
-    def compose_node(self, parent: Any, index: Any) -> Any:
-        if self.check_event(yaml.AliasEvent):
-            raise yaml.composer.ComposerError(None, None, "YAML aliases are not allowed", None)
-        return super().compose_node(parent, index)
-
-
 def safe_yaml(text: str) -> Any:
     if len(text.encode()) > MAX_PACK_BYTES:
         raise PackError(f"larger than {MAX_PACK_BYTES} bytes")
     try:
-        return yaml.load(text, Loader=_NoAliasLoader)  # noqa: S506  # nosec B506 - SafeLoader subclass
+        return yamlsafe.load(text)
     except yaml.YAMLError as exc:
         raise PackError(f"invalid YAML: {exc}") from None
 
