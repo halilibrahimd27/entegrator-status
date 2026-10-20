@@ -22,6 +22,7 @@ from sentinel.web.routes import (
     api,
     auth,
     catalog,
+    ingest,
     invites,
     members,
     orgs,
@@ -73,6 +74,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         catalog.router,
         admin.router,
         api.router,
+        ingest.router,
     ):
         app.include_router(router)
 
@@ -125,5 +127,6 @@ def _register_error_pages(app: FastAPI) -> None:
     app.add_exception_handler(CsrfError, csrf_failed)
     app.add_exception_handler(PermissionDeniedError, forbidden)
     app.add_exception_handler(api.ApiAuthError, api.unauthorized)
+    app.add_exception_handler(ingest.NodeAuthError, ingest.unauthorized)
     app.add_exception_handler(RequestValidationError, bad_form)
     app.add_exception_handler(StarletteHTTPException, http_error)

@@ -56,9 +56,16 @@ services:
       timeout: 5s
       retries: 5
 
-  prober:
+  prober: # starts once a node is registered (`make node` writes its credentials to .env)
     <<: *app
     command: ["python", "-m", "sentinel.probe"]
+    profiles: ["probe"]
+    environment:
+      PROBE_INGEST_URL: http://web:8000
+      PROBE_BUFFER_PATH: /data/probe-buffer.sqlite3
+    volumes:
+      - ./src:/app/src:ro
+      - probe-buffer:/data
 
   engine:
     <<: *app
@@ -97,3 +104,4 @@ services:
 
 volumes:
   pgdata:
+  probe-buffer:

@@ -21,6 +21,7 @@ from sentinel.catalog.service import CatalogService
 from sentinel.config import Settings
 from sentinel.db.session import Database
 from sentinel.graph.service import GraphService
+from sentinel.probe.nodes import NodeService
 from sentinel.tenancy.api_tokens import ApiTokenService
 from sentinel.tenancy.invitations import InvitationService
 from sentinel.tenancy.orgs import OrgService
@@ -43,6 +44,7 @@ class AppServices:
     graph: GraphService
     imports: ImportService
     proposals: ProposalService
+    nodes: NodeService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -81,6 +83,7 @@ def build_services(settings: Settings) -> AppServices:
         graph=GraphService(db),
         imports=ImportService(db, redis),
         proposals=ProposalService(db),
+        nodes=NodeService(db, settings),
         renderer=Renderer(),
     )
 

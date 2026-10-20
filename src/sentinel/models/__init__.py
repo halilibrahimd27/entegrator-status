@@ -15,6 +15,7 @@ from sentinel.models.catalog import (
     SourceKind,
 )
 from sentinel.models.orgs import ApiToken, Invitation, Membership, Organization
+from sentinel.models.probe import IngestBatch, Observation, ProbeNode
 
 __all__ = [
     "ApiToken",
@@ -23,10 +24,13 @@ __all__ = [
     "CatalogTagRule",
     "Component",
     "Dependency",
+    "IngestBatch",
     "Invitation",
     "Membership",
+    "Observation",
     "OneTimeToken",
     "Organization",
+    "ProbeNode",
     "Product",
     "ProposalStatus",
     "Service",

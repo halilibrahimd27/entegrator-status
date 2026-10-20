@@ -11,7 +11,7 @@ TEST_DATABASE_URL ?= postgresql+asyncpg://sentinel@127.0.0.1:55432/sentinel_test
 TEST_REDIS_URL ?= redis://127.0.0.1:56379/0
 export TEST_DATABASE_URL TEST_REDIS_URL
 
-.PHONY: help install lock env dev test-services test lint security migrate catalog catalog-schema check
+.PHONY: help install lock env dev node test-services test lint security migrate catalog catalog-schema check
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -32,9 +32,15 @@ lock: ## Regenerate hashed lock files (needs uv)
 env: ## Create .env with fresh random secrets (never overwrites)
 	$(BIN)/python tools/make_env.py
 
-dev: ## docker compose up (web, prober, engine, postgres, redis) with hot reload
+dev: ## docker compose up (web, engine, postgres, redis, mailpit; prober once `make node` ran)
 	@test -f .env || { echo "No .env — run 'make env' first."; exit 1; }
-	docker compose up --build
+	@if grep -q '^PROBE_NODE_ID=.' .env; then docker compose --profile probe up --build; \
+	else echo "No probe node yet: run 'make node' in another terminal to start the prober."; docker compose up --build; fi
+
+node: ## Register a local probe node, store its credentials in .env, start the prober
+	@grep -q '^PROBE_NODE_ID=.' .env && { echo "A node is already registered in .env."; exit 1; } || true
+	docker compose run --rm -T migrate python -m sentinel.probe register local-dev "docker compose" >> .env
+	docker compose --profile probe up -d prober
 
 test-services: ## Start the throwaway test Postgres/Redis (skipped in CI)
 	@if [ -z "$$CI" ]; then docker compose -f compose.test.yml up -d --wait --quiet-pull >/dev/null; fi
