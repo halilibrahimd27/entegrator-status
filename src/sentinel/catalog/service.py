@@ -1,5 +1,9 @@
 """What an organization does with the catalog: products, private services, components,
 sources, and browsing the shared catalog. Shared rows are read-only here.
+
+Longer than ~400 lines on purpose: every write here follows the same rules (tenant rows
+only, shared rows read-only, an audit event per change), and keeping them in one class
+keeps those rules in one place.
 """
 
 from __future__ import annotations
