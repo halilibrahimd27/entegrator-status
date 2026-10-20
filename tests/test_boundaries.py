@@ -59,3 +59,14 @@ def test_only_the_advisory_adapter_sends_read_queries() -> None:
             if isinstance(node, ast.keyword) and node.arg == "read_query":
                 users.add(str(path.relative_to(PACKAGE)))
     assert users == {"sources/adapters/advisory.py"}
+
+
+def test_only_the_auth_provider_sends_token_requests() -> None:
+    """The OAuth2 token request is the other POST exception (ADR 0003 rule 2, ADR 0011)."""
+    users = set()
+    for path in PACKAGE.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.keyword) and node.arg == "token_request":
+                users.add(str(path.relative_to(PACKAGE)))
+    assert users == {"sources/auth.py"}

@@ -11,6 +11,7 @@ from sentinel.sources.adapters.base import (
     AdapterEnv,
     ProbeJob,
     ProbeOutcome,
+    credential,
     retry_after_seconds,
 )
 
@@ -33,6 +34,7 @@ class HttpAdapter(Adapter):
             allow_http=job.allow_http,
             max_bytes=PAGE_MAX_BYTES,
             timeouts=Timeouts(connect_s=min(5.0, timeout), read_s=timeout, total_s=timeout * 2),
+            credential=await credential(job, env),
         )
         result = await env.http.fetch(url, policy)
         latency = int(result.elapsed_s * 1000)

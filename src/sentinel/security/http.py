@@ -63,9 +63,23 @@ class Timeouts:
 
 
 @dataclass(frozen=True)
+class BoundCredential:
+    """A header that may only ever travel to ``host`` (ADR 0011). Never printed."""
+
+    host: str
+    header: str
+    value: str = field(repr=False)
+
+
+@dataclass(frozen=True)
 class FetchPolicy:
-    """How one fetch may behave. ``POST`` exists only for read queries (ADR 0003 rule 2):
-    it needs ``read_query=True`` and a JSON body, and never follows a redirect."""
+    """How one fetch may behave.
+
+    ``POST`` exists only for the two exceptions of ADR 0003 rule 2, each flagged and
+    never following a redirect: a read query (``read_query``, JSON body) and an OAuth2
+    token request (``token_request``, form body). A ``credential`` is attached only to
+    hops whose host is the credential's host.
+    """
 
     method: Literal["GET", "HEAD", "POST"] = "GET"
     allow_http: bool = False
@@ -75,15 +89,22 @@ class FetchPolicy:
     headers: Mapping[str, str] = field(default_factory=dict)
     json_body: bytes | None = None
     read_query: bool = False
+    form_body: bytes | None = field(default=None, repr=False)
+    token_request: bool = False
+    credential: BoundCredential | None = None
 
     def __post_init__(self) -> None:
+        query = self.read_query and self.json_body is not None and self.form_body is None
+        token = self.token_request and self.form_body is not None and self.json_body is None
         if self.method == "POST":
-            if not self.read_query or self.json_body is None:
-                raise ValueError("POST is only for flagged read queries with a JSON body")
+            if not (query or token) or (self.read_query and self.token_request):
+                raise ValueError("POST is only for a flagged read query or token request")
             if self.max_redirects != 0:
-                raise ValueError("a read query never follows redirects")
-        elif self.json_body is not None or self.read_query:
-            raise ValueError("only a POST read query carries a body")
+                raise ValueError("a read query or token request never follows redirects")
+        elif self.json_body is not None or self.form_body is not None:
+            raise ValueError("only a POST read query or token request carries a body")
+        elif self.read_query or self.token_request:
+            raise ValueError("read queries and token requests are POST")
         for name, value in self.headers.items():
             if name.lower() not in REQUEST_HEADERS:
                 raise ValueError(f"header {name!r} may not be set by a fetch")
@@ -202,10 +223,11 @@ class OutboundClient:
         request = self._client.build_request(
             policy.method,
             target.url.copy_with(host=str(ip)),
-            content=policy.json_body,
+            content=policy.json_body if policy.json_body is not None else policy.form_body,
             headers={
                 **policy.headers,
-                **({"Content-Type": "application/json"} if policy.json_body is not None else {}),
+                **_body_type(policy),
+                **_credential_for(target, policy),
                 "Host": target.host_header,
                 "User-Agent": self._user_agent,
                 # Size caps count decoded bytes; asking for identity keeps them honest.
@@ -235,6 +257,22 @@ class OutboundClient:
             raise _translate(exc) from exc
         finally:
             await response.aclose()
+
+
+def _body_type(policy: FetchPolicy) -> dict[str, str]:
+    if policy.json_body is not None:
+        return {"Content-Type": "application/json"}
+    if policy.form_body is not None:
+        return {"Content-Type": "application/x-www-form-urlencoded"}
+    return {}
+
+
+def _credential_for(target: Target, policy: FetchPolicy) -> dict[str, str]:
+    """The credential's header, only on a hop to its own host."""
+    credential = policy.credential
+    if credential is None or target.host != credential.host:
+        return {}
+    return {credential.header: credential.value}
 
 
 def _join(target: Target, location: str) -> str:

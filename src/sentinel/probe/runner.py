@@ -17,17 +17,19 @@ from sentinel.security.internal import CoreClient
 from sentinel.security.tls import CertInfo, fetch_certificate
 from sentinel.sources.adapters import AdapterEnv
 from sentinel.sources.adapters.dns import system_dns
+from sentinel.sources.auth import AuthProvider
 
 log = logging.getLogger("sentinel.prober")
 
 
-def adapter_env(http: OutboundClient) -> AdapterEnv:
+def adapter_env(http: OutboundClient, signing_key: str | None = None) -> AdapterEnv:
     async def tls(host: str, port: int, limit_s: float) -> CertInfo:
         return await fetch_certificate(
             host, port, timeout_s=limit_s, resolver=http.resolver, policy=http.address_policy
         )
 
-    return AdapterEnv(http=http, robots=RobotsCache(http), tls=tls, dns=system_dns)
+    auth = AuthProvider(signing_key, http) if signing_key else None
+    return AdapterEnv(http=http, robots=RobotsCache(http), tls=tls, dns=system_dns, auth=auth)
 
 
 def build_prober(settings: ProbeSettings) -> Prober:
@@ -42,7 +44,7 @@ def build_prober(settings: ProbeSettings) -> Prober:
     )
     return Prober(
         core=core,
-        env=adapter_env(http),
+        env=adapter_env(http, settings.probe_signing_key.get_secret_value()),
         buffer=ResultBuffer(settings.probe_buffer_path),
         health=NodeHealth(settings.control_targets, http),
         intervals=Intervals(

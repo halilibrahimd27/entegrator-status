@@ -6,8 +6,8 @@ import hashlib
 import hmac
 import json
 import uuid
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal, cast, get_args
 
@@ -15,15 +15,17 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from sqlalchemy import CursorResult, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel import audit
 from sentinel.accounts.tokens import digest, new_token
 from sentinel.config import Settings
 from sentinel.db.base import utcnow
 from sentinel.db.session import Database
-from sentinel.models import IngestBatch, Observation, ProbeNode, Source, SourceKind
+from sentinel.models import Credential, IngestBatch, Observation, ProbeNode, Source, SourceKind
 from sentinel.probe import content
 from sentinel.probe.signing import node_signing_key
+from sentinel.security.vault import seal_for_node
 from sentinel.sources.config import probe_config
 from sentinel.sources.snapshots import (
     MAX_ITEMS,
@@ -32,6 +34,7 @@ from sentinel.sources.snapshots import (
     safe_validator,
     snapshot_hash,
 )
+from sentinel.tenancy.credentials import CredentialService
 
 # Kinds the prober runs today; grows phase by phase as adapters arrive.
 PROBED_KINDS = (
@@ -55,6 +58,7 @@ ErrorClass = Literal[
     "response_too_large",
     "parse_error",
     "no_items",
+    "auth_failed",
     "unsupported",
     "error",
 ]
@@ -145,6 +149,7 @@ class Job:
     ignores_robots: bool
     source_ids: tuple[str, ...]
     validators: dict[str, str]
+    auth: str | None = field(default=None, repr=False)  # sealed for the requesting node
 
 
 def job_key(source: Source) -> str:
@@ -154,6 +159,8 @@ def job_key(source: Source) -> str:
         "allow_http": source.allow_http,
         "ignores_robots": source.availability_ignores_robots,
         "timeout_s": source.timeout_s,
+        # an organization's credential makes the job its own (never grouped across orgs)
+        "credential": str(source.credential_id) if source.credential_id else None,
     }
     return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:32]
 
@@ -165,18 +172,22 @@ class NodeService:
         self._db = db
         self._token_key = settings.token_hash_key.get_secret_value()
         self._ingest_key = settings.ingest_hmac_key.get_secret_value()
+        self._vault = CredentialService(db, settings, clock)
         self._clock = clock
 
     def signing_key(self, node_id: uuid.UUID) -> str:
         return node_signing_key(self._ingest_key, node_id)
 
-    async def register(self, name: str, location: str) -> NodeCredentials:
+    async def register(
+        self, name: str, location: str, *, credentials: bool = False
+    ) -> NodeCredentials:
         token = new_token()
         async with self._db.system("register a probe node") as s:
             node = ProbeNode(
                 name=name.strip()[:63],
                 location=location.strip()[:120],
                 token_hash=digest(self._token_key, token, purpose=_PURPOSE),
+                handles_credentials=credentials,
             )
             s.add(node)
             try:
@@ -223,6 +234,17 @@ class NodeService:
             validators = await content.latest_validators(
                 s, [src.id for src in sources if src.kind in content.CONTENT_KINDS]
             )
+            trusted = set(
+                (
+                    await s.scalars(
+                        select(ProbeNode.id).where(
+                            ProbeNode.id.in_(active | ({node_id} if node_id else set())),
+                            ProbeNode.handles_credentials.is_(True),
+                        )
+                    )
+                ).all()
+            )
+            sealed = await self._sealed(s, sources, node_id) if node_id in trusted else {}
         if node_id is not None:
             active.add(node_id)
         grouped: dict[str, list[Source]] = {}
@@ -231,7 +253,11 @@ class NodeService:
         jobs = []
         for key, group in grouped.items():
             changes = group[0].kind in content.CONTENT_KINDS
-            if changes and node_id is not None and content.owner_of(key, active) != node_id:
+            authenticated = group[0].credential_id is not None
+            if authenticated and node_id is not None and node_id not in trusted:
+                continue  # credentials only ever reach trusted nodes (ADR 0011)
+            fetchers = trusted if authenticated else active
+            if changes and node_id is not None and content.owner_of(key, fetchers) != node_id:
                 continue
             seen = next((validators[s.id] for s in group if validators.get(s.id)), {})
             jobs.append(
@@ -246,9 +272,37 @@ class NodeService:
                     ignores_robots=group[0].availability_ignores_robots and not changes,
                     source_ids=tuple(str(src.id) for src in group),
                     validators=seen,
+                    auth=sealed.get(key) if authenticated else None,
                 )
             )
         return jobs
+
+    async def _sealed(
+        self, s: AsyncSession, sources: Sequence[Source], node_id: uuid.UUID | None
+    ) -> dict[str, str]:
+        """Each authenticated job's secret, sealed for ``node_id`` alone."""
+        if node_id is None:
+            return {}
+        found: dict[str, str] = {}
+        key = self.signing_key(node_id)
+        for source in sources:
+            if source.credential_id is None:
+                continue
+            credential = await s.get(Credential, source.credential_id)
+            if credential is None:
+                continue
+            job = job_key(source)
+            payload = {
+                "kind": credential.kind,
+                "host": credential.host,
+                "header_name": credential.header_name,
+                "token_url": credential.token_url,
+                "scope": credential.scope,
+                "secret": await self._vault.secret_for_job(s, credential),
+            }
+            found[job] = seal_for_node(key, job, payload)
+            credential.last_used_at = self._clock()
+        return found
 
     async def ingest(self, node_id: uuid.UUID, batch_id: uuid.UUID, payload: IngestPayload) -> int:
         now = self._clock()

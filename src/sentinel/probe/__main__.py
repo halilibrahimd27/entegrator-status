@@ -8,7 +8,7 @@ import sys
 from collections.abc import Sequence
 
 
-def register(name: str, location: str) -> int:
+def register(name: str, location: str, *, credentials: bool = False) -> int:
     from sentinel.config import load_settings_or_exit
     from sentinel.db.session import Database
     from sentinel.probe.nodes import NodeService
@@ -18,7 +18,9 @@ def register(name: str, location: str) -> int:
     async def run() -> int:
         db = Database(settings.database_url.get_secret_value(), pool_size=1)
         try:
-            creds = await NodeService(db, settings).register(name, location)
+            creds = await NodeService(db, settings).register(
+                name, location, credentials=credentials
+            )
         except ValueError as exc:
             print(f"✗ {exc}", file=sys.stderr)
             return 1
@@ -39,9 +41,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     reg = sub.add_parser("register", help="register a probe node and print its credentials")
     reg.add_argument("name")
     reg.add_argument("location")
+    reg.add_argument(
+        "--credentials",
+        action="store_true",
+        help="this node may run authenticated checks (receives sealed secrets, ADR 0011)",
+    )
     args = parser.parse_args(argv)
     if args.command == "register":
-        return register(args.name, args.location)
+        return register(args.name, args.location, credentials=args.credentials)
     from sentinel.probe.runner import main as run_prober
 
     run_prober()

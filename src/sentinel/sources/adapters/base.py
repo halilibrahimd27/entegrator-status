@@ -19,8 +19,9 @@ from typing import Any, ClassVar
 from sentinel.models.catalog import SourceKind
 from sentinel.probe.robots import RobotsCache
 from sentinel.security.errors import OutboundError
-from sentinel.security.http import OutboundClient
+from sentinel.security.http import BoundCredential, OutboundClient
 from sentinel.security.tls import CertInfo
+from sentinel.sources.auth import AuthProvider, AuthUnavailableError
 from sentinel.sources.snapshots import SnapshotData
 
 TlsReader = Callable[[str, int, float], Awaitable[CertInfo]]
@@ -38,6 +39,7 @@ class ProbeJob:
     ignores_robots: bool
     source_ids: tuple[str, ...]
     validators: dict[str, str] = field(default_factory=dict)  # ETag / Last-Modified seen last
+    auth_sealed: str | None = field(default=None, repr=False)  # sealed for this node only
 
     @classmethod
     def from_wire(cls, data: dict[str, Any]) -> ProbeJob:
@@ -51,6 +53,7 @@ class ProbeJob:
             ignores_robots=bool(data["ignores_robots"]),
             source_ids=tuple(str(s) for s in data["source_ids"]),
             validators={str(k): str(v) for k, v in dict(data.get("validators") or {}).items()},
+            auth_sealed=str(data["auth"]) if data.get("auth") else None,
         )
 
     @property
@@ -83,6 +86,7 @@ class AdapterEnv:
     dns: DnsLookup
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
     monotonic: Callable[[], float] = time.monotonic
+    auth: AuthProvider | None = None
 
 
 class Adapter(ABC):
@@ -93,6 +97,10 @@ class Adapter(ABC):
             return await self.observe(job, env)
         except OutboundError as exc:
             return ProbeOutcome(ok=False, error_class=exc.kind, details={"reason": str(exc)[:200]})
+        except AuthUnavailableError as exc:  # our side: the provider is not judged
+            return ProbeOutcome(
+                ok=False, error_class="auth_failed", details={"reason": str(exc)[:200]}
+            )
         except Exception as exc:  # an adapter bug must not kill the prober
             return ProbeOutcome(
                 ok=False, error_class="error", details={"reason": type(exc).__name__}
@@ -128,3 +136,12 @@ def retry_after_seconds(value: str | None, now: datetime) -> float | None:
     if when.tzinfo is None:
         when = when.replace(tzinfo=UTC)
     return max(0.0, min((when - now).total_seconds(), 3600.0))
+
+
+async def credential(job: ProbeJob, env: AdapterEnv) -> BoundCredential | None:
+    """The job's credential, bound to its host; a sealed job without a provider fails."""
+    if not job.auth_sealed:
+        return None
+    if env.auth is None:
+        raise AuthUnavailableError("this node does not handle credentials")
+    return await env.auth.credential_for(job.key, job.auth_sealed)

@@ -15,6 +15,7 @@ from sentinel.security.errors import (
 from sentinel.security.http import (
     CONTRACT_MAX_BYTES,
     PAGE_MAX_BYTES,
+    BoundCredential,
     FetchPolicy,
     FetchResult,
     OutboundClient,
@@ -27,6 +28,7 @@ __all__ = [
     "CONTRACT_MAX_BYTES",
     "PAGE_MAX_BYTES",
     "AddressBlockedError",
+    "BoundCredential",
     "ConnectFailedError",
     "ConnectTimeoutError",
     "DNSResolutionError",

@@ -286,10 +286,11 @@ Tasks
       `CREDENTIALS_MASTER_KEY` (new fail-closed secret); write-only API; rotation; audit.
       ([ADR 0011](adr/0011-credentials.md); `make env` adds missing keys to an existing
       `.env`.)
-- [ ] Auth methods for sources: API key in a header, bearer, basic, OAuth2 client
+- [x] Auth methods for sources: API key in a header, bearer, basic, OAuth2 client
       credentials (token URL through the SSRF guard; POST allowed only there). Credentials
       dropped when a redirect leaves the configured host. API keys in query strings are
-      refused.
+      refused. (Authenticated jobs reach only nodes registered with `--credentials`,
+      sealed for that node.)
 - [ ] `api_contract` adapters, each with a normaliser to a structural model:
   - OpenAPI 3.x spec URL (paths, operations, parameters, request/response schemas).
   - JSON response shape inferred from sample responses (port `legacy/api-sentinel/contracts`).
