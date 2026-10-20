@@ -140,6 +140,7 @@ async def service_page(
         )
     proposals = [p for p in await svc.proposals.of_org(ctx.scope) if p.service_id == service_id]
     component_ids = [c.id for c in service.components]
+    source_ids = [src.id for group in service.sources.values() for src in group]
     return svc.renderer.page(
         request,
         "org/service.html",
@@ -154,9 +155,9 @@ async def service_page(
         statuses=await svc.status.current(ctx.scope, component_ids),
         uptimes=await svc.status.uptime(ctx.scope, component_ids),
         bars=await svc.status.bars(ctx.scope, component_ids),
-        latency=await svc.status.latency(
-            ctx.scope, [src.id for group in service.sources.values() for src in group]
-        ),
+        latency=await svc.status.latency(ctx.scope, source_ids),
+        changes=await svc.changes.recent(ctx.scope, component_ids),
+        watch=await svc.changes.watch(ctx.scope, source_ids),
         now=utcnow(),
         windows=await svc.notices.component_windows(ctx.scope, component_ids),
     )

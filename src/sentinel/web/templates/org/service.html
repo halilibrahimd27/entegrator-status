@@ -42,8 +42,14 @@
           {% if source.org_id is none %}<span class="badge shared">{{ t("products.shared_badge") }}</span>{% endif %}</td>
         <td><code>{{ source.identity.split(":", 1)[1] }}</code></td>
         {% set lat = latency.get(source.id) %}
+        {% set w = watch.get(source.id) %}
         <td>{{ t("service.interval") }}: {{ source.interval_s }}
-          {% if lat %}<br><span class="hint">{{ t("uptime.latency") }}: p50 {{ lat.p50_ms }} ms · p95 {{ lat.p95_ms }} ms</span>{% endif %}</td>
+          {% if lat %}<br><span class="hint">{{ t("uptime.latency") }}: p50 {{ lat.p50_ms }} ms · p95 {{ lat.p95_ms }} ms</span>{% endif %}
+          {% if w %}<br><span class="hint">{{ t("watch.last_checked") }}: {{ w.last_checked_at|local }}{% if w.last_changed_at %} · {{ t("watch.last_changed") }}: {{ w.last_changed_at|local }}{% endif %}</span>
+            {% if w.attention %}<br><span class="badge attention">{{ t("watch." ~ w.attention) }}</span>
+              {% if w.reason in ("no_items", "parse_error", "disallowed", "unreachable") %} <span class="hint">{{ t("watch." ~ w.reason) }}</span>{% else %} <code>{{ w.reason }}</code>{% endif %}
+            {% endif %}
+          {% endif %}</td>
         {% if editable and source.org_id is not none %}
         <td>
           <form method="post" action="{{ base }}/kaynaklar/{{ source.id }}/sil" class="inline">
@@ -60,6 +66,21 @@
   <p>{{ t("service.sources_empty") }}</p>
   {% endif %}
 
+  {% set recent = changes[component.id] %}
+  {% if recent %}
+  <h3>{{ t("changes.title") }}</h3>
+  <ul class="timeline">
+    {% for change in recent %}
+    <li>
+      <span class="badge">{{ t("categories." ~ change.category) }}</span>
+      {% if change.link %}<a href="{{ change.link }}" rel="noopener noreferrer nofollow">{{ change.title }}</a>{% else %}{{ change.title }}{% endif %}
+      <br><span class="hint">{{ t("changes.detected") }}: {{ change.detected_at|local }}
+        {%- if change.published_at %} · {{ t("changes.published") }}: {{ change.published_at|local }}{% endif %}
+        {%- if change.effective_at %} · {{ t("changes.effective") }}: {{ change.effective_at|local }}{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
   {% set planned = windows[component.id] %}
   {% if planned %}
   <h3>{{ t("maintenance.title") }}</h3>

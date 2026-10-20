@@ -305,3 +305,28 @@ async def test_one_request_per_host_at_a_time() -> None:
 def test_policy_limits_cannot_be_loosened(kwargs: dict[str, int]) -> None:
     with pytest.raises(ValueError, match="must be between"):
         FetchPolicy(**kwargs)  # type: ignore[arg-type]
+
+
+async def test_conditional_headers_are_sent_but_ours_cannot_be_replaced() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(304)
+
+    policy = FetchPolicy(headers={"If-None-Match": '"abc"', "Accept": "application/rss+xml"})
+    async with client(handler) as c:
+        result = await c.fetch("https://portal.example/feed", policy)
+    assert result.status_code == 304
+    assert seen[0].headers["if-none-match"] == '"abc"'
+    assert seen[0].headers["accept"] == "application/rss+xml"
+    assert seen[0].headers["user-agent"] == UA
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [{"User-Agent": "spoofed"}, {"Host": "elsewhere"}, {"If-None-Match": "a\r\nX-Evil: 1"}],
+)
+def test_only_safe_headers_with_safe_values(headers: dict[str, str]) -> None:
+    with pytest.raises(ValueError, match="header"):
+        FetchPolicy(headers=headers)

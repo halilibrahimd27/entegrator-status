@@ -26,6 +26,7 @@ from sentinel.sources.adapters import AdapterEnv, ProbeJob, ProbeOutcome, adapte
 log = logging.getLogger("sentinel.prober")
 
 BATCH_SIZE = 500
+BATCH_BYTES = 2 * 1024 * 1024  # the core accepts request bodies up to 3 MB
 MAX_DETAILS_BYTES = 4096  # the core refuses larger details
 MAX_CONCURRENT_JOBS = 16
 MAX_CRAWL_DELAY_S = 24 * 3600.0
@@ -120,7 +121,7 @@ class Prober:
         details = outcome.details
         if len(json.dumps(details, default=str)) > MAX_DETAILS_BYTES:
             details = {"truncated": True}
-        return {
+        result: dict[str, Any] = {
             "id": str(uuid.uuid4()),
             "source_ids": list(job.source_ids),
             "observed_at": self.env.now().isoformat(),
@@ -131,6 +132,9 @@ class Prober:
             "node_healthy": self.health.healthy,
             "details": details,
         }
+        if outcome.snapshot is not None:
+            result["snapshot"] = outcome.snapshot.to_wire()
+        return result
 
     async def _store(self, results: list[dict[str, Any]]) -> None:
         dropped = await self.buffer.add(results)
@@ -142,7 +146,7 @@ class Prober:
     async def ship(self) -> int:
         """Send buffered results until the buffer is empty or the core is unreachable."""
         shipped = 0
-        while batch := await self.buffer.take(BATCH_SIZE):
+        while batch := await self.buffer.take(BATCH_SIZE, BATCH_BYTES):
             try:
                 await self.core.send(uuid.uuid4(), batch)
             except CoreUnavailableError as exc:

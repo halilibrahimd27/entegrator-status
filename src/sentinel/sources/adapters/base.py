@@ -3,7 +3,8 @@
 ``run`` turns one job into one outcome and never raises: every failure becomes an error
 class. Adapters reach the network only through ``AdapterEnv`` (the SSRF-guarded HTTP
 client, the guarded TLS reader, the DNS resolver), which tests replace with fakes.
-Change sources (Phase 5+) extend this with snapshots and diffs.
+Change sources also return a snapshot (normalised items + hash); the engine diffs
+consecutive snapshots into changes.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from sentinel.probe.robots import RobotsCache
 from sentinel.security.errors import OutboundError
 from sentinel.security.http import OutboundClient
 from sentinel.security.tls import CertInfo
+from sentinel.sources.snapshots import SnapshotData
 
 TlsReader = Callable[[str, int, float], Awaitable[CertInfo]]
 DnsLookup = Callable[[str, str, float], Awaitable[Sequence[str]]]
@@ -35,6 +37,7 @@ class ProbeJob:
     allow_http: bool
     ignores_robots: bool
     source_ids: tuple[str, ...]
+    validators: dict[str, str] = field(default_factory=dict)  # ETag / Last-Modified seen last
 
     @classmethod
     def from_wire(cls, data: dict[str, Any]) -> ProbeJob:
@@ -47,6 +50,7 @@ class ProbeJob:
             allow_http=bool(data["allow_http"]),
             ignores_robots=bool(data["ignores_robots"]),
             source_ids=tuple(str(s) for s in data["source_ids"]),
+            validators={str(k): str(v) for k, v in dict(data.get("validators") or {}).items()},
         )
 
     @property
@@ -68,6 +72,7 @@ class ProbeOutcome:
     latency_ms: int | None = None
     details: dict[str, Any] = field(default_factory=dict)
     retry_after_s: float | None = None  # host asked us to slow down
+    snapshot: SnapshotData | None = None  # change sources: what the source says now
 
 
 @dataclass

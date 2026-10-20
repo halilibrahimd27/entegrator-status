@@ -57,7 +57,7 @@ Node = Annotated[uuid.UUID, Depends(signed_node)]
 
 @router.get("/jobs")
 async def jobs(request: Request, node: Node) -> dict[str, Any]:
-    return {"jobs": [asdict(job) for job in await services(request).nodes.jobs()]}
+    return {"jobs": [asdict(job) for job in await services(request).nodes.jobs(node)]}
 
 
 @router.post("/results", status_code=202, response_model=None)

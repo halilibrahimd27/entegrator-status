@@ -14,6 +14,14 @@ from sentinel.models.catalog import (
     Source,
     SourceKind,
 )
+from sentinel.models.changes import (
+    Attention,
+    Change,
+    ChangeCategory,
+    ChangeKind,
+    Snapshot,
+    SourceWatch,
+)
 from sentinel.models.orgs import ApiToken, Invitation, Membership, Organization
 from sentinel.models.probe import IngestBatch, Observation, ProbeNode
 from sentinel.models.status import (
@@ -31,9 +39,13 @@ from sentinel.models.status import (
 
 __all__ = [
     "ApiToken",
+    "Attention",
     "AuditEvent",
     "CatalogProposal",
     "CatalogTagRule",
+    "Change",
+    "ChangeCategory",
+    "ChangeKind",
     "Component",
     "ComponentDaily",
     "ComponentState",
@@ -54,11 +66,13 @@ __all__ = [
     "ProposalStatus",
     "Service",
     "ServiceKind",
+    "Snapshot",
     "Source",
     "SourceHourly",
     "SourceKind",
     "SourceRound",
     "SourceState",
+    "SourceWatch",
     "TokenPurpose",
     "User",
     "UserSession",

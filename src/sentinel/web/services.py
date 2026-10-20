@@ -20,6 +20,7 @@ from sentinel.catalog.proposals import ProposalService
 from sentinel.catalog.service import CatalogService
 from sentinel.config import Settings
 from sentinel.db.session import Database
+from sentinel.engine.change_views import ChangeViews
 from sentinel.engine.notices import NoticeService
 from sentinel.engine.views import StatusViews
 from sentinel.graph.service import GraphService
@@ -49,6 +50,7 @@ class AppServices:
     nodes: NodeService
     notices: NoticeService
     status: StatusViews
+    changes: ChangeViews
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -91,6 +93,7 @@ def build_services(settings: Settings) -> AppServices:
         nodes=NodeService(db, settings),
         notices=NoticeService(db),
         status=StatusViews(db, graph),
+        changes=ChangeViews(db),
         renderer=Renderer(),
     )
 

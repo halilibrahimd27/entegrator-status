@@ -60,11 +60,19 @@ class ResultBuffer:
         async with self._lock:
             return await asyncio.to_thread(write)
 
-    async def take(self, limit: int) -> list[dict[str, Any]]:
-        """The oldest ``limit`` results that are still young enough for the core."""
+    async def take(self, limit: int, max_bytes: int | None = None) -> list[dict[str, Any]]:
+        """The oldest results still young enough for the core: at most ``limit`` of them
+        and about ``max_bytes`` of JSON (always at least one)."""
         await self._run("DELETE FROM results WHERE created < ?", (self._clock() - MAX_AGE_S,))
         rows = await self._run("SELECT payload FROM results ORDER BY created LIMIT ?", (limit,))
-        return [json.loads(payload) for (payload,) in rows]
+        taken: list[dict[str, Any]] = []
+        size = 0
+        for (payload,) in rows:
+            size += len(payload)
+            if taken and max_bytes is not None and size > max_bytes:
+                break
+            taken.append(json.loads(payload))
+        return taken
 
     async def ack(self, ids: list[str]) -> None:
         if ids:

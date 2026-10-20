@@ -11,6 +11,7 @@ from dataclasses import asdict
 
 from sentinel.config import load_settings_or_exit
 from sentinel.db.session import Database
+from sentinel.engine.changes import run_changes
 from sentinel.engine.retention import run_retention
 from sentinel.engine.rollups import run_rollups
 from sentinel.engine.status import StatusEngine
@@ -52,6 +53,8 @@ async def serve(
         report = await engine.run()
         level = logging.INFO if report.changes else logging.DEBUG
         log.log(level, "status: %s", asdict(report))
+        found = await run_changes(db)
+        log.log(logging.INFO if found.changes else logging.DEBUG, "changes: %s", asdict(found))
 
     async def rollups() -> None:
         report = await run_rollups(db)

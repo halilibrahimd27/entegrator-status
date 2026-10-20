@@ -44,6 +44,9 @@ from sentinel.security.ratelimit import Clock, HostLimiter
 PAGE_MAX_BYTES = 2 * 1024 * 1024
 CONTRACT_MAX_BYTES = 5 * 1024 * 1024
 MAX_REDIRECTS = 3
+# Headers a fetch may add; everything else (Host, User-Agent, encodings) is ours.
+REQUEST_HEADERS = frozenset({"accept", "if-none-match", "if-modified-since"})
+MAX_HEADER_VALUE = 256
 REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 
 
@@ -66,8 +69,14 @@ class FetchPolicy:
     max_redirects: int = MAX_REDIRECTS
     max_bytes: int = PAGE_MAX_BYTES
     timeouts: Timeouts = field(default_factory=Timeouts)
+    headers: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        for name, value in self.headers.items():
+            if name.lower() not in REQUEST_HEADERS:
+                raise ValueError(f"header {name!r} may not be set by a fetch")
+            if len(value) > MAX_HEADER_VALUE or any(ord(c) < 32 or ord(c) == 127 for c in value):
+                raise ValueError(f"invalid value for header {name!r}")
         if not 0 <= self.max_redirects <= MAX_REDIRECTS:
             raise ValueError(f"max_redirects must be between 0 and {MAX_REDIRECTS}")
         if not 0 < self.max_bytes <= CONTRACT_MAX_BYTES:
@@ -182,6 +191,7 @@ class OutboundClient:
             policy.method,
             target.url.copy_with(host=str(ip)),
             headers={
+                **policy.headers,
                 "Host": target.host_header,
                 "User-Agent": self._user_agent,
                 # Size caps count decoded bytes; asking for identity keeps them honest.

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal, cast, get_args
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import CursorResult, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
@@ -22,12 +22,21 @@ from sentinel.config import Settings
 from sentinel.db.base import utcnow
 from sentinel.db.session import Database
 from sentinel.models import IngestBatch, Observation, ProbeNode, Source, SourceKind
+from sentinel.probe import content
 from sentinel.probe.signing import node_signing_key
 from sentinel.sources.config import probe_config
+from sentinel.sources.snapshots import (
+    MAX_ITEMS,
+    MAX_SNAPSHOT_BYTES,
+    canonical,
+    safe_validator,
+    snapshot_hash,
+)
 
 # Kinds the prober runs today; grows phase by phase as adapters arrive.
-PROBED_KINDS = frozenset(
-    {SourceKind.HTTP, SourceKind.TLS_CERT, SourceKind.DNS, SourceKind.DOMAIN_EXPIRY}
+PROBED_KINDS = (
+    frozenset({SourceKind.HTTP, SourceKind.TLS_CERT, SourceKind.DNS, SourceKind.DOMAIN_EXPIRY})
+    | content.CONTENT_KINDS
 )
 ErrorClass = Literal[
     "dns",
@@ -44,6 +53,8 @@ ErrorClass = Literal[
     "blocked_address",
     "too_many_redirects",
     "response_too_large",
+    "parse_error",
+    "no_items",
     "unsupported",
     "error",
 ]
@@ -59,6 +70,26 @@ class ReplayError(Exception):
     """The batch id was seen before."""
 
 
+class SnapshotIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    items: list[dict[str, Any]] = Field(max_length=MAX_ITEMS)
+    validators: dict[str, str] = {}
+
+    @model_validator(mode="after")
+    def _consistent(self) -> SnapshotIn:
+        if len(canonical(self.items)) > MAX_SNAPSHOT_BYTES:
+            raise ValueError(f"snapshot larger than {MAX_SNAPSHOT_BYTES} bytes")
+        if snapshot_hash(self.items) != self.hash:
+            raise ValueError("snapshot hash does not match its items")
+        if set(self.validators) - {"etag", "last_modified"} or any(
+            safe_validator(v) != v for v in self.validators.values()
+        ):
+            raise ValueError("invalid validators")
+        return self
+
+
 class IngestResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -71,6 +102,7 @@ class IngestResult(BaseModel):
     latency_ms: Annotated[int, Field(ge=0, le=600_000)] | None = None
     node_healthy: bool = True
     details: dict[str, Any] = {}
+    snapshot: SnapshotIn | None = None
 
     @field_validator("observed_at")
     @classmethod
@@ -112,6 +144,7 @@ class Job:
     allow_http: bool
     ignores_robots: bool
     source_ids: tuple[str, ...]
+    validators: dict[str, str]
 
 
 def job_key(source: Source) -> str:
@@ -161,7 +194,12 @@ class NodeService:
                 node is not None and node.enabled and hmac.compare_digest(node.token_hash, expected)
             )
 
-    async def jobs(self) -> list[Job]:
+    async def jobs(self, node_id: uuid.UUID | None = None) -> list[Job]:
+        """Availability jobs for every node; each change source for one node only.
+
+        ``node_id`` None lists everything (operators, tests).
+        """
+        now = self._clock()
         async with self._db.system("prober: list enabled sources of every organization") as s:
             sources = (
                 await s.scalars(
@@ -172,22 +210,45 @@ class NodeService:
                     .order_by(Source.created_at)
                 )
             ).all()
+            active = set(
+                (
+                    await s.scalars(
+                        select(ProbeNode.id).where(
+                            ProbeNode.enabled.is_(True),
+                            ProbeNode.last_seen_at > now - content.NODE_FRESH,
+                        )
+                    )
+                ).all()
+            )
+            validators = await content.latest_validators(
+                s, [src.id for src in sources if src.kind in content.CONTENT_KINDS]
+            )
+        if node_id is not None:
+            active.add(node_id)
         grouped: dict[str, list[Source]] = {}
         for source in sources:
             grouped.setdefault(job_key(source), []).append(source)
-        return [
-            Job(
-                key=key,
-                kind=group[0].kind,
-                config=probe_config(group[0].config),
-                interval_s=min(src.interval_s for src in group),
-                timeout_s=group[0].timeout_s,
-                allow_http=group[0].allow_http,
-                ignores_robots=group[0].availability_ignores_robots,
-                source_ids=tuple(str(src.id) for src in group),
+        jobs = []
+        for key, group in grouped.items():
+            changes = group[0].kind in content.CONTENT_KINDS
+            if changes and node_id is not None and content.owner_of(key, active) != node_id:
+                continue
+            seen = next((validators[s.id] for s in group if validators.get(s.id)), {})
+            jobs.append(
+                Job(
+                    key=key,
+                    kind=group[0].kind,
+                    config=probe_config(group[0].config),
+                    interval_s=min(src.interval_s for src in group),
+                    timeout_s=group[0].timeout_s,
+                    allow_http=group[0].allow_http,
+                    # robots.txt is optional only for availability (ADR 0003)
+                    ignores_robots=group[0].availability_ignores_robots and not changes,
+                    source_ids=tuple(str(src.id) for src in group),
+                    validators=seen,
+                )
             )
-            for key, group in grouped.items()
-        ]
+        return jobs
 
     async def ingest(self, node_id: uuid.UUID, batch_id: uuid.UUID, payload: IngestPayload) -> int:
         now = self._clock()
@@ -202,11 +263,14 @@ class NodeService:
                 raise ReplayError(str(batch_id)) from None
             wanted = {sid for r in payload.results for sid in r.source_ids}
             owners: dict[uuid.UUID, uuid.UUID | None] = {}
+            kinds: dict[uuid.UUID, tuple[uuid.UUID | None, str]] = {}
             if wanted:
                 found = await s.execute(
-                    select(Source.id, Source.org_id).where(Source.id.in_(wanted))
+                    select(Source.id, Source.org_id, Source.kind).where(Source.id.in_(wanted))
                 )
-                owners = {row.id: row.org_id for row in found}
+                for row in found:
+                    owners[row.id] = row.org_id
+                    kinds[row.id] = (row.org_id, row.kind)
             rows = [
                 {
                     "id": uuid.uuid5(result.id, str(source_id)),
@@ -232,6 +296,7 @@ class NodeService:
                 )
                 result_proxy = cast(CursorResult[Any], await s.execute(statement))
                 inserted = int(result_proxy.rowcount or 0)
+            await content.record(s, payload.results, kinds, now)
             node = await s.get(ProbeNode, node_id)
             if node is not None:
                 node.last_seen_at = now

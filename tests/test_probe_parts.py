@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 
@@ -195,3 +196,15 @@ async def test_node_health_is_cached_and_optional() -> None:
         disabled = NodeHealth([], http)
         assert not disabled.enabled
         assert await disabled.refresh() is True
+
+
+async def test_buffer_batches_respect_a_byte_budget(tmp_path: Path) -> None:
+    clock = Clock()
+    buffer = ResultBuffer(tmp_path / "b.sqlite3", clock=clock)
+    for i in range(4):
+        clock.advance(1)
+        await buffer.add([{"id": str(uuid.uuid4()), "n": i, "pad": "x" * 1000}])
+    assert len(await buffer.take(10, max_bytes=2500)) == 2
+    assert len(await buffer.take(10, max_bytes=10)) == 1  # always at least one
+    assert len(await buffer.take(10)) == 4
+    buffer.close()

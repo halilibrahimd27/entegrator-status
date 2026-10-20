@@ -225,11 +225,12 @@ Tasks
 - [ ] `status_page` adapter: Atlassian Statuspage (`/api/v2/summary.json`), Instatus,
       generic RSS/Atom incident feeds; map vendor components to ours; vendor status shown
       next to our consensus, never merged.
-- [ ] `feed` adapter: RSS/Atom with `ETag` / `If-Modified-Since`.
+- [x] `feed` adapter: RSS/Atom with `ETag` / `If-Modified-Since`
+      ([ADR 0009](adr/0009-change-sources.md): one node per change source, snapshots).
 - [ ] `page_watch` adapter: robots-checked every cycle, items extracted with a
       configurable CSS selector (title, date, link only — never article bodies), new items
       detected (port `legacy/api-sentinel/watchers`).
-- [ ] Announcement classifier with Turkish + English keyword tables: `maintenance`
+- [x] Announcement classifier with Turkish + English keyword tables: `maintenance`
       (bakım, kesinti, erişim, maintenance), `deprecation` (sunset, deprecated, kullanımdan
       kaldırılacak), `security`, `package_update` (UBL-TR, şematron, paket, kod listesi,
       XSLT, SDK), `incident`, `other`. Effective dates extracted when present.

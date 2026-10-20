@@ -49,6 +49,32 @@ overview:
   incident_since: "Olay başlangıcı"
   method: "Durumlar en az iki ölçüm noktasının uzlaşısıyla belirlenir; tek noktanın gördüğü sorunlar \"Doğrulanmadı\" olarak gösterilir. Erişilebilirlik oranına planlı bakım ve ölçüm olmayan süreler katılmaz."
 
+changes:
+  title: "Duyurular ve değişiklikler"
+  published: "Yayın"
+  detected: "Görüldü"
+  effective: "Geçerlilik tarihi"
+
+categories:
+  maintenance: "Bakım"
+  deprecation: "Kullanımdan kaldırma"
+  security: "Güvenlik"
+  package_update: "Paket / şema güncellemesi"
+  incident: "Olay"
+  other: "Diğer"
+
+watch:
+  last_checked: "Son kontrol"
+  last_changed: "Son değişiklik"
+  never: "Henüz kontrol edilmedi"
+  blocked_by_robots: "Okunmuyor: robots.txt izin vermiyor"
+  needs_attention: "Kontrol gerekiyor"
+  failing: "Art arda okunamadı"
+  no_items: "Kaynakta hiç öğe bulunamadı; adres ya da sayfa yapısı değişmiş olabilir."
+  parse_error: "Kaynak okunamadı; RSS/Atom değil ya da bozuk."
+  disallowed: "robots.txt bu adresi yasaklıyor."
+  unreachable: "robots.txt alınamadı; izin varsayılmıyor."
+
 causes:
   dns: "DNS çözümlenemiyor"
   connect: "Bağlantı kurulamıyor"

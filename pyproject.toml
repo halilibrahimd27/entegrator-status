@@ -9,10 +9,13 @@ dependencies = [
     "argon2-cffi",
     "asyncpg",
     "cryptography",
+    "cssselect",  # CSS selectors for page_watch, compiled to XPath for lxml (ADR 0009)
+    "defusedxml",  # feeds: no DTDs, no entity expansion (ADR 0001)
     "dnspython",
     "fastapi",
     "httpx",
     "jinja2",
+    "lxml",  # HTML for page_watch; WSDL/XSD in Phase 7 (ADR 0001)
     "pydantic-settings",
     "pyotp",
     "python-multipart",
@@ -36,6 +39,8 @@ dev = [
     "trustme",
     "httpx2",  # Starlette's TestClient; the product itself uses httpx (ADR 0001)
     "ruff",
+    "types-defusedxml",
+    "lxml-stubs",
     "types-pyyaml",
 ]
 

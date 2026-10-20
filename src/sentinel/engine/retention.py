@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, cast
 
-from sqlalchemy import CursorResult, Delete, and_, delete, or_
+from sqlalchemy import CursorResult, Delete, and_, delete, or_, select
+from sqlalchemy.dialects.postgresql import distinct_on
 
 from sentinel.db.base import utcnow
 from sentinel.db.session import Database
@@ -18,6 +19,7 @@ from sentinel.models import (
     Observation,
     OneTimeToken,
     Organization,
+    Snapshot,
     SourceHourly,
     SourceRound,
     User,
@@ -32,6 +34,7 @@ RAW_OBSERVATIONS = timedelta(days=30)
 INGEST_BATCHES = timedelta(days=8)  # replay protection must outlive the 7-day ingest window
 ROUNDS = timedelta(days=120)
 HOURLY = timedelta(days=400)
+SNAPSHOTS = timedelta(days=30)  # the latest snapshot of each source is always kept
 
 
 @dataclass(frozen=True)
@@ -46,6 +49,7 @@ class RetentionReport:
     ingest_batches: int = 0
     rounds: int = 0
     hourly: int = 0
+    snapshots: int = 0
 
 
 async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) -> RetentionReport:
@@ -100,6 +104,18 @@ async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) ->
         )
         rounds = await count(delete(SourceRound).where(SourceRound.start < now - ROUNDS))
         hourly = await count(delete(SourceHourly).where(SourceHourly.hour < now - HOURLY))
+        latest = (
+            select(Snapshot.id)
+            .ext(distinct_on(Snapshot.source_id))
+            .order_by(Snapshot.source_id, Snapshot.taken_at.desc())
+        )
+        snapshots = await count(
+            delete(Snapshot).where(
+                Snapshot.taken_at < now - SNAPSHOTS,
+                Snapshot.processed_at.is_not(None),
+                Snapshot.id.not_in(latest),
+            )
+        )
     return RetentionReport(
         unverified,
         orgs,
@@ -111,4 +127,5 @@ async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) ->
         batches,
         rounds,
         hourly,
+        snapshots,
     )
