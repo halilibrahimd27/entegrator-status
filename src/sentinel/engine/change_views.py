@@ -4,15 +4,28 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterable
+from dataclasses import dataclass
+from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
+from sqlalchemy.dialects.postgresql import array
 
 from sentinel.db.session import Database
-from sentinel.models import Change, SourceWatch
+from sentinel.models import Change, Source, SourceWatch, VendorStatus
 from sentinel.tenancy.roles import Action
 from sentinel.tenancy.scope import TenantScope
 
 RECENT = 10
+
+
+@dataclass(frozen=True)
+class VendorClaim:
+    """What the vendor's status page says about one of our components."""
+
+    status: str | None  # the mapped vendor component's status, if mapped
+    indicator: str  # the whole page
+    open_incidents: int
+    observed_at: datetime
 
 
 class ChangeViews:
@@ -59,3 +72,38 @@ class ChangeViews:
                 await s.scalars(select(SourceWatch).where(SourceWatch.source_id.in_(ids)))
             ).all()
         return {row.source_id: row for row in rows}
+
+    async def vendor(
+        self, scope: TenantScope, component_ids: Iterable[uuid.UUID]
+    ) -> dict[uuid.UUID, VendorClaim]:
+        """Vendor declarations for components: mapped ones, and the status page's own."""
+        scope.require(Action.GRAPH_VIEW)
+        ids = list(dict.fromkeys(component_ids))
+        if not ids:
+            return {}
+        keys = [str(c) for c in ids]
+        async with self._db.tenant(scope) as s:
+            rows = (
+                await s.execute(
+                    select(VendorStatus, Source.component_id)
+                    .join(Source, Source.id == VendorStatus.source_id)
+                    .where(
+                        or_(
+                            Source.component_id.in_(ids),
+                            VendorStatus.components.has_any(array(keys)),
+                        )
+                    )
+                    .order_by(VendorStatus.observed_at.desc())
+                )
+            ).all()
+        found: dict[uuid.UUID, VendorClaim] = {}
+        for vendor, own_component in rows:
+            for component_id in ids:
+                if component_id in found:
+                    continue
+                status = vendor.components.get(str(component_id))
+                if status is not None or component_id == own_component:
+                    found[component_id] = VendorClaim(
+                        status, vendor.indicator, vendor.open_incidents, vendor.observed_at
+                    )
+        return found

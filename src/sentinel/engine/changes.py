@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel.db.base import utcnow
 from sentinel.db.session import Database
+from sentinel.engine.vendor import apply_status_page
 from sentinel.models import Change, ChangeKind, Snapshot, Source, SourceKind
 from sentinel.sources.classify import classify, effective_date
 
@@ -68,7 +69,7 @@ async def run_changes(db: Database, clock: Callable[[], datetime] = utcnow) -> C
 
 async def _diff(s: AsyncSession, snapshot: Snapshot) -> int:
     source = await s.get(Source, snapshot.source_id)
-    if source is None or source.kind not in ITEM_KINDS:
+    if source is None:  # pragma: no cover - cascades remove snapshots with their source
         return 0
     previous = await s.scalar(
         select(Snapshot)
@@ -76,8 +77,10 @@ async def _diff(s: AsyncSession, snapshot: Snapshot) -> int:
         .order_by(Snapshot.taken_at.desc())
         .limit(1)
     )
-    if previous is None:
-        return 0  # baseline
+    if source.kind == SourceKind.STATUS_PAGE:
+        return await apply_status_page(s, source, snapshot, previous)
+    if source.kind not in ITEM_KINDS or previous is None:
+        return 0  # previous None: the baseline
     seen = {str(item.get("id")) for item in previous.items}
     rows = []
     for item in snapshot.items:

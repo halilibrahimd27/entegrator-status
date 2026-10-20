@@ -158,6 +158,7 @@ async def service_page(
         latency=await svc.status.latency(ctx.scope, source_ids),
         changes=await svc.changes.recent(ctx.scope, component_ids),
         watch=await svc.changes.watch(ctx.scope, source_ids),
+        vendor=await svc.changes.vendor(ctx.scope, component_ids),
         now=utcnow(),
         windows=await svc.notices.component_windows(ctx.scope, component_ids),
     )

@@ -55,6 +55,22 @@ changes:
   detected: "Görüldü"
   effective: "Geçerlilik tarihi"
 
+vendor:
+  label: "Sağlayıcının beyanı"
+  hint: "Sağlayıcının kendi durum sayfasında yazan; bizim ölçümümüzle birleştirilmez."
+  operational: "Çalışıyor"
+  degraded: "Yavaşlama"
+  partial_outage: "Kısmi kesinti"
+  major_outage: "Büyük kesinti"
+  maintenance: "Bakımda"
+  unknown: "Bilinmiyor"
+  page_none: "Sorun bildirilmiyor"
+  page_minor: "Küçük bir sorun bildiriliyor"
+  page_major: "Büyük bir sorun bildiriliyor"
+  page_critical: "Kritik bir sorun bildiriliyor"
+  page_maintenance: "Bakım bildiriliyor"
+  open_incidents: "Açık olay"
+
 categories:
   maintenance: "Bakım"
   deprecation: "Kullanımdan kaldırma"

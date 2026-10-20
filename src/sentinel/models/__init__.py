@@ -21,6 +21,7 @@ from sentinel.models.changes import (
     ChangeKind,
     Snapshot,
     SourceWatch,
+    VendorStatus,
 )
 from sentinel.models.orgs import ApiToken, Invitation, Membership, Organization
 from sentinel.models.probe import IngestBatch, Observation, ProbeNode
@@ -76,4 +77,5 @@ __all__ = [
     "TokenPurpose",
     "User",
     "UserSession",
+    "VendorStatus",
 ]

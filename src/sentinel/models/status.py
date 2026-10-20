@@ -11,7 +11,16 @@ from datetime import date, datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -161,13 +170,15 @@ class MaintenanceWindow(IdMixin, CreatedAtMixin, SharedOrTenantMixin, Base):
     __table_args__ = (
         CheckConstraint("ends_at > starts_at", name="ends_after_start"),
         Index("ix_maintenance_component_time", "component_id", "starts_at"),
+        UniqueConstraint("component_id", "external_id"),
     )
 
     component_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("components.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(String(200))
     starts_at: Mapped[datetime]
     ends_at: Mapped[datetime]
-    origin: Mapped[str] = mapped_column(String(16), default="manual")
+    origin: Mapped[str] = mapped_column(String(16), default="manual")  # manual | announcement
+    external_id: Mapped[str | None] = mapped_column(String(120))  # the vendor's maintenance id
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )

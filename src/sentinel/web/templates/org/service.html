@@ -23,6 +23,13 @@
   <p>{{ ui.state_line(st) }}</p>
   {% if st.state == "unverified" %}<p class="hint">{{ t("status.unverified_hint") }}</p>{% endif %}
   {% endif %}
+  {% set claim = vendor.get(component.id) %}
+  {% if claim %}
+  <p class="hint" title="{{ t('vendor.hint') }}">{{ t("vendor.label") }}:
+    {% if claim.status %}{{ t("vendor." ~ claim.status) }}{% else %}{{ t("vendor.page_" ~ claim.indicator) }}{% endif %}
+    {%- if claim.open_incidents %} · {{ t("vendor.open_incidents") }}: {{ claim.open_incidents }}{% endif %}
+    · {{ claim.observed_at|local }}</p>
+  {% endif %}
   {% set days = bars.get(component.id, []) %}
   {% if days | rejectattr("worst", "equalto", "unknown") | list %}
   {% set up = uptimes[component.id] %}

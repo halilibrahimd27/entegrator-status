@@ -222,9 +222,10 @@ Acceptance
 Goal: vendor statements and announcements arrive classified, without anyone reading them.
 
 Tasks
-- [ ] `status_page` adapter: Atlassian Statuspage (`/api/v2/summary.json`), Instatus,
+- [x] `status_page` adapter: Atlassian Statuspage (`/api/v2/summary.json`), Instatus,
       generic RSS/Atom incident feeds; map vendor components to ours; vendor status shown
-      next to our consensus, never merged.
+      next to our consensus, never merged. (Vendor maintenance becomes a maintenance
+      window only when announced before it starts; otherwise it stays an announcement.)
 - [x] `feed` adapter: RSS/Atom with `ETag` / `If-Modified-Since`
       ([ADR 0009](adr/0009-change-sources.md): one node per change source, snapshots).
 - [ ] `page_watch` adapter: robots-checked every cycle, items extracted with a

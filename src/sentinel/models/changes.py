@@ -103,3 +103,20 @@ class Change(IdMixin, CreatedAtMixin, SharedOrTenantMixin, Base):
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )
+
+
+class VendorStatus(SharedOrTenantMixin, Base):
+    """What a vendor's status page declares now. Shown next to ours, never merged."""
+
+    __tablename__ = "vendor_status"
+
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("sources.id", ondelete="CASCADE"), primary_key=True
+    )
+    indicator: Mapped[str] = mapped_column(
+        String(20)
+    )  # none | minor | major | critical | maintenance
+    # our component id -> the vendor's status of the mapped vendor component
+    components: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
+    open_incidents: Mapped[int] = mapped_column(Integer, default=0)
+    observed_at: Mapped[datetime]

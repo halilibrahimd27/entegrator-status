@@ -25,7 +25,7 @@ from sentinel.models import Attention, Snapshot, SourceKind, SourceWatch
 if TYPE_CHECKING:
     from sentinel.probe.nodes import IngestResult, SnapshotIn
 
-CONTENT_KINDS = frozenset({SourceKind.FEED})
+CONTENT_KINDS = frozenset({SourceKind.FEED, SourceKind.STATUS_PAGE})
 NODE_FRESH = timedelta(minutes=10)
 FAILING_AFTER = 5
 _NEEDS_ATTENTION = frozenset({"no_items", "parse_error"})
