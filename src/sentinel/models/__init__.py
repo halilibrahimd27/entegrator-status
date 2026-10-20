@@ -25,6 +25,7 @@ from sentinel.models.changes import (
 )
 from sentinel.models.orgs import ApiToken, Invitation, Membership, Organization
 from sentinel.models.probe import IngestBatch, Observation, ProbeNode
+from sentinel.models.risk import Risk, RiskKind
 from sentinel.models.status import (
     ComponentDaily,
     ComponentState,
@@ -65,6 +66,8 @@ __all__ = [
     "ProbeNode",
     "Product",
     "ProposalStatus",
+    "Risk",
+    "RiskKind",
     "Service",
     "ServiceKind",
     "Snapshot",

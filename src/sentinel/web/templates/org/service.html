@@ -73,6 +73,21 @@
   <p>{{ t("service.sources_empty") }}</p>
   {% endif %}
 
+  {% set open_risks = risks[component.id] %}
+  {% if open_risks %}
+  <h3>{{ t("risks.title") }}</h3>
+  <ul class="timeline">
+    {% for risk in open_risks %}
+    <li><span class="badge attention">{{ t("risks." ~ risk.kind) }}</span>
+      {% if risk.due_at %}{{ t("risks.due") }}: {{ risk.due_at|local }}
+        {% set days = (risk.due_at - now).days %}
+        <span class="hint">{{ t("risks.overdue") if days < 0 else t("risks.days_left").format(n=days) }}</span>
+      {% else %}<span class="hint">{{ t("risks.no_date") }}</span>{% endif %}
+      {% if risk.link %} · <a href="{{ risk.link }}" rel="noopener noreferrer nofollow">{{ t("risks.more") }}</a>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
   {% set recent = changes[component.id] %}
   {% if recent %}
   <h3>{{ t("changes.title") }}</h3>

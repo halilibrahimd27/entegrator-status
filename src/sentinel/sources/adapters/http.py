@@ -37,8 +37,9 @@ class HttpAdapter(Adapter):
         result = await env.http.fetch(url, policy)
         latency = int(result.elapsed_s * 1000)
         details: dict[str, Any] = {}
+        announced = "deprecation" in result.headers or "sunset" in result.headers
         for header in ("deprecation", "sunset", "link"):
-            if header in result.headers and (header != "link" or "deprecation" in result.headers):
+            if header in result.headers and (header != "link" or announced):
                 details[header] = result.headers[header][:300]
         if result.redirects:
             details["redirects"] = len(result.redirects)

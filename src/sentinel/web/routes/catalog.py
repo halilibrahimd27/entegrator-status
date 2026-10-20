@@ -160,6 +160,7 @@ async def service_page(
         watch=await svc.changes.watch(ctx.scope, source_ids),
         vendor=await svc.changes.vendor(ctx.scope, component_ids),
         categories=[c.value for c in ChangeCategory],
+        risks=await svc.risks.open(ctx.scope, component_ids),
         now=utcnow(),
         windows=await svc.notices.component_windows(ctx.scope, component_ids),
     )

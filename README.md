@@ -19,7 +19,7 @@ your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phases 0–4 of the [build plan](docs/PLAN.md) are done:
+Phases 0–5 of the [build plan](docs/PLAN.md) are done:
 
 - configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
 - accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
@@ -40,8 +40,14 @@ Phases 0–4 of the [build plan](docs/PLAN.md) are done:
   manual incidents for your own products, uptime (24 h to 90 d), 90-day bars, an
   organization status page and `GET /api/v1/status`
   ([ADR 0008](docs/adr/0008-status-engine.md))
+- change sources: vendor status pages (Statuspage, Instatus, RSS) shown next to our
+  measurements, RSS/Atom feeds and watched pages (CSS selectors), each fetched by one
+  node with robots.txt every cycle; announcements classified in Turkish and English with
+  effective dates; manual announcements; dated risks from `Sunset` / `Deprecation`
+  headers and expiring certificates and domains
+  ([ADR 0009](docs/adr/0009-change-sources.md))
 
-Next: change sources (Phase 5): vendor status pages, feeds and announcements.
+Next: releases, advisories and lifecycle (Phase 6).
 
 ## Quick start
 
@@ -58,7 +64,7 @@ open http://127.0.0.1:8000      # sign up; mails land in http://127.0.0.1:8025
 
 | Command | What it does |
 |---|---|
-| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and the coverage gates (security, tenancy, accounts, sources, graph, catalog, probe, engine) |
+| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and the coverage gates (security, tenancy, accounts, sources, graph, catalog, probe, engine, risk) |
 | `make lint` | ruff, ruff format check, mypy --strict |
 | `make security` | bandit, pip-audit, gitleaks |
 | `make check` | all of the above; must pass before every commit |

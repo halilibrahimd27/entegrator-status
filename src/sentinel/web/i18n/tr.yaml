@@ -85,6 +85,21 @@ vendor:
   page_maintenance: "Bakım bildiriliyor"
   open_incidents: "Açık olay"
 
+risks:
+  title: "Riskler"
+  sunset: "Sağlayıcı bu ucun kapanış tarihini bildirdi (Sunset)"
+  deprecation: "Sağlayıcı bu ucu kullanımdan kaldırdı (Deprecation)"
+  cert_expiry: "TLS sertifikasının süresi doluyor"
+  domain_expiry: "Alan adının süresi doluyor"
+  eol: "Destek süresi bitiyor"
+  advisory: "Bilinen güvenlik açığı"
+  unadopted_major: "Uygulanmamış büyük sürüm"
+  due: "Tarih"
+  no_date: "Tarih bildirilmedi"
+  overdue: "Tarih geçti"
+  days_left: "{n} gün kaldı"
+  more: "Açıklama"
+
 categories:
   maintenance: "Bakım"
   deprecation: "Kullanımdan kaldırma"

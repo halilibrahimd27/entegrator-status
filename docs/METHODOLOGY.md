@@ -44,7 +44,16 @@ Only what an organisation adds to its dependency graph, plus the curated shared 
 ## Change and impact rules
 
 - A change is reported once per snapshot transition; noise (timestamps, ordering,
-  rotating tokens) is normalised away.
+  rotating tokens) is normalised away. The first snapshot of a source is a baseline:
+  what was already published when we started watching is not reported as news.
+- Change sources (status pages, feeds, watched pages) are fetched by one probe node per
+  interval, check robots.txt every cycle and use conditional requests. A source that
+  stops yielding items is flagged "needs attention" rather than reported as "no news".
+- Announcements are classified from their titles with Turkish and English keyword
+  tables (maintenance, deprecation, security, package update, incident, other); a date
+  in the title becomes the effective date (midnight, Turkey time).
+- Vendor-declared maintenance counts as maintenance only when it was announced before
+  it started.
 - Contract changes are `breaking`, `non_breaking` or `cosmetic`; releases `major`,
   `minor`, `patch` or `prerelease`; announcements `maintenance`, `deprecation`,
   `security`, `package_update`, `incident` or `other`.

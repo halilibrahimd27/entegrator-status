@@ -25,6 +25,7 @@ from sentinel.engine.notices import NoticeService
 from sentinel.engine.views import StatusViews
 from sentinel.graph.service import GraphService
 from sentinel.probe.nodes import NodeService
+from sentinel.risk.views import RiskViews
 from sentinel.tenancy.api_tokens import ApiTokenService
 from sentinel.tenancy.invitations import InvitationService
 from sentinel.tenancy.orgs import OrgService
@@ -51,6 +52,7 @@ class AppServices:
     notices: NoticeService
     status: StatusViews
     changes: ChangeViews
+    risks: RiskViews
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -94,6 +96,7 @@ def build_services(settings: Settings) -> AppServices:
         notices=NoticeService(db),
         status=StatusViews(db, graph),
         changes=ChangeViews(db),
+        risks=RiskViews(db),
         renderer=Renderer(),
     )
 

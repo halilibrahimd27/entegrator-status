@@ -47,7 +47,7 @@ test-services: ## Start the throwaway test Postgres/Redis (skipped in CI)
 
 test: test-services ## pytest (no network) + coverage gates
 	$(BIN)/pytest --cov --cov-report=term-missing
-	@for pkg in security tenancy accounts sources graph catalog probe engine; do \
+	@for pkg in security tenancy accounts sources graph catalog probe engine risk; do \
 		echo "coverage gate: sentinel.$$pkg"; \
 		$(BIN)/coverage report --include="src/sentinel/$$pkg/*" --fail-under=85 > /dev/null || exit 1; \
 	done

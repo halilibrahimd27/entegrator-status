@@ -15,6 +15,7 @@ from sentinel.engine.changes import run_changes
 from sentinel.engine.retention import run_retention
 from sentinel.engine.rollups import run_rollups
 from sentinel.engine.status import StatusEngine
+from sentinel.risk.scan import run_risks
 from sentinel.runtime import configure_logging
 
 log = logging.getLogger("sentinel.engine")
@@ -59,6 +60,12 @@ async def serve(
     async def rollups() -> None:
         report = await run_rollups(db)
         log.debug("rollups: %s", asdict(report))
+        risks = await run_risks(db)
+        log.log(
+            logging.INFO if risks.opened or risks.resolved else logging.DEBUG,
+            "risks: %s",
+            asdict(risks),
+        )
 
     async def retention() -> None:
         report = await run_retention(db)

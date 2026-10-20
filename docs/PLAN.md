@@ -217,7 +217,7 @@ Acceptance
 
 ---
 
-## Phase 5 — Change sources: status pages, feeds, announcements
+## Phase 5 — Change sources: status pages, feeds, announcements ✅
 
 Goal: vendor statements and announcements arrive classified, without anyone reading them.
 
@@ -235,7 +235,9 @@ Tasks
       (bakım, kesinti, erişim, maintenance), `deprecation` (sunset, deprecated, kullanımdan
       kaldırılacak), `security`, `package_update` (UBL-TR, şematron, paket, kod listesi,
       XSLT, SDK), `incident`, `other`. Effective dates extracted when present.
-- [ ] `Deprecation` / `Sunset` headers seen by `http` sources become Risks with dates.
+- [x] `Deprecation` / `Sunset` headers seen by `http` sources become Risks with dates.
+      (Expiring certificates and domains become Risks too; the register with states
+      arrives in Phase 8.)
 - [x] Manual announcement form for sources that disallow automation (fields: service,
       title, link, published date, effective date, kind, affected components).
 
