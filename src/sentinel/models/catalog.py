@@ -110,6 +110,10 @@ class Source(IdMixin, CreatedAtMixin, SharedOrTenantMixin, Base):
     availability_ignores_robots: Mapped[bool] = mapped_column(default=False)
     enabled: Mapped[bool] = mapped_column(default=True)
     provenance: Mapped[str | None] = mapped_column(String(500))  # where the URL came from
+    # the organization's own credential (private sources only, ADR 0011)
+    credential_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("credentials.id", ondelete="SET NULL"), index=True
+    )
 
 
 class Dependency(IdMixin, CreatedAtMixin, SharedOrTenantMixin, Base):

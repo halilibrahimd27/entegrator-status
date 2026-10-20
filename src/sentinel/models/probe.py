@@ -24,6 +24,8 @@ class ProbeNode(IdMixin, CreatedAtMixin, Base):
     enabled: Mapped[bool] = mapped_column(default=True)
     last_seen_at: Mapped[datetime | None]
     healthy: Mapped[bool | None]
+    # may receive jobs of authenticated sources (ADR 0011); off unless registered so
+    handles_credentials: Mapped[bool] = mapped_column(default=False, server_default="false")
 
 
 class IngestBatch(Base):

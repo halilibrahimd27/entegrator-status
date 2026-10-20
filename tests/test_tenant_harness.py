@@ -29,6 +29,7 @@ from sentinel.models import (
     ApiToken,
     Change,
     Component,
+    Credential,
     Dependency,
     Incident,
     Invitation,
@@ -78,6 +79,7 @@ Model = (
     | type[Incident]
     | type[MaintenanceWindow]
     | type[Change]
+    | type[Credential]
 )
 ID_PARAMS: dict[str, Model] = {
     "membership_id": Membership,
@@ -91,6 +93,7 @@ ID_PARAMS: dict[str, Model] = {
     "incident_id": Incident,
     "window_id": MaintenanceWindow,
     "change_id": Change,
+    "credential_id": Credential,
 }
 
 
@@ -183,6 +186,19 @@ async def build_tenant(
         csrf_from=f"{base}/servisler/{service_id}",
     )
     assert announced.status_code == 303, announced.text
+    vault = await post_form(
+        owner,
+        f"{base}/kimlik-bilgileri",
+        {
+            "name": "Portal",
+            "kind": "bearer",
+            "host": f"{slug}.example.invalid",
+            "token": "t" + uuid.uuid4().hex,
+            "entitled": "true",
+        },
+        csrf_from=f"{base}/kimlik-bilgileri",
+    )
+    assert vault.status_code == 303, vault.text
     return slug
 
 

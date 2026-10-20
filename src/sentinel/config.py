@@ -17,6 +17,7 @@ SECRET_FIELDS = (
     "webhook_signing_key",
     "ingest_hmac_key",
     "totp_encryption_key",
+    "credentials_master_key",
 )
 
 # Compared against the value lower-cased with separators removed, so "Change_Me",
@@ -83,6 +84,7 @@ class Settings(BaseSettings):
     webhook_signing_key: SecretStr
     ingest_hmac_key: SecretStr
     totp_encryption_key: SecretStr
+    credentials_master_key: SecretStr  # wraps per-organization data keys (ADR 0011)
 
     signup_enabled: bool = True
     session_idle_minutes: int = 120

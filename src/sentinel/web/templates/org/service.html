@@ -52,6 +52,18 @@
         {% set w = watch.get(source.id) %}
         <td>{{ t("service.interval") }}: {{ source.interval_s }}
           {% if lat %}<br><span class="hint">{{ t("uptime.latency") }}: p50 {{ lat.p50_ms }} ms · p95 {{ lat.p95_ms }} ms</span>{% endif %}
+          {% if credentials and source.org_id is not none %}
+            <form method="post" action="{{ base }}/kaynaklar/{{ source.id }}/kimlik" class="inline">
+              {{ ui.csrf_field() }}
+              <label for="cr-{{ source.id }}">{{ t("credentials.attach") }}</label>
+              <select id="cr-{{ source.id }}" name="credential_id">
+                <option value="">{{ t("credentials.attach_none") }}</option>
+                {% for c in credentials %}<option value="{{ c.id }}"{% if c.id == source.credential_id %} selected{% endif %}>{{ c.name }} ({{ c.host }})</option>{% endfor %}
+              </select>
+              <button type="submit" class="secondary">{{ t("credentials.attach_submit") }}</button>
+            </form>
+          {% elif source.credential_id %}<br><span class="hint">{{ t("credentials.attached") }}</span>
+          {% endif %}
           {% if w %}<br><span class="hint">{{ t("watch.last_checked") }}: {{ w.last_checked_at|local }}{% if w.last_changed_at %} · {{ t("watch.last_changed") }}: {{ w.last_changed_at|local }}{% endif %}</span>
             {% if w.attention %}<br><span class="badge attention">{{ t("watch." ~ w.attention) }}</span>
               {% if w.reason in ("no_items", "parse_error", "disallowed", "unreachable") %} <span class="hint">{{ t("watch." ~ w.reason) }}</span>{% else %} <code>{{ w.reason }}</code>{% endif %}

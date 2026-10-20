@@ -282,8 +282,10 @@ Acceptance
 Goal: detect when an API a product uses changes shape, and say how much it matters.
 
 Tasks
-- [ ] Credential vault: AES-256-GCM envelope encryption with per-org data keys and
+- [x] Credential vault: AES-256-GCM envelope encryption with per-org data keys and
       `CREDENTIALS_MASTER_KEY` (new fail-closed secret); write-only API; rotation; audit.
+      ([ADR 0011](adr/0011-credentials.md); `make env` adds missing keys to an existing
+      `.env`.)
 - [ ] Auth methods for sources: API key in a header, bearer, basic, OAuth2 client
       credentials (token URL through the SSRF guard; POST allowed only there). Credentials
       dropped when a redirect leaves the configured host. API keys in query strings are

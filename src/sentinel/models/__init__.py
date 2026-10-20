@@ -23,6 +23,7 @@ from sentinel.models.changes import (
     SourceWatch,
     VendorStatus,
 )
+from sentinel.models.credentials import Credential, CredentialKind, OrgDataKey
 from sentinel.models.orgs import ApiToken, Invitation, Membership, Organization
 from sentinel.models.probe import IngestBatch, Observation, ProbeNode
 from sentinel.models.risk import Risk, RiskKind
@@ -51,6 +52,8 @@ __all__ = [
     "Component",
     "ComponentDaily",
     "ComponentState",
+    "Credential",
+    "CredentialKind",
     "Dependency",
     "Incident",
     "IncidentKind",
@@ -62,6 +65,7 @@ __all__ = [
     "Membership",
     "Observation",
     "OneTimeToken",
+    "OrgDataKey",
     "Organization",
     "ProbeNode",
     "Product",

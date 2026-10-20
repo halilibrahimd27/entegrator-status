@@ -14,6 +14,9 @@
       {% if can(role, "tokens.manage") %}
       <a href="{{ base }}/tokenlar"{% if section == "tokens" %} aria-current="page"{% endif %}>{{ t("org.tokens") }}</a>
       {% endif %}
+      {% if can(role, "credentials.manage") %}
+      <a href="{{ base }}/kimlik-bilgileri"{% if section == "credentials" %} aria-current="page"{% endif %}>{{ t("org.credentials") }}</a>
+      {% endif %}
       {% if can(role, "audit.view") %}
       <a href="{{ base }}/denetim"{% if section == "audit" %} aria-current="page"{% endif %}>{{ t("org.audit") }}</a>
       {% endif %}

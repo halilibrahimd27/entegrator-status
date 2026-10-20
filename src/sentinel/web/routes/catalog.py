@@ -16,6 +16,7 @@ from sentinel.models import Component, ServiceKind, Source, SourceKind
 from sentinel.models import Service as ServiceModel
 from sentinel.models.changes import ANNOUNCEMENT_CATEGORIES
 from sentinel.sources.config import KIND_CONFIG
+from sentinel.tenancy.roles import Action, can
 from sentinel.web.org_context import InOrg, OrgContext
 from sentinel.web.routes.products import status_of
 from sentinel.web.services import client_ip, services
@@ -162,6 +163,11 @@ async def service_page(
         vendor=await svc.changes.vendor(ctx.scope, component_ids),
         categories=[c.value for c in ANNOUNCEMENT_CATEGORIES],
         risks=await svc.risks.open(ctx.scope, component_ids),
+        credentials=(
+            await svc.credentials.list(ctx.scope)
+            if can(ctx.scope.role, Action.CREDENTIALS_MANAGE)
+            else []
+        ),
         now=utcnow(),
         windows=await svc.notices.component_windows(ctx.scope, component_ids),
     )

@@ -25,6 +25,7 @@ class Action(StrEnum):
     GRAPH_VIEW = "graph.view"
     GRAPH_EDIT = "graph.edit"
     STATUS_MANAGE = "status.manage"  # manual incidents, maintenance windows
+    CREDENTIALS_MANAGE = "credentials.manage"  # write-only secrets (ADR 0011)
 
 
 _VIEW = {Action.ORG_VIEW, Action.MEMBERS_VIEW, Action.GRAPH_VIEW}
@@ -36,6 +37,7 @@ _ADMIN = _MEMBER | {
     Action.MEMBERS_REMOVE,
     Action.TOKENS_MANAGE,
     Action.AUDIT_VIEW,
+    Action.CREDENTIALS_MANAGE,
 }
 _OWNER = _ADMIN | {Action.ORG_DELETE}
 

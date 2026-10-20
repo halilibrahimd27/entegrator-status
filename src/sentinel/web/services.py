@@ -27,6 +27,7 @@ from sentinel.graph.service import GraphService
 from sentinel.probe.nodes import NodeService
 from sentinel.risk.views import RiskViews
 from sentinel.tenancy.api_tokens import ApiTokenService
+from sentinel.tenancy.credentials import CredentialService
 from sentinel.tenancy.invitations import InvitationService
 from sentinel.tenancy.orgs import OrgService
 from sentinel.web.templating import Renderer
@@ -53,6 +54,7 @@ class AppServices:
     status: StatusViews
     changes: ChangeViews
     risks: RiskViews
+    credentials: CredentialService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -97,6 +99,7 @@ def build_services(settings: Settings) -> AppServices:
         status=StatusViews(db, graph),
         changes=ChangeViews(db),
         risks=RiskViews(db),
+        credentials=CredentialService(db, settings),
         renderer=Renderer(),
     )
 
