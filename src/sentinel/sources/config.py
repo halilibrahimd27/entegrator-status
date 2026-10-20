@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from sentinel.models.catalog import SourceKind
 from sentinel.security.addresses import parse_target
 from sentinel.security.errors import URLPolicyError
+from sentinel.sources.pages import PageError, check_selector
 
 AVAILABILITY_KINDS = frozenset(
     {SourceKind.HTTP, SourceKind.TLS_CERT, SourceKind.DNS, SourceKind.DOMAIN_EXPIRY}
@@ -149,6 +150,16 @@ class PageWatchConfig(_UrlConfig):
     title_selector: Annotated[str, Field(min_length=1, max_length=200)]
     date_selector: Annotated[str, Field(max_length=200)] | None = None
     link_selector: Annotated[str, Field(max_length=200)] | None = None
+
+    @field_validator("item_selector", "title_selector", "date_selector", "link_selector")
+    @classmethod
+    def _selector(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        try:
+            return check_selector(value)
+        except PageError as exc:
+            raise ValueError(str(exc)) from None
 
 
 class EolConfig(_Config):

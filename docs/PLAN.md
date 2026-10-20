@@ -228,7 +228,7 @@ Tasks
       window only when announced before it starts; otherwise it stays an announcement.)
 - [x] `feed` adapter: RSS/Atom with `ETag` / `If-Modified-Since`
       ([ADR 0009](adr/0009-change-sources.md): one node per change source, snapshots).
-- [ ] `page_watch` adapter: robots-checked every cycle, items extracted with a
+- [x] `page_watch` adapter: robots-checked every cycle, items extracted with a
       configurable CSS selector (title, date, link only — never article bodies), new items
       detected (port `legacy/api-sentinel/watchers`).
 - [x] Announcement classifier with Turkish + English keyword tables: `maintenance`
@@ -236,7 +236,7 @@ Tasks
       kaldırılacak), `security`, `package_update` (UBL-TR, şematron, paket, kod listesi,
       XSLT, SDK), `incident`, `other`. Effective dates extracted when present.
 - [ ] `Deprecation` / `Sunset` headers seen by `http` sources become Risks with dates.
-- [ ] Manual announcement form for sources that disallow automation (fields: service,
+- [x] Manual announcement form for sources that disallow automation (fields: service,
       title, link, published date, effective date, kind, affected components).
 
 Acceptance

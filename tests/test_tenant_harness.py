@@ -27,6 +27,7 @@ from sentinel.accounts.mail import Mail
 from sentinel.db.base import utcnow
 from sentinel.models import (
     ApiToken,
+    Change,
     Component,
     Dependency,
     Incident,
@@ -60,6 +61,7 @@ FORM = {
     "title": "Başlık",
     "body": "Açıklama",
     "status": "investigating",
+    "category": "maintenance",
     "starts_at": local_input(timedelta(days=1)),
     "ends_at": local_input(timedelta(days=1, hours=2)),
 }
@@ -75,6 +77,7 @@ Model = (
     | type[Dependency]
     | type[Incident]
     | type[MaintenanceWindow]
+    | type[Change]
 )
 ID_PARAMS: dict[str, Model] = {
     "membership_id": Membership,
@@ -87,6 +90,7 @@ ID_PARAMS: dict[str, Model] = {
     "dependency_id": Dependency,
     "incident_id": Incident,
     "window_id": MaintenanceWindow,
+    "change_id": Change,
 }
 
 
@@ -168,6 +172,17 @@ async def build_tenant(
         csrf_from=f"{base}/servisler/{service_id}",
     )
     assert planned.status_code == 303, planned.text
+    announced = await post_form(
+        owner,
+        f"{base}/servisler/{service_id}/duyuru",
+        {
+            "title": "Sağlayıcı duyurusu",
+            "category": "maintenance",
+            "component_ids": str(component_id),
+        },
+        csrf_from=f"{base}/servisler/{service_id}",
+    )
+    assert announced.status_code == 303, announced.text
     return slug
 
 

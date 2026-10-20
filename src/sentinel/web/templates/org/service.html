@@ -80,10 +80,17 @@
     {% for change in recent %}
     <li>
       <span class="badge">{{ t("categories." ~ change.category) }}</span>
+      {% if change.origin == "manual" %}<span class="badge">{{ t("changes.manual") }}</span>{% endif %}
       {% if change.link %}<a href="{{ change.link }}" rel="noopener noreferrer nofollow">{{ change.title }}</a>{% else %}{{ change.title }}{% endif %}
       <br><span class="hint">{{ t("changes.detected") }}: {{ change.detected_at|local }}
         {%- if change.published_at %} · {{ t("changes.published") }}: {{ change.published_at|local }}{% endif %}
         {%- if change.effective_at %} · {{ t("changes.effective") }}: {{ change.effective_at|local }}{% endif %}</span>
+      {% if manage and change.origin == "manual" and change.org_id is not none %}
+      <form method="post" action="{{ base }}/degisiklikler/{{ change.id }}/sil" class="inline">
+        {{ ui.csrf_field() }}
+        <button type="submit" class="secondary">{{ t("changes.delete") }}</button>
+      </form>
+      {% endif %}
     </li>
     {% endfor %}
   </ul>
@@ -180,6 +187,50 @@
   {% endif %}
 </section>
 {% endfor %}
+
+{% if manage and detail_view.components %}
+<section class="card wide">
+  <h2>{{ t("changes.add_title") }}</h2>
+  <p class="hint">{{ t("changes.add_hint") }}</p>
+  <form method="post" action="{{ base }}/servisler/{{ svc.id }}/duyuru" novalidate>
+    {{ ui.csrf_field() }}
+    <div class="field">
+      <label for="an-title">{{ t("changes.field_title") }}</label>
+      <input id="an-title" name="title" type="text" maxlength="300" required>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label for="an-category">{{ t("changes.field_category") }}</label>
+        <select id="an-category" name="category">
+          {% for c in categories %}<option value="{{ c }}">{{ t("categories." ~ c) }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="an-link">{{ t("changes.field_link") }}</label>
+        <input id="an-link" name="link" type="url" maxlength="2000">
+      </div>
+      <div class="field">
+        <label for="an-published">{{ t("changes.field_published") }}</label>
+        <input id="an-published" name="published_on" type="date">
+      </div>
+      <div class="field">
+        <label for="an-effective">{{ t("changes.field_effective") }}</label>
+        <input id="an-effective" name="effective_on" type="date">
+      </div>
+    </div>
+    <fieldset>
+      <legend>{{ t("changes.field_components") }}</legend>
+      {% for component in detail_view.components %}
+      <div class="field checkbox">
+        <input id="an-c-{{ component.id }}" name="component_ids" type="checkbox" value="{{ component.id }}">
+        <label for="an-c-{{ component.id }}">{{ component.name }}</label>
+      </div>
+      {% endfor %}
+    </fieldset>
+    <button type="submit">{{ t("changes.submit") }}</button>
+  </form>
+</section>
+{% endif %}
 
 {% if editable and own %}
 <section class="card wide">

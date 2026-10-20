@@ -1,10 +1,13 @@
-"""What people write about status: manual incidents on products, maintenance windows.
+"""What people write: manual incidents on products, maintenance windows, announcements.
 
 Manual incidents belong to an organization's own product. Maintenance windows belong
 to the organization's own components; windows on shared components are platform-level
 (Phase 5 creates them from vendor announcements). A window must be declared before it
 starts (5 minutes of slack) and cannot be moved into the past afterwards, because
 maintenance is left out of uptime.
+
+Manual announcements cover vendors that publish news where automation is not allowed
+(robots.txt) or not possible; they are private to the organization that enters them.
 """
 
 from __future__ import annotations
@@ -20,6 +23,9 @@ from sentinel import audit
 from sentinel.db.base import utcnow
 from sentinel.db.session import Database
 from sentinel.models import (
+    Change,
+    ChangeCategory,
+    ChangeKind,
     Component,
     Incident,
     IncidentKind,
@@ -29,6 +35,7 @@ from sentinel.models import (
     Product,
 )
 from sentinel.models.status import MANUAL_STATUSES
+from sentinel.sources.feeds import safe_link
 from sentinel.tenancy.roles import Action
 from sentinel.tenancy.scope import TenantScope
 
@@ -290,3 +297,93 @@ class NoticeService:
                 if component is not None and window.org_id == component.org_id:
                     found[window.component_id].append(window)
         return found
+
+    # --- manual announcements ---------------------------------------------------------
+
+    async def add_announcement(
+        self,
+        scope: TenantScope,
+        service_id: uuid.UUID,
+        *,
+        title: str,
+        category: str,
+        component_ids: list[uuid.UUID],
+        link: str = "",
+        published_at: datetime | None = None,
+        effective_at: datetime | None = None,
+        ip: str = "",
+    ) -> list[Change]:
+        scope.require(Action.STATUS_MANAGE)
+        title = _text(title, MAX_TITLE + 100, "status.invalid_title")
+        try:
+            kind = ChangeCategory(category)
+        except ValueError:
+            raise NoticeError("changes.invalid_category") from None
+        url = link.strip() or None
+        if url is not None and safe_link(url, url) != url:
+            raise NoticeError("changes.invalid_link")  # absolute http(s) only
+        if not component_ids:
+            raise NoticeError("changes.no_components")
+        now = self._clock()
+        async with self._db.tenant(scope) as s:
+            components = (
+                await s.scalars(
+                    select(Component).where(
+                        Component.id.in_(component_ids), Component.service_id == service_id
+                    )
+                )
+            ).all()
+            if len(components) != len(set(component_ids)):
+                raise NoticeError("not_found")
+            changes = [
+                Change(
+                    org_id=scope.org_id,
+                    component_id=component.id,
+                    kind=ChangeKind.ANNOUNCEMENT,
+                    category=kind,
+                    title=title,
+                    link=url,
+                    published_at=published_at,
+                    effective_at=effective_at,
+                    detected_at=now,
+                    fingerprint=uuid.uuid4().hex * 2,
+                    origin="manual",
+                    created_by=scope.user_id,
+                )
+                for component in components
+            ]
+            s.add_all(changes)
+            await s.flush()
+            audit.record(
+                s,
+                "announcement.added",
+                org_id=scope.org_id,
+                actor_user_id=scope.user_id,
+                target_type="service",
+                target_id=service_id,
+                details={"components": len(changes), "category": kind.value},
+                ip=ip,
+            )
+            return changes
+
+    async def delete_announcement(
+        self, scope: TenantScope, change_id: uuid.UUID, *, ip: str = ""
+    ) -> uuid.UUID:
+        """Remove a manual announcement; returns its component id."""
+        scope.require(Action.STATUS_MANAGE)
+        async with self._db.tenant(scope) as s:
+            change = await s.get(Change, change_id)
+            if change is None or change.origin != "manual" or change.org_id is None:
+                raise NoticeError("not_found")
+            component_id = change.component_id
+            await s.delete(change)
+            audit.record(
+                s,
+                "announcement.deleted",
+                org_id=scope.org_id,
+                actor_user_id=scope.user_id,
+                target_type="change",
+                target_id=change_id,
+                ip=ip,
+            )
+            return component_id

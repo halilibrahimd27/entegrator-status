@@ -24,8 +24,6 @@ this directory is empty, delete it.
 | `contracts/differ.py` | 7 | Change taxonomy and summary building for JSON schema diffs | Works on JSON shapes; WSDL/XSD needs a structural normaliser first. |
 | `contracts/severity.py` | 7 | Change type → severity table | Map `CRITICAL / WARNING / INFO` onto `breaking / non_breaking / cosmetic`. |
 | `contracts/tests/` | 7 | Table-driven test style | Fixtures are JSON; Phase 7 also needs synthetic OpenAPI and WSDL fixtures. |
-| `watchers/changelog_watcher.py` | 5 | CSS-selector extraction (BeautifulSoup), change detection | Hashes the whole selection; the plan stores items (title + date + link). No robots.txt. `follow_redirects=True` without SSRF guard. Falls back to `<body>` when the selector misses; the plan wants `needs_attention` instead. Raw sqlite3. |
-| `probe/scheduler.py` | 3 | Job add/remove per check, retention job idea | APScheduler; the plan wants an asyncio scheduler with jitter, per-host concurrency 1 and budgets. |
 
 ## Not carried over (and why)
 

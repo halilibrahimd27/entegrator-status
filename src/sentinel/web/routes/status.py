@@ -1,4 +1,4 @@
-"""Manual incidents on products and maintenance windows on components."""
+"""Manual incidents, maintenance windows, manual announcements, the org status page."""
 
 from __future__ import annotations
 
@@ -10,7 +10,8 @@ from fastapi import APIRouter, Depends, Form, Request
 from starlette.responses import RedirectResponse, Response
 
 from sentinel.engine.notices import NoticeError
-from sentinel.models import Component, Incident, MaintenanceWindow
+from sentinel.models import Change, Component, Incident, MaintenanceWindow
+from sentinel.models import Service as ServiceModel
 from sentinel.web.org_context import InOrg, OrgContext
 from sentinel.web.routes.catalog import service_page
 from sentinel.web.routes.products import product_page
@@ -48,6 +49,16 @@ async def overview(request: Request, ctx: InOrg) -> Response:
     svc = services(request)
     rows = await svc.status.overview(ctx.scope)
     return svc.renderer.page(request, "org/status.html", ctx=ctx, section="status", rows=rows)
+
+
+def parse_day(value: str) -> datetime | None:
+    """A ``date`` input (Turkey time) as midnight, or None when empty."""
+    if not value.strip():
+        return None
+    try:
+        return datetime.fromisoformat(value.strip() + "T00:00").replace(tzinfo=LOCAL_TZ)
+    except ValueError:
+        raise NoticeError("status.invalid_time") from None
 
 
 def _not_found(request: Request) -> Response:
@@ -138,6 +149,55 @@ async def end_window(request: Request, ctx: InOrg, window_id: uuid.UUID) -> Resp
         return _not_found(request)
     try:
         await svc.notices.end_window(ctx.scope, window_id, ip=client_ip(request))
+    except NoticeError as exc:
+        return await service_page(request, ctx, service_id, status=status_of(exc), error=exc.key)
+    return RedirectResponse(f"/o/{ctx.org.slug}/servisler/{service_id}", status_code=303)
+
+
+@router.post("/o/{slug}/servisler/{service_id}/duyuru")
+async def add_announcement(
+    request: Request,
+    ctx: InOrg,
+    service_id: uuid.UUID,
+    title: Title,
+    category: Status,
+    link: Annotated[str, Form(max_length=2000)] = "",
+    published_on: LocalTime = "",
+    effective_on: LocalTime = "",
+    component_ids: Annotated[list[uuid.UUID], Form()] = [],  # noqa: B006 - FastAPI copies it
+) -> Response:
+    svc = services(request)
+    async with svc.db.tenant(ctx.scope) as s:
+        if await s.get(ServiceModel, service_id) is None:
+            return _not_found(request)
+    try:
+        await svc.notices.add_announcement(
+            ctx.scope,
+            service_id,
+            title=title,
+            category=category,
+            component_ids=component_ids,
+            link=link,
+            published_at=parse_day(published_on),
+            effective_at=parse_day(effective_on),
+            ip=client_ip(request),
+        )
+    except NoticeError as exc:
+        return await service_page(request, ctx, service_id, status=status_of(exc), error=exc.key)
+    return RedirectResponse(f"/o/{ctx.org.slug}/servisler/{service_id}", status_code=303)
+
+
+@router.post("/o/{slug}/degisiklikler/{change_id}/sil")
+async def delete_announcement(request: Request, ctx: InOrg, change_id: uuid.UUID) -> Response:
+    svc = services(request)
+    async with svc.db.tenant(ctx.scope) as s:
+        change = await s.get(Change, change_id)
+        component_id = change.component_id if change else None
+    service_id = await _service_of(ctx, request, component_id) if component_id else None
+    if service_id is None:
+        return _not_found(request)
+    try:
+        await svc.notices.delete_announcement(ctx.scope, change_id, ip=client_ip(request))
     except NoticeError as exc:
         return await service_page(request, ctx, service_id, status=status_of(exc), error=exc.key)
     return RedirectResponse(f"/o/{ctx.org.slug}/servisler/{service_id}", status_code=303)
