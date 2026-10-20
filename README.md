@@ -53,7 +53,7 @@ open http://127.0.0.1:8000      # sign up; mails land in http://127.0.0.1:8025
 
 | Command | What it does |
 |---|---|
-| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and the coverage gates (security, tenancy, accounts, sources, graph, catalog, probe) |
+| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and the coverage gates (security, tenancy, accounts, sources, graph, catalog, probe, engine) |
 | `make lint` | ruff, ruff format check, mypy --strict |
 | `make security` | bandit, pip-audit, gitleaks |
 | `make check` | all of the above; must pass before every commit |

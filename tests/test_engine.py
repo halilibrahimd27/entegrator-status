@@ -45,7 +45,9 @@ async def test_serve_runs_retention(db: Database, caplog: pytest.LogCaptureFixtu
         await asyncio.sleep(0.05)
         stop.set()
 
-    await asyncio.gather(service.serve(db, stop, every_s=0.01), stop_soon())
+    await asyncio.gather(
+        service.serve(db, stop, retention_every_s=0.01, status_every_s=0.01), stop_soon()
+    )
     assert "retention:" in caplog.text
 
 

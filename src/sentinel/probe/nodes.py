@@ -23,6 +23,7 @@ from sentinel.db.base import utcnow
 from sentinel.db.session import Database
 from sentinel.models import IngestBatch, Observation, ProbeNode, Source, SourceKind
 from sentinel.probe.signing import node_signing_key
+from sentinel.sources.config import probe_config
 
 # Kinds the prober runs today; grows phase by phase as adapters arrive.
 PROBED_KINDS = frozenset(
@@ -116,7 +117,7 @@ class Job:
 def job_key(source: Source) -> str:
     identity = {
         "kind": source.kind,
-        "config": source.config,
+        "config": probe_config(source.config),
         "allow_http": source.allow_http,
         "ignores_robots": source.availability_ignores_robots,
         "timeout_s": source.timeout_s,
@@ -178,7 +179,7 @@ class NodeService:
             Job(
                 key=key,
                 kind=group[0].kind,
-                config=group[0].config,
+                config=probe_config(group[0].config),
                 interval_s=min(src.interval_s for src in group),
                 timeout_s=group[0].timeout_s,
                 allow_http=group[0].allow_http,

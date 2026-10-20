@@ -188,9 +188,9 @@ Notes
 Goal: trustworthy state, incidents and uptime.
 
 Tasks
-- [ ] Consensus per component per round: `operational | degraded | down | unverified |
-      maintenance` (CLAUDE.md "Status semantics").
-- [ ] Incident lifecycle: auto-open after N failing rounds with ≥ 2 healthy nodes,
+- [x] Consensus per component per round: `operational | degraded | down | unverified |
+      maintenance` (CLAUDE.md "Status semantics"; [ADR 0008](adr/0008-status-engine.md)).
+- [x] Incident lifecycle: auto-open after N failing rounds with ≥ 2 healthy nodes,
       auto-resolve after M successes, merge flaps within 10 minutes, root-cause hint from
       error classes ("TLS sertifika hatası", "zaman aşımı", "HTTP 5xx").
 - [ ] Maintenance windows (manual or from announcements) suppress incidents and are

@@ -1,4 +1,4 @@
-"""The engine process: periodic jobs until SIGTERM. Phase 3+ adds consensus and rollups."""
+"""The engine process: status consensus and retention until SIGTERM."""
 
 from __future__ import annotations
 
@@ -12,10 +12,12 @@ from dataclasses import asdict
 from sentinel.config import load_settings_or_exit
 from sentinel.db.session import Database
 from sentinel.engine.retention import run_retention
+from sentinel.engine.status import StatusEngine
 from sentinel.runtime import configure_logging
 
 log = logging.getLogger("sentinel.engine")
 RETENTION_EVERY_S = 3600.0
+STATUS_EVERY_S = 30.0
 
 Job = Callable[[], Awaitable[None]]
 
@@ -34,12 +36,28 @@ async def run_periodically(job: Job, every_s: float, stop: asyncio.Event) -> Non
             await asyncio.wait_for(stop.wait(), timeout=every_s)
 
 
-async def serve(db: Database, stop: asyncio.Event, every_s: float = RETENTION_EVERY_S) -> None:
+async def serve(
+    db: Database,
+    stop: asyncio.Event,
+    *,
+    retention_every_s: float = RETENTION_EVERY_S,
+    status_every_s: float = STATUS_EVERY_S,
+) -> None:
+    engine = StatusEngine(db)
+
+    async def status() -> None:
+        report = await engine.run()
+        level = logging.INFO if report.changes else logging.DEBUG
+        log.log(level, "status: %s", asdict(report))
+
     async def retention() -> None:
         report = await run_retention(db)
         log.info("retention: %s", asdict(report))
 
-    await run_periodically(retention, every_s, stop)
+    await asyncio.gather(
+        run_periodically(status, status_every_s, stop),
+        run_periodically(retention, retention_every_s, stop),
+    )
 
 
 def main() -> None:

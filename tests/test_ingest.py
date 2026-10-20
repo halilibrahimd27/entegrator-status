@@ -184,3 +184,17 @@ def test_prober_fails_closed(
         load_probe_settings_or_exit()
     assert caught.value.code == 2
     assert "register" in capsys.readouterr().err
+
+
+async def test_engine_only_settings_do_not_split_jobs(app: FastAPI, services: AppServices) -> None:
+    a, b = await two_orgs(services)
+    first = await add_source(services, a, "https://same.example.invalid/")
+    second = await add_source(services, b, "https://same.example.invalid/")
+    async with services.db.system("test change") as s:
+        source = await s.get(Source, second)
+        assert source is not None
+        source.config = {**source.config, "latency_degraded_ms": 800}
+    creds = await services.nodes.register("n1", "test")
+    jobs = await client_for(app, creds).jobs()
+    assert [sorted(j["source_ids"]) for j in jobs] == [sorted([str(first), str(second)])]
+    assert "latency_degraded_ms" not in jobs[0]["config"]

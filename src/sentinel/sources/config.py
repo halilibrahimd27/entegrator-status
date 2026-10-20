@@ -21,6 +21,9 @@ AVAILABILITY_KINDS = frozenset(
     {SourceKind.HTTP, SourceKind.TLS_CERT, SourceKind.DNS, SourceKind.DOMAIN_EXPIRY}
 )
 MIN_INTERVAL_S = {"availability": 60, "content": 3600}
+# Config keys the engine reads but the prober does not need. They stay out of the job
+# identity, so organizations with different thresholds still share one probe.
+ENGINE_ONLY_KEYS = frozenset({"latency_degraded_ms"})
 DEFAULT_INTERVAL_S: dict[SourceKind, int] = {
     SourceKind.HTTP: 120,
     SourceKind.DNS: 300,
@@ -179,6 +182,11 @@ class ValidSource:
     identity: str
     interval_s: int
     timeout_s: int
+
+
+def probe_config(config: dict[str, Any]) -> dict[str, Any]:
+    """``config`` without the keys only the engine reads."""
+    return {key: value for key, value in config.items() if key not in ENGINE_ONLY_KEYS}
 
 
 def interval_class(kind: SourceKind) -> str:
