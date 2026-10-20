@@ -19,7 +19,7 @@ your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phases 0–3 of the [build plan](docs/PLAN.md) are done:
+Phases 0–4 of the [build plan](docs/PLAN.md) are done:
 
 - configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
 - accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
@@ -35,8 +35,13 @@ Phases 0–3 of the [build plan](docs/PLAN.md) are done:
   one request per host at a time, `Retry-After` / `Crawl-delay` and backoff; results
   buffered locally (SQLite) and shipped in signed batches, at-least-once; node
   self-health from control targets; identical sources of different tenants probed once
+- the status engine: consensus of at least two healthy nodes with hysteresis, a
+  per-component timeline, automatic incidents with cause hints, maintenance windows,
+  manual incidents for your own products, uptime (24 h to 90 d), 90-day bars, an
+  organization status page and `GET /api/v1/status`
+  ([ADR 0008](docs/adr/0008-status-engine.md))
 
-Next: the status engine (Phase 4): consensus across nodes, incidents, uptime.
+Next: change sources (Phase 5): vendor status pages, feeds and announcements.
 
 ## Quick start
 

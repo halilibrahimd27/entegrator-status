@@ -1,0 +1,38 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("overview.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% set base = "/o/" ~ ctx.org.slug %}
+<section class="card wide">
+  <h1>{{ t("overview.title") }}</h1>
+  <p>{{ t("overview.body") }}</p>
+  {% if rows %}
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("products.service") }}</th>
+      <th scope="col">{{ t("products.component") }}</th>
+      <th scope="col">{{ t("overview.depth") }}</th>
+      <th scope="col">{{ t("status.column") }}</th>
+      <th scope="col">{{ t("uptime.30d") }}</th>
+      <th scope="col">{{ t("overview.used_by") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td><a href="{{ base }}/servisler/{{ row.node.service_id }}">{{ row.node.service }}</a>
+          {% if row.node.shared %}<span class="badge shared">{{ t("products.shared_badge") }}</span>{% endif %}</td>
+        <td>{{ row.node.component }}</td>
+        <td>{{ t("overview.degree").format(n=row.node.depth) }}</td>
+        <td>{{ ui.state_line(row.status) }}
+          {% if row.status.incident %}<br><span class="hint">{{ t("overview.incident_since") }}: {{ row.status.incident.started_at|local }}</span>{% endif %}</td>
+        <td>{{ row.uptime.get("30d")|percent }}</td>
+        <td>{{ row.products|join(", ") }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("overview.empty") }}</p>
+  {% endif %}
+  <p class="hint">{{ t("overview.method") }}</p>
+</section>
+{% endblock %}

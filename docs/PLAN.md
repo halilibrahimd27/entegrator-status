@@ -183,7 +183,7 @@ Notes
 
 ---
 
-## Phase 4 — Status engine
+## Phase 4 — Status engine ✅
 
 Goal: trustworthy state, incidents and uptime.
 
@@ -198,9 +198,16 @@ Tasks
       (Organizations declare windows for their own components, before they start;
       windows on shared components are platform-level and arrive with announcements
       in Phase 5, with an admin form in Phase 10.)
-- [ ] Rollups: minute buckets → hourly latency p50/p95 → daily uptime; uptime
+- [x] Rollups: minute buckets → hourly latency p50/p95 → daily uptime; uptime
       24 h / 7 d / 30 d / 90 d from consensus only.
-- [ ] Retention: raw observations 30 days, minute buckets 120 days, daily forever.
+- [x] Retention: raw observations 30 days, minute buckets 120 days, daily forever.
+
+Notes
+- Uptime windows are rolling and computed exactly from the timeline; daily rows feed
+  the 90-day bars. `degraded` and `unverified` count as up; maintenance and time
+  without data are left out of the ratio.
+- Org status page (`/o/{slug}/durum`) and `GET /api/v1/status` list every component
+  the products depend on (≤ 3 hops), worst first.
 
 Acceptance
 - Table-driven tests: 1 node failing → `unverified`; 2 nodes failing 3 rounds → `down`;

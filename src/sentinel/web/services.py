@@ -72,6 +72,7 @@ def build_services(settings: Settings) -> AppServices:
     )
     totp_box = TotpBox(settings.totp_encryption_key.get_secret_value())
     two_factor = TwoFactorService(db=db, passwords=passwords, throttle=throttle, totp_box=totp_box)
+    graph = GraphService(db)
     return AppServices(
         settings=settings,
         db=db,
@@ -84,12 +85,12 @@ def build_services(settings: Settings) -> AppServices:
         invitations=InvitationService(db=db, settings=settings, mailer=mailer, throttle=throttle),
         api_tokens=ApiTokenService(db, settings),
         catalog=CatalogService(db),
-        graph=GraphService(db),
+        graph=graph,
         imports=ImportService(db, redis),
         proposals=ProposalService(db),
         nodes=NodeService(db, settings),
         notices=NoticeService(db),
-        status=StatusViews(db),
+        status=StatusViews(db, graph),
         renderer=Renderer(),
     )
 

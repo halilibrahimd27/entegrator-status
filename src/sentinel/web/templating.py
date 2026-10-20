@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -25,6 +25,17 @@ def local_time(value: datetime | None) -> str:
     return value.astimezone(LOCAL_TZ).strftime("%d.%m.%Y %H:%M")
 
 
+def percent(value: float | None) -> str:
+    """Turkish style: the sign first, a decimal comma, two decimals (``%99,95``)."""
+    if value is None:
+        return "—"
+    return f"%{value * 100:.2f}".replace(".", ",")
+
+
+def local_date(value: date) -> str:
+    return value.strftime("%d.%m.%Y")
+
+
 def build_environment() -> Environment:
     env = Environment(
         loader=PackageLoader("sentinel.web", "templates"),
@@ -35,6 +46,8 @@ def build_environment() -> Environment:
     )
     env.globals["t"] = t
     env.filters["local"] = local_time
+    env.filters["percent"] = percent
+    env.filters["day"] = local_date
     # Templates hide controls with the same permission matrix the routes enforce.
     env.globals["can"] = lambda role, action: can(Role(role), Action(action))
     return env

@@ -23,6 +23,15 @@
   <p>{{ ui.state_line(st) }}</p>
   {% if st.state == "unverified" %}<p class="hint">{{ t("status.unverified_hint") }}</p>{% endif %}
   {% endif %}
+  {% set days = bars.get(component.id, []) %}
+  {% if days | rejectattr("worst", "equalto", "unknown") | list %}
+  {% set up = uptimes[component.id] %}
+  <p class="hint">{{ t("uptime.label") }}:
+    {% for key in ("24h", "7d", "30d", "90d") %}{{ t("uptime." ~ key) }} {{ up[key]|percent }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+  <ol class="bars" aria-label="{{ t('uptime.bars_label') }}">
+    {% for bar in days %}<li class="bar state-{{ bar.worst }}" title="{{ bar.day|day }}: {{ bar.uptime|percent }}"><span class="sr-only">{{ bar.day|day }}: {{ t("status." ~ bar.worst) }}, {{ bar.uptime|percent }}</span></li>{% endfor %}
+  </ol>
+  {% endif %}
   {% set sources = detail_view.sources[component.id] %}
   {% if sources %}
   <table>
@@ -32,7 +41,9 @@
         <td>{{ t("source_kinds." ~ source.kind) }}
           {% if source.org_id is none %}<span class="badge shared">{{ t("products.shared_badge") }}</span>{% endif %}</td>
         <td><code>{{ source.identity.split(":", 1)[1] }}</code></td>
-        <td>{{ t("service.interval") }}: {{ source.interval_s }}</td>
+        {% set lat = latency.get(source.id) %}
+        <td>{{ t("service.interval") }}: {{ source.interval_s }}
+          {% if lat %}<br><span class="hint">{{ t("uptime.latency") }}: p50 {{ lat.p50_ms }} ms · p95 {{ lat.p95_ms }} ms</span>{% endif %}</td>
         {% if editable and source.org_id is not none %}
         <td>
           <form method="post" action="{{ base }}/kaynaklar/{{ source.id }}/sil" class="inline">

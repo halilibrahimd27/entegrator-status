@@ -30,6 +30,25 @@ status:
   window_over: "Bitmiş bir bakım penceresi değiştirilemez."
   shared_component: "Ortak katalogdaki bileşenler için bakımı yalnızca platform yöneticileri bildirir."
 
+uptime:
+  label: "Erişilebilirlik"
+  24h: "24 saat"
+  7d: "7 gün"
+  30d: "30 gün"
+  90d: "90 gün"
+  bars_label: "Son 90 gün, günlük (UTC)"
+  latency: "Son saat gecikme"
+
+overview:
+  title: "Durum"
+  body: "Ürünlerinin üç dereceye kadar bağlı olduğu bileşenler; sorunlu olanlar üstte."
+  empty: "Henüz izlenen bir bağımlılık yok. Ürünlerine bağımlılık ekleyince burada görünür."
+  depth: "Derece"
+  degree: "{n}. derece"
+  used_by: "Kullanan ürünler"
+  incident_since: "Olay başlangıcı"
+  method: "Durumlar en az iki ölçüm noktasının uzlaşısıyla belirlenir; tek noktanın gördüğü sorunlar \"Doğrulanmadı\" olarak gösterilir. Erişilebilirlik oranına planlı bakım ve ölçüm olmayan süreler katılmaz."
+
 causes:
   dns: "DNS çözümlenemiyor"
   connect: "Bağlantı kurulamıyor"
@@ -228,6 +247,7 @@ org:
   nav_label: "Organizasyon menüsü"
   home: "Genel bakış"
   products: "Ürünler"
+  status: "Durum"
   catalog: "Katalog"
   members: "Üyeler"
   tokens: "API token'ları"

@@ -1,4 +1,4 @@
-"""The engine process: status consensus and retention until SIGTERM."""
+"""The engine process: status consensus, rollups and retention until SIGTERM."""
 
 from __future__ import annotations
 
@@ -12,12 +12,14 @@ from dataclasses import asdict
 from sentinel.config import load_settings_or_exit
 from sentinel.db.session import Database
 from sentinel.engine.retention import run_retention
+from sentinel.engine.rollups import run_rollups
 from sentinel.engine.status import StatusEngine
 from sentinel.runtime import configure_logging
 
 log = logging.getLogger("sentinel.engine")
 RETENTION_EVERY_S = 3600.0
 STATUS_EVERY_S = 30.0
+ROLLUPS_EVERY_S = 600.0
 
 Job = Callable[[], Awaitable[None]]
 
@@ -42,6 +44,7 @@ async def serve(
     *,
     retention_every_s: float = RETENTION_EVERY_S,
     status_every_s: float = STATUS_EVERY_S,
+    rollups_every_s: float = ROLLUPS_EVERY_S,
 ) -> None:
     engine = StatusEngine(db)
 
@@ -50,12 +53,17 @@ async def serve(
         level = logging.INFO if report.changes else logging.DEBUG
         log.log(level, "status: %s", asdict(report))
 
+    async def rollups() -> None:
+        report = await run_rollups(db)
+        log.debug("rollups: %s", asdict(report))
+
     async def retention() -> None:
         report = await run_retention(db)
         log.info("retention: %s", asdict(report))
 
     await asyncio.gather(
         run_periodically(status, status_every_s, stop),
+        run_periodically(rollups, rollups_every_s, stop),
         run_periodically(retention, retention_every_s, stop),
     )
 

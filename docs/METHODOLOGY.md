@@ -27,12 +27,19 @@ Only what an organisation adds to its dependency graph, plus the curated shared 
 
 ## Status rules
 
-- `down` only when **≥ 2 healthy probe nodes** see failures for **3 consecutive rounds**;
-  with one healthy node the state is `unverified`.
-- Recovery after **3 consecutive successes**.
-- `degraded`: p95 latency above the component threshold for ≥ 15 minutes.
-- Nodes that fail their own control targets are excluded from the round.
-- Uptime is computed from the consensus timeline; declared maintenance is excluded.
+- A round is one check interval. Each healthy node counts once per round, by its latest
+  result within 1.5 intervals (nodes spread their checks, so a round may miss one).
+- `down` only when **≥ 2 healthy probe nodes** see failures for **3 consecutive rounds**,
+  dated back to the first of them; with one healthy node the state is `unverified`.
+- Recovery after **3 consecutive successes**, dated back to the first of them.
+- `degraded`: p95 latency above the source's threshold for ≥ 15 minutes.
+- Nodes that fail their own control targets are excluded from the round, and so are
+  results that say nothing about the provider (our robots.txt or rate-limit decisions).
+- An outage that starts within 10 minutes of the previous one continues that incident.
+- Uptime is computed from the consensus timeline: up = operational + degraded +
+  unverified; declared maintenance and time without data are excluded. Maintenance
+  must be declared before it starts and only counts for the component's owner.
+- Days are UTC days; times are shown in Turkey time (Europe/Istanbul).
 
 ## Change and impact rules
 

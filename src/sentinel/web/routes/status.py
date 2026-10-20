@@ -43,6 +43,13 @@ def parse_local(value: str) -> datetime:
     return parsed.replace(tzinfo=LOCAL_TZ)
 
 
+@router.get("/o/{slug}/durum")
+async def overview(request: Request, ctx: InOrg) -> Response:
+    svc = services(request)
+    rows = await svc.status.overview(ctx.scope)
+    return svc.renderer.page(request, "org/status.html", ctx=ctx, section="status", rows=rows)
+
+
 def _not_found(request: Request) -> Response:
     return services(request).renderer.message(
         request, "errors.not_found_title", "errors.not_found_body", status=404

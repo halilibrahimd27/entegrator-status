@@ -152,6 +152,11 @@ async def service_page(
         proposals=proposals,
         source_kinds=list(SourceKind),
         statuses=await svc.status.current(ctx.scope, component_ids),
+        uptimes=await svc.status.uptime(ctx.scope, component_ids),
+        bars=await svc.status.bars(ctx.scope, component_ids),
+        latency=await svc.status.latency(
+            ctx.scope, [src.id for group in service.sources.values() for src in group]
+        ),
         now=utcnow(),
         windows=await svc.notices.component_windows(ctx.scope, component_ids),
     )

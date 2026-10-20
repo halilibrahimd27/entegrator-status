@@ -10,7 +10,7 @@ import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
 
-from org_support import create_org, create_product, create_service, join
+from org_support import create_org, create_product, create_service, join, new_token
 from sentinel.accounts.mail import Mail
 from sentinel.db.base import utcnow
 from sentinel.engine.notices import NoticeError
@@ -291,3 +291,56 @@ async def test_platform_windows_on_shared_components(services: AppServices) -> N
             starts_at=utcnow() + timedelta(hours=1),
             ends_at=utcnow() + timedelta(hours=2),
         )
+
+
+async def test_status_overview_page_and_api(
+    http: httpx2.AsyncClient, outbox: list[Mail], services: AppServices
+) -> None:
+    await with_examples(services)
+    await signed_in(http, outbox, ALICE)
+    slug = await create_org(http, "Alpha")
+    product = await create_product(http, slug, "Ödeme modülü")
+    base = f"/o/{slug}/urunler/{product}"
+    api = await shared_component(services, "ornek-odeme", "api")
+    await post_form(http, f"{base}/bagimlilik", {"to_component_id": api}, csrf_from=base)
+
+    empty = await create_org(http, "Beta")
+    assert "Henüz izlenen bir bağımlılık yok" in (await http.get(f"/o/{empty}/durum")).text
+
+    await set_state(services, api, "down", "tls")
+    page = await http.get(f"/o/{slug}/durum")
+    assert page.status_code == 200
+    assert 'aria-current="page"' in page.text
+    assert "state-down" in page.text
+    assert "TLS sertifika hatası" in page.text
+    assert "2. derece" in page.text  # the curated upstream of the vendor
+    assert "Ödeme modülü" in page.text
+    assert page.text.index("state-down") < page.text.index("state-unknown")  # worst first
+
+    token = await new_token(http, slug)
+    response = await http.get("/api/v1/status", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    components = response.json()["components"]
+    first = components[0]
+    assert (first["component_id"], first["state"], first["cause"]) == (api, "down", "tls")
+    assert first["depth"] == 1
+    assert first["products"] == ["Ödeme modülü"]
+    assert set(first["uptime"]) == {"24h", "7d", "30d", "90d"}
+    assert {c["depth"] for c in components} >= {1, 2}
+    assert (await http.get("/api/v1/status")).status_code == 401
+
+
+async def test_service_page_shows_uptime_and_bars(
+    http: httpx2.AsyncClient, outbox: list[Mail], services: AppServices
+) -> None:
+    await signed_in(http, outbox, ALICE)
+    slug = await create_org(http, "Alpha")
+    service = await create_service(http, slug)
+    component = await own_component(services, service)
+    page_url = f"/o/{slug}/servisler/{service}"
+    assert 'class="bars"' not in (await http.get(page_url)).text  # nothing measured yet
+    await set_state(services, component, "operational", None)
+    page = await http.get(page_url)
+    assert 'class="bars"' in page.text
+    assert "%100,00" in page.text
+    assert "Erişilebilirlik" in page.text
