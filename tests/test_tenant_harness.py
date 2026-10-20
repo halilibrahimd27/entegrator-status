@@ -13,17 +13,61 @@ import httpx2
 from fastapi import FastAPI
 from sqlalchemy import select
 
-from org_support import any_csrf, browser, create_org, join, new_token
+from org_support import (
+    any_csrf,
+    browser,
+    create_org,
+    create_product,
+    create_service,
+    join,
+    new_token,
+)
 from sentinel.accounts.mail import Mail
-from sentinel.models import ApiToken, Invitation, Membership, Organization
+from sentinel.models import (
+    ApiToken,
+    Component,
+    Dependency,
+    Invitation,
+    Membership,
+    Organization,
+    Product,
+    Service,
+    Source,
+)
 from sentinel.web.services import AppServices
-from support import api_routes, signed_in
+from support import api_routes, post_form, signed_in
 
-FORM = {"name": "Yeni Ad", "email": "x@example.invalid", "role": "viewer", "days": "30"}
-ID_PARAMS: dict[str, type[Membership] | type[Invitation] | type[ApiToken]] = {
+FORM = {
+    "name": "Yeni Ad",
+    "email": "x@example.invalid",
+    "role": "viewer",
+    "days": "30",
+    "kind": "http",
+    "url": "https://x.example.invalid/",
+    "token": "t" * 24,
+    "confirm": "x",
+    "password": "x",
+}
+UPLOAD = {"file": ("requirements.txt", b"httpx==0.28.1\n")}
+Model = (
+    type[Membership]
+    | type[Invitation]
+    | type[ApiToken]
+    | type[Product]
+    | type[Service]
+    | type[Component]
+    | type[Source]
+    | type[Dependency]
+)
+ID_PARAMS: dict[str, Model] = {
     "membership_id": Membership,
     "invitation_id": Invitation,
     "token_id": ApiToken,
+    "product_id": Product,
+    "service_id": Service,
+    "component_id": Component,
+    "source_id": Source,
+    "dependency_id": Dependency,
 }
 
 
@@ -53,7 +97,12 @@ def fill(path: str, slug: str, ids: dict[str, uuid.UUID]) -> str:
 
 
 async def build_tenant(
-    app: FastAPI, outbox: list[Mail], owner: httpx2.AsyncClient, email: str, name: str
+    app: FastAPI,
+    services: AppServices,
+    outbox: list[Mail],
+    owner: httpx2.AsyncClient,
+    email: str,
+    name: str,
 ) -> str:
     await signed_in(owner, outbox, email)
     slug = await create_org(owner, name)
@@ -61,6 +110,27 @@ async def build_tenant(
         pass
     await post_invite_only(owner, slug)
     await new_token(owner, slug)
+    product_id = await create_product(owner, slug)
+    service_id = await create_service(owner, slug)
+    async with services.db.system("test harness lookup") as s:
+        component_id = await s.scalar(
+            select(Component.id).where(Component.service_id == uuid.UUID(service_id))
+        )
+    base = f"/o/{slug}"
+    added = await post_form(
+        owner,
+        f"{base}/bilesenler/{component_id}/kaynak",
+        {"kind": "http", "url": f"https://{slug}.example.invalid/"},
+        csrf_from=f"{base}/servisler/{service_id}",
+    )
+    assert added.status_code == 303, added.text
+    linked = await post_form(
+        owner,
+        f"{base}/urunler/{product_id}/bagimlilik",
+        {"to_component_id": str(component_id)},
+        csrf_from=f"{base}/urunler/{product_id}",
+    )
+    assert linked.status_code == 303, linked.text
     return slug
 
 
@@ -74,11 +144,11 @@ async def test_every_org_route_hides_other_tenants(
     app: FastAPI, outbox: list[Mail], services: AppServices
 ) -> None:
     async with browser(app) as alice, browser(app) as bob:
-        a = await build_tenant(app, outbox, alice, "alice@example.invalid", "Alpha")
-        b = await build_tenant(app, outbox, bob, "bob@example.invalid", "Beta")
+        a = await build_tenant(app, services, outbox, alice, "alice@example.invalid", "Alpha")
+        b = await build_tenant(app, services, outbox, bob, "bob@example.invalid", "Beta")
         ids_b = await ids_of(services, b)
         routes = org_routes(app)
-        assert len(routes) >= 13  # the discovery itself works (5 GET + 8 POST in phase 1c)
+        assert len(routes) >= 30  # the discovery itself works (phase 2d: products, catalog)
 
         failures = []
         for method, template in routes:
@@ -89,9 +159,12 @@ async def test_every_org_route_hides_other_tenants(
                 if method == "GET":
                     response = await alice.get(url)
                 else:
-                    response = await alice.request(
-                        method, url, data={**FORM, "csrf": await any_csrf(alice)}
-                    )
+                    form = {
+                        **FORM,
+                        "to_component_id": str(ids_b["component_id"]),
+                        "csrf": await any_csrf(alice),
+                    }
+                    response = await alice.request(method, url, data=form, files=UPLOAD)
                 if response.status_code != 404:
                     failures.append(f"{method} {url} -> {response.status_code}")
         assert failures == []

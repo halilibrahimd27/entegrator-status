@@ -1,0 +1,31 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("products.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+<section class="card wide">
+  <h1>{{ t("products.title") }}</h1>
+  {% if rows %}
+  <table>
+    <thead><tr><th scope="col">{{ t("products.name") }}</th><th scope="col">{{ t("products.dependency_count") }}</th></tr></thead>
+    <tbody>
+    {% for product, count in rows %}
+      <tr><td><a href="/o/{{ ctx.org.slug }}/urunler/{{ product.id }}">{{ product.name }}</a></td><td>{{ count }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("products.empty") }}</p>
+  {% endif %}
+</section>
+
+{% if can(role, "graph.edit") %}
+<section class="card wide">
+  <h2>{{ t("products.create_title") }}</h2>
+  <form method="post" action="/o/{{ ctx.org.slug }}/urunler" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("name", "products.name", maxlength=120) }}
+    {{ ui.field("description", "products.description", required=false, maxlength=2000) }}
+    <button type="submit">{{ t("products.create_submit") }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

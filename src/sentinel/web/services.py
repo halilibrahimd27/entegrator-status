@@ -15,8 +15,12 @@ from sentinel.accounts.sessions import SessionManager
 from sentinel.accounts.throttle import Throttle
 from sentinel.accounts.totp import TotpBox
 from sentinel.accounts.two_factor import TwoFactorService
+from sentinel.catalog.imports import ImportService
+from sentinel.catalog.proposals import ProposalService
+from sentinel.catalog.service import CatalogService
 from sentinel.config import Settings
 from sentinel.db.session import Database
+from sentinel.graph.service import GraphService
 from sentinel.tenancy.api_tokens import ApiTokenService
 from sentinel.tenancy.invitations import InvitationService
 from sentinel.tenancy.orgs import OrgService
@@ -35,6 +39,10 @@ class AppServices:
     orgs: OrgService
     invitations: InvitationService
     api_tokens: ApiTokenService
+    catalog: CatalogService
+    graph: GraphService
+    imports: ImportService
+    proposals: ProposalService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -69,6 +77,10 @@ def build_services(settings: Settings) -> AppServices:
         orgs=OrgService(db),
         invitations=InvitationService(db=db, settings=settings, mailer=mailer, throttle=throttle),
         api_tokens=ApiTokenService(db, settings),
+        catalog=CatalogService(db),
+        graph=GraphService(db),
+        imports=ImportService(db, redis),
+        proposals=ProposalService(db),
         renderer=Renderer(),
     )
 

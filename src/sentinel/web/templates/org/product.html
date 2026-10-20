@@ -1,0 +1,112 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ product.name }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% set base = "/o/" ~ ctx.org.slug %}
+{% set editable = can(role, "graph.edit") %}
+<section class="card wide">
+  <h1>{{ product.name }}</h1>
+  {% if product.description %}<p>{{ product.description }}</p>{% endif %}
+  {% if detail is defined and detail %}<p class="detail">{{ detail }}</p>{% endif %}
+  <h2>{{ t("products.graph_heading") }}</h2>
+  <div class="graph-wrap">{{ svg }}</div>
+</section>
+
+<section class="card wide">
+  <h2>{{ t("products.dependencies_title") }}</h2>
+  {% if dependencies %}
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("products.service") }}</th>
+      <th scope="col">{{ t("products.component") }}</th>
+      <th scope="col">{{ t("products.version") }}</th>
+      {% if editable %}<th scope="col"><span class="sr-only">{{ t("products.remove") }}</span></th>{% endif %}
+    </tr></thead>
+    <tbody>
+    {% for dep, component, service in dependencies %}
+      <tr>
+        <td><a href="{{ base }}/servisler/{{ service.id }}">{{ service.name }}</a>
+          {% if service.org_id is none %}<span class="badge shared">{{ t("products.shared_badge") }}</span>{% endif %}</td>
+        <td>{{ component.name }}</td>
+        <td>{{ dep.usage.get("version", "—") }}</td>
+        {% if editable %}
+        <td>
+          <form method="post" action="{{ base }}/bagimliliklar/{{ dep.id }}/sil" class="inline">
+            {{ ui.csrf_field() }}
+            <button type="submit" class="secondary">{{ t("products.remove") }}</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("products.dependencies_empty") }}</p>
+  {% endif %}
+</section>
+
+{% if editable %}
+<section class="card wide">
+  <h2>{{ t("products.add_title") }}</h2>
+  <form method="get" action="{{ base }}/urunler/{{ product.id }}" role="search">
+    <div class="field">
+      <label for="f-q">{{ t("products.search") }}</label>
+      <input id="f-q" name="q" type="search" value="{{ query }}" maxlength="80">
+    </div>
+    <button type="submit" class="secondary">{{ t("products.search_submit") }}</button>
+  </form>
+  {% if query %}
+    {% if results %}
+    <table>
+      <tbody>
+      {% for r in results %}
+        <tr>
+          <td>{{ r.service }} — {{ r.name }}
+            <span class="badge{% if r.shared %} shared{% endif %}">{{ t("products.shared_badge") if r.shared else t("products.own_badge") }}</span></td>
+          <td>
+            <form method="post" action="{{ base }}/urunler/{{ product.id }}/bagimlilik" novalidate>
+              {{ ui.csrf_field() }}
+              <input type="hidden" name="to_component_id" value="{{ r.id }}">
+              <label class="sr-only" for="v-{{ r.id }}">{{ t("products.version") }}</label>
+              <input id="v-{{ r.id }}" name="version" type="text" maxlength="100" placeholder="{{ t('products.version') }}">
+              <button type="submit">{{ t("products.add") }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>{{ t("products.no_results") }}</p>
+    {% endif %}
+  {% endif %}
+</section>
+
+<section class="card wide">
+  <h2>{{ t("products.import_title") }}</h2>
+  <p>{{ t("products.import_body").format(mb=max_upload_mb) }}</p>
+  <form method="post" action="{{ base }}/urunler/{{ product.id }}/ice-aktar" enctype="multipart/form-data">
+    {{ ui.csrf_field() }}
+    <div class="field">
+      <label for="f-file">{{ t("products.import_file") }}</label>
+      <input id="f-file" name="file" type="file" required>
+    </div>
+    <button type="submit">{{ t("products.import_submit") }}</button>
+  </form>
+</section>
+
+<section class="card wide">
+  <h2>{{ t("products.edit_title") }}</h2>
+  <form method="post" action="{{ base }}/urunler/{{ product.id }}/ayarlar" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("name", "products.name", value=product.name, maxlength=120) }}
+    {{ ui.field("description", "products.description", value=product.description or "", required=false, maxlength=2000) }}
+    <button type="submit">{{ t("products.save") }}</button>
+  </form>
+  <form method="post" action="{{ base }}/urunler/{{ product.id }}/sil">
+    {{ ui.csrf_field() }}
+    <button type="submit" class="secondary">{{ t("products.delete") }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

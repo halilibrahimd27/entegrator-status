@@ -262,10 +262,13 @@ async def test_preview_is_bound_to_org_and_product(
 ) -> None:
     imports = ImportService(db, redis_client)
     preview = await imports.preview(setup.a, setup.product, "requirements.txt", b"httpx==0.28.1\n")
-    with pytest.raises(ImportFormatError, match=r"imports\.expired"):
+    with pytest.raises(ImportFormatError, match="not_found"):  # A's product, seen from B
         await imports.confirm(setup.b, setup.product, preview.token, ip="")
-    with pytest.raises(ImportFormatError, match=r"imports\.expired"):
+    # An unknown product answers "not found" before the token is spent...
+    with pytest.raises(ImportFormatError, match="not_found"):
         await imports.confirm(setup.a, uuid.uuid4(), preview.token, ip="")
+    # ...so the preview still works for its own product.
+    assert (await imports.confirm(setup.a, setup.product, preview.token, ip="")).linked == 1
 
 
 async def test_foreign_product_and_viewers(db: Database, redis_client: Redis, setup: Setup) -> None:

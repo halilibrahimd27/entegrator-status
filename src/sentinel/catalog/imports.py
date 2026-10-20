@@ -112,8 +112,12 @@ class ImportService:
         self, scope: TenantScope, product_id: uuid.UUID, token: str, ip: str
     ) -> ImportResult:
         scope.require(Action.GRAPH_EDIT)
-        key = self._key(scope, token)
-        raw = await self._redis.getdel(key)
+        # The product is checked before the token is spent: a foreign or unknown product
+        # answers "not found" and leaves the preview usable.
+        async with self._db.tenant(scope) as s:
+            if await s.get(Product, product_id) is None:
+                raise ImportFormatError("not_found")
+        raw = await self._redis.getdel(self._key(scope, token))
         if raw is None:
             raise ImportFormatError("imports.expired")
         payload = json.loads(raw)

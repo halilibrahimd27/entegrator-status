@@ -1,0 +1,71 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("catalog.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% set base = "/o/" ~ ctx.org.slug %}
+{% macro service_table(rows) %}
+  {% if rows %}
+  <table>
+    <thead><tr><th scope="col">{{ t("catalog.name") }}</th><th scope="col">{{ t("catalog.kind") }}</th><th scope="col">{{ t("catalog.components") }}</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr><td><a href="{{ base }}/servisler/{{ r.id }}">{{ r.name }}</a></td><td>{{ t("service_kinds." ~ r.kind) }}</td><td>{{ r.components }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("catalog.empty") }}</p>
+  {% endif %}
+{% endmacro %}
+<section class="card wide">
+  <h1>{{ t("catalog.title") }}</h1>
+  <p>{{ t("catalog.body") }}</p>
+  {% if detail is defined and detail %}<p class="detail">{{ detail }}</p>{% endif %}
+  <form method="get" action="{{ base }}/katalog" role="search">
+    <div class="field">
+      <label for="f-q">{{ t("catalog.search") }}</label>
+      <input id="f-q" name="q" type="search" value="{{ query }}" maxlength="80">
+    </div>
+    <button type="submit" class="secondary">{{ t("catalog.search") }}</button>
+  </form>
+  <h2>{{ t("catalog.shared_title") }}</h2>
+  {{ service_table(shared) }}
+  <h2>{{ t("catalog.own_title") }}</h2>
+  {{ service_table(own) }}
+</section>
+
+{% if can(role, "graph.edit") %}
+<section class="card wide">
+  <h2>{{ t("catalog.create_title") }}</h2>
+  <form method="post" action="{{ base }}/servisler" novalidate>
+    {{ ui.csrf_field() }}
+    <div class="grid-2">
+      {{ ui.field("name", "catalog.name", maxlength=120) }}
+      <div class="field">
+        <label for="f-kind">{{ t("catalog.kind") }}</label>
+        <select id="f-kind" name="kind">
+          {% for k in kinds %}<option value="{{ k.value }}">{{ t("service_kinds." ~ k.value) }}</option>{% endfor %}
+        </select>
+      </div>
+      {{ ui.field("homepage", "catalog.homepage", type="url", required=false, maxlength=500) }}
+      {{ ui.field("component", "catalog.component", required=false, maxlength=120) }}
+      {{ ui.field("tags", "catalog.tags", required=false, maxlength=200) }}
+    </div>
+    {{ ui.field("description", "catalog.description", required=false, maxlength=2000) }}
+    <button type="submit">{{ t("catalog.create_submit") }}</button>
+  </form>
+</section>
+
+<section class="card wide">
+  <h2>{{ t("catalog.openapi_title") }}</h2>
+  <p>{{ t("catalog.openapi_body") }}</p>
+  <form method="post" action="{{ base }}/servisler/openapi" novalidate>
+    {{ ui.csrf_field() }}
+    <div class="grid-2">
+      {{ ui.field("name", "catalog.name", maxlength=120) }}
+      {{ ui.field("url", "catalog.openapi_url", type="url", maxlength=2000) }}
+    </div>
+    <button type="submit">{{ t("catalog.openapi_submit") }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

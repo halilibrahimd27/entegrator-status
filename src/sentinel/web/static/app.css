@@ -101,3 +101,20 @@ th, td { text-align: left; padding: .5rem .5rem .5rem 0; border-bottom: 1px soli
 .row-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 select { font: inherit; padding: .4rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.badge { display: inline-block; font-size: .8rem; padding: .05rem .45rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.badge.shared { border-color: var(--accent); color: var(--accent); }
+.graph-wrap { overflow-x: auto; }
+svg.graph .node rect { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; }
+svg.graph .node.product rect { fill: var(--accent); stroke: var(--accent); }
+svg.graph .node.product .label { fill: var(--accent-text); font-weight: 700; }
+svg.graph .node.shared rect { stroke: var(--accent); }
+svg.graph text { fill: var(--text); font-size: 13px; font-family: system-ui, sans-serif; }
+svg.graph .service { font-weight: 600; }
+svg.graph .component { fill: var(--muted); }
+svg.graph .edge { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+svg.graph .edge.shared { stroke: var(--accent); stroke-dasharray: 5 4; }
+svg.graph .arrow { fill: var(--muted); }
+textarea { width: 100%; font: inherit; padding: .6rem .7rem; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+.field select { width: 100%; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0 1rem; }
+.detail { color: var(--muted); font-size: .9rem; }

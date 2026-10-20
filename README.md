@@ -27,8 +27,12 @@ Phases 0–1 of the [build plan](docs/PLAN.md) are done:
 - organizations, roles, invitations and read-only API tokens, isolated per tenant by
   the ORM session itself ([ADR 0005](docs/adr/0005-tenant-isolation.md))
 - KVKK: data export, account deletion, closing organizations, retention jobs
+- the dependency graph: products, a curated shared catalog (YAML packs, see
+  [docs/CATALOG.md](docs/CATALOG.md)) plus private services, components and sources;
+  third-degree view as server-rendered SVG; imports from SBOMs, lockfiles and compose
+  files; proposals to the shared catalog with a platform-admin review queue
 
-Next: the shared catalog and dependency graph (Phase 2).
+Next: the prober and availability checks (Phase 3).
 
 ## Quick start
 

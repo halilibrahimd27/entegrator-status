@@ -1,0 +1,35 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("imports.preview_title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% set base = "/o/" ~ ctx.org.slug %}
+<section class="card wide">
+  <h1>{{ t("imports.preview_title") }}</h1>
+  <p>{{ t("imports.preview_body") }}</p>
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("imports.package") }}</th>
+      <th scope="col">{{ t("imports.type") }}</th>
+      <th scope="col">{{ t("imports.version") }}</th>
+      <th scope="col">{{ t("imports.match") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for item in preview.items %}
+      <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.type }}</td>
+        <td>{{ item.version or "—" }}</td>
+        <td>{{ t("imports.match_" ~ item.match) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="actions">
+    <form method="post" action="{{ base }}/urunler/{{ product_id }}/ice-aktar/onayla" class="inline">
+      {{ ui.csrf_field() }}
+      <input type="hidden" name="token" value="{{ preview.token }}">
+      <button type="submit">{{ t("imports.confirm") }}</button>
+    </form>
+    <a href="{{ base }}/urunler/{{ product_id }}">{{ t("imports.cancel") }}</a>
+  </div>
+</section>
+{% endblock %}

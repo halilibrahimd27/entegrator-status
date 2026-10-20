@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ t("admin.catalog_title") }}{% endblock %}
+{% block content %}
+<section class="card wide">
+  <h1>{{ t("admin.catalog_title") }}</h1>
+  {% if pending %}
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("admin.service") }}</th>
+      <th scope="col">{{ t("admin.organization") }}</th>
+      <th scope="col">{{ t("admin.note") }}</th>
+      <th scope="col"><span class="sr-only">{{ t("admin.accept") }}</span></th>
+    </tr></thead>
+    <tbody>
+    {% for p in pending %}
+      <tr>
+        <td>{{ p.service }}</td>
+        <td>{{ p.organization }}</td>
+        <td>{{ p.note or "—" }}</td>
+        <td>
+          <form method="post" action="/yonetim/katalog/{{ p.id }}/kabul" class="inline">
+            {{ ui.csrf_field() }}
+            <label class="sr-only" for="n-{{ p.id }}">{{ t("admin.review_note") }}</label>
+            <input id="n-{{ p.id }}" name="note" type="text" maxlength="2000" placeholder="{{ t('admin.review_note') }}">
+            <button type="submit">{{ t("admin.accept") }}</button>
+          </form>
+          <form method="post" action="/yonetim/katalog/{{ p.id }}/ret" class="inline">
+            {{ ui.csrf_field() }}
+            <button type="submit" class="secondary">{{ t("admin.reject") }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("admin.empty") }}</p>
+  {% endif %}
+</section>
+{% endblock %}

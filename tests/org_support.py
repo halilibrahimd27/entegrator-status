@@ -71,3 +71,21 @@ async def new_token(client: httpx2.AsyncClient, slug: str, name: str = "ci") -> 
 
 async def any_csrf(client: httpx2.AsyncClient) -> str:
     return await csrf(client, "/orglar")
+
+
+async def create_product(client: httpx2.AsyncClient, slug: str, name: str = "Ürün") -> str:
+    response = await post_form(
+        client, f"/o/{slug}/urunler", {"name": name}, csrf_from=f"/o/{slug}/urunler"
+    )
+    assert response.status_code == 303, response.text
+    return response.headers["location"].rsplit("/", 1)[-1]
+
+
+async def create_service(
+    client: httpx2.AsyncClient, slug: str, name: str = "İç servis", kind: str = "internal"
+) -> str:
+    response = await post_form(
+        client, f"/o/{slug}/servisler", {"name": name, "kind": kind}, csrf_from=f"/o/{slug}/katalog"
+    )
+    assert response.status_code == 303, response.text
+    return response.headers["location"].rsplit("/", 1)[-1]

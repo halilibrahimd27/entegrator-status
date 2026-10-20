@@ -103,34 +103,34 @@ Acceptance
 
 ---
 
-## Phase 2 — Catalog and dependency graph
+## Phase 2 — Catalog and dependency graph ✅
 
 Goal: an org describes what it depends on in minutes; the shared catalog fills in the
 upstream.
 
 Tasks
-- [ ] Models + migration: Product, Service (`visibility: shared | private`, `kind`),
+- [x] Models + migration: Product, Service (`visibility: shared | private`, `kind`),
       Component, Source (`kind`, per-adapter config validated by JSON Schema, `interval_s`,
       `timeout_s`, flags `allow_http`, `availability_ignores_robots`), Dependency
       (Product|Component → Component, optional `usage`: pinned version, operations used).
-- [ ] Shared catalog as YAML packs `catalog/packs/*.yaml` (+ JSON Schema) and CLI:
+- [x] Shared catalog as YAML packs `catalog/packs/*.yaml` (+ JSON Schema) and CLI:
       `sentinel catalog validate`, `sentinel catalog import` (idempotent upsert, dry-run
       by default, prints a diff, audit-logged). Every URL validated through the SSRF guard
       at import time, every URL records its `source:`.
-- [ ] Ship **only example entries** using `*.example.invalid` hosts, plus a `tr-efatura`
+- [x] Ship **only example entries** using `*.example.invalid` hosts, plus a `tr-efatura`
       pack skeleton: GİB as authority with components and **no URLs filled in**, and the
       edge template "integrator `efatura_service` → GİB central e-Fatura". Do not invent
       real endpoints. `docs/CATALOG.md` documents the human curation workflow (official
       lists opened by hand in a browser, never scraped; public endpoints only; source of
       every URL recorded; integrator-only services modelled as components without sources).
-- [ ] Graph rules: cycles rejected on write, impact depth ≤ 3, shared edges editable only
+- [x] Graph rules: cycles rejected on write, impact depth ≤ 3, shared edges editable only
       by platform admins; orgs add their own edges from their products and private services.
-- [ ] Imports that fill a graph fast (preview → confirm): CycloneDX JSON and SPDX JSON
+- [x] Imports that fill a graph fast (preview → confirm): CycloneDX JSON and SPDX JSON
       SBOMs, `package-lock.json`, `requirements.txt` / `poetry.lock`, container images from
       a `compose.yml`, an OpenAPI spec URL (→ API component + contract source). Imported
       packages map to catalog entries by purl.
-- [ ] Propose a private service for the shared catalog; review queue for platform admins.
-- [ ] Panel pages: products, services, add from catalog, dependency view (server-rendered
+- [x] Propose a private service for the shared catalog; review queue for platform admins.
+- [x] Panel pages: products, services, add from catalog, dependency view (server-rendered
       SVG, depth ≤ 3).
 
 Acceptance

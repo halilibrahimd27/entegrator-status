@@ -1,0 +1,127 @@
+{% extends "org/_layout.html" %}
+{% set svc = detail_view.service %}
+{% block title %}{{ svc.name }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% set base = "/o/" ~ ctx.org.slug %}
+{% set editable = can(role, "graph.edit") %}
+{% set own = svc.org_id is not none %}
+<section class="card wide">
+  <h1>{{ svc.name }}
+    <span class="badge{% if not own %} shared{% endif %}">{{ t("products.own_badge") if own else t("products.shared_badge") }}</span></h1>
+  <p>{{ t("service_kinds." ~ svc.kind) }}{% if svc.homepage %} · {{ svc.homepage }}{% endif %}</p>
+  {% if svc.description %}<p>{{ svc.description }}</p>{% endif %}
+  {% if not own %}<p class="notice" role="note">{{ t("service.shared_notice") }}</p>{% endif %}
+  {% if detail is defined and detail %}<p class="detail">{{ detail }}</p>{% endif %}
+</section>
+
+{% for component in detail_view.components %}
+<section class="card wide">
+  <h2>{{ component.name }}{% for tag in component.tags %} <span class="badge">{{ tag }}</span>{% endfor %}</h2>
+  {% set sources = detail_view.sources[component.id] %}
+  {% if sources %}
+  <table>
+    <tbody>
+    {% for source in sources %}
+      <tr>
+        <td>{{ t("source_kinds." ~ source.kind) }}
+          {% if source.org_id is none %}<span class="badge shared">{{ t("products.shared_badge") }}</span>{% endif %}</td>
+        <td><code>{{ source.identity.split(":", 1)[1] }}</code></td>
+        <td>{{ t("service.interval") }}: {{ source.interval_s }}</td>
+        {% if editable and source.org_id is not none %}
+        <td>
+          <form method="post" action="{{ base }}/kaynaklar/{{ source.id }}/sil" class="inline">
+            {{ ui.csrf_field() }}
+            <button type="submit" class="secondary">{{ t("service.delete") }}</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("service.sources_empty") }}</p>
+  {% endif %}
+
+  {% set upstream = detail_view.upstream[component.id] %}
+  {% if upstream %}
+  <h3>{{ t("service.upstream_title") }}</h3>
+  <ul class="links">
+    {% for dep, target, target_service in upstream %}
+    <li><a href="{{ base }}/servisler/{{ target_service.id }}">{{ target_service.name }} — {{ target.name }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if editable %}
+  <details>
+    <summary>{{ t("service.add_source_title") }}</summary>
+    <form method="post" action="{{ base }}/bilesenler/{{ component.id }}/kaynak" novalidate>
+      {{ ui.csrf_field() }}
+      <p class="hint">{{ t("service.source_hint") }}</p>
+      <div class="grid-2">
+        <div class="field">
+          <label for="k-{{ component.id }}">{{ t("service.source_kind") }}</label>
+          <select id="k-{{ component.id }}" name="kind">
+            {% for k in source_kinds %}<option value="{{ k.value }}">{{ t("source_kinds." ~ k.value) }}</option>{% endfor %}
+          </select>
+        </div>
+        {% for name, key in (("url", "service.source_url"), ("host", "service.source_host"), ("domain", "service.source_domain"), ("name", "service.source_name"), ("ecosystem", "service.source_ecosystem"), ("provider", "service.source_provider"), ("format", "service.source_format"), ("product", "service.source_product")) %}
+        <div class="field">
+          <label for="{{ name }}-{{ component.id }}">{{ t(key) }}</label>
+          <input id="{{ name }}-{{ component.id }}" name="{{ name }}" type="text" maxlength="2000">
+        </div>
+        {% endfor %}
+        <div class="field">
+          <label for="i-{{ component.id }}">{{ t("service.interval") }}</label>
+          <input id="i-{{ component.id }}" name="interval_s" type="number" inputmode="numeric" min="60">
+        </div>
+      </div>
+      <div class="field checkbox">
+        <input id="h-{{ component.id }}" name="allow_http" type="checkbox" value="true">
+        <label for="h-{{ component.id }}">{{ t("service.allow_http") }}</label>
+      </div>
+      <button type="submit">{{ t("service.add_source_submit") }}</button>
+    </form>
+  </details>
+  {% if own %}
+  <form method="post" action="{{ base }}/bilesenler/{{ component.id }}/sil">
+    {{ ui.csrf_field() }}
+    <button type="submit" class="secondary">{{ t("service.delete") }}</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</section>
+{% endfor %}
+
+{% if editable and own %}
+<section class="card wide">
+  <h2>{{ t("service.add_component_title") }}</h2>
+  <form method="post" action="{{ base }}/servisler/{{ svc.id }}/bilesen" novalidate>
+    {{ ui.csrf_field() }}
+    <div class="grid-2">
+      {{ ui.field("name", "catalog.name", maxlength=120) }}
+      {{ ui.field("tags", "catalog.tags", required=false, maxlength=200) }}
+    </div>
+    <button type="submit">{{ t("service.add_component_submit") }}</button>
+  </form>
+</section>
+
+<section class="card wide">
+  <h2>{{ t("service.propose_title") }}</h2>
+  <p>{{ t("service.propose_body") }}</p>
+  {% for p in proposals %}
+  <p>{{ t("service.proposal_status") }}: <strong>{{ t("proposal_status." ~ p.status) }}</strong>{% if p.review_note %} — {{ p.review_note }}{% endif %}</p>
+  {% endfor %}
+  <form method="post" action="{{ base }}/servisler/{{ svc.id }}/oner" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("note", "service.propose_note", required=false, maxlength=2000) }}
+    <button type="submit" class="secondary">{{ t("service.propose_submit") }}</button>
+  </form>
+  <form method="post" action="{{ base }}/servisler/{{ svc.id }}/sil">
+    {{ ui.csrf_field() }}
+    <button type="submit" class="secondary">{{ t("service.delete") }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

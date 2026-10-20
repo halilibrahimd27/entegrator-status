@@ -15,7 +15,19 @@ from sentinel import __version__
 from sentinel.config import Settings, load_settings
 from sentinel.tenancy.scope import PermissionDeniedError
 from sentinel.web.headers import SecurityHeaders
-from sentinel.web.routes import account, api, auth, invites, members, orgs, pages
+from sentinel.web.limits import BodySizeLimit
+from sentinel.web.routes import (
+    account,
+    admin,
+    api,
+    auth,
+    catalog,
+    invites,
+    members,
+    orgs,
+    pages,
+    products,
+)
 from sentinel.web.services import build_services, services
 from sentinel.web.session_auth import (
     AdminTotpRequiredError,
@@ -47,6 +59,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = settings
+    app.add_middleware(BodySizeLimit)
     app.add_middleware(SecurityHeaders, hsts=settings.cookies_secure)
     app.mount("/static", StaticFiles(packages=[("sentinel.web", "static")]), name="static")
     for router in (
@@ -56,6 +69,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         orgs.router,
         members.router,
         invites.router,
+        products.router,
+        catalog.router,
+        admin.router,
         api.router,
     ):
         app.include_router(router)

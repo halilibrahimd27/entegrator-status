@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated
 
@@ -112,14 +113,23 @@ def csrf_token(request: Request) -> str:
 
 async def csrf_protect(
     request: Request, viewer: Annotated[Viewer | None, Depends(optional_viewer)]
-) -> None:
-    """Router-level dependency: every unsafe HTML request must carry the form token."""
+) -> AsyncIterator[None]:
+    """Router-level dependency: every unsafe HTML request must carry the form token.
+
+    The parsed form is closed afterwards: a multipart body sent to any route spools its
+    file parts to temporary files, which must not wait for garbage collection.
+    """
     if request.method in SAFE_METHODS:
+        yield
         return
     form = await request.form()
-    sent = form.get("csrf")
-    if not isinstance(sent, str) or not hmac.compare_digest(sent, csrf_token(request)):
-        raise CsrfError
+    try:
+        sent = form.get("csrf")
+        if not isinstance(sent, str) or not hmac.compare_digest(sent, csrf_token(request)):
+            raise CsrfError
+        yield
+    finally:
+        await form.close()
 
 
 def _set_cookie(request: Request, response: Response, name: str, value: str, max_age: int) -> None:
