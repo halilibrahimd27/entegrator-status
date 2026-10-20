@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy import delete, func, select, update
 
 from sentinel.db.session import Database
-from sentinel.models import AuditEvent, Membership, Organization, User
+from sentinel.models import AuditEvent, Membership, Organization, Service, User
 from sentinel.tenancy.guard import TenantScopeMissingError, TenantViolationError
 from sentinel.tenancy.roles import Role
 from sentinel.tenancy.scope import TenantScope
@@ -197,3 +197,70 @@ async def test_system_sessions_need_a_reason(db: Database) -> None:
     with pytest.raises(ValueError, match="reason"):
         async with db.system(""):
             pass
+
+
+# --- shared catalog rows (SharedOrTenantMixin) -------------------------------------
+
+
+@pytest.fixture
+async def catalog(
+    db: Database, two_orgs: tuple[uuid.UUID, uuid.UUID]
+) -> tuple[uuid.UUID, uuid.UUID]:
+    a, b = two_orgs
+    async with db.system("test fixture") as s:
+        s.add(Service(org_id=None, slug="shared", name="Shared", kind="saas_api", tags=[]))
+        s.add(Service(org_id=a, slug="private-a", name="Private A", kind="internal", tags=[]))
+        s.add(Service(org_id=b, slug="private-b", name="Private B", kind="internal", tags=[]))
+    return a, b
+
+
+async def test_tenants_read_shared_rows_and_their_own(
+    db: Database, catalog: tuple[uuid.UUID, uuid.UUID]
+) -> None:
+    a, b = catalog
+    async with db.tenant(scope_for(a)) as s:
+        assert sorted((await s.scalars(select(Service.slug))).all()) == ["private-a", "shared"]
+    async with db.tenant(scope_for(b)) as s:
+        assert sorted((await s.scalars(select(Service.slug))).all()) == ["private-b", "shared"]
+
+
+async def test_tenants_cannot_create_or_change_shared_rows(
+    db: Database, catalog: tuple[uuid.UUID, uuid.UUID]
+) -> None:
+    a, _ = catalog
+    with pytest.raises(TenantViolationError):
+        async with db.tenant(scope_for(a)) as s:
+            s.add(Service(org_id=None, slug="sneaky", name="Sneaky", kind="other", tags=[]))
+
+    async def rename_shared() -> None:
+        async with db.tenant(scope_for(a)) as s:
+            shared = (await s.scalars(select(Service).where(Service.slug == "shared"))).one()
+            shared.name = "Hijacked"
+
+    with pytest.raises(TenantViolationError):
+        await rename_shared()
+
+
+async def test_bulk_writes_never_touch_shared_rows(
+    db: Database, catalog: tuple[uuid.UUID, uuid.UUID]
+) -> None:
+    a, _ = catalog
+    async with db.tenant(scope_for(a)) as s:
+        await s.execute(update(Service).values(name="Renamed"))
+    async with db.tenant(scope_for(a)) as s:
+        await s.execute(delete(Service))
+    async with db.system("test check") as s:
+        rows = (await s.execute(select(Service.slug, Service.name))).all()
+        remaining = {row.slug: row.name for row in rows}
+    assert remaining == {"shared": "Shared", "private-b": "Private B"}
+
+
+async def test_unscoped_sessions_cannot_touch_shared_rows(
+    db: Database, catalog: tuple[uuid.UUID, uuid.UUID]
+) -> None:
+    async with db.session() as s:
+        with pytest.raises(TenantScopeMissingError):
+            await s.execute(select(Service))
+    with pytest.raises(TenantScopeMissingError):
+        async with db.session() as s:
+            s.add(Service(org_id=None, slug="unscoped", name="Unscoped", kind="other", tags=[]))

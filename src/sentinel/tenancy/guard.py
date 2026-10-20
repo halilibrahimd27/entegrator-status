@@ -3,7 +3,8 @@
 Two layers, both on the ORM session:
 
 1. ``do_orm_execute`` adds ``org_id = :scope`` criteria to every SELECT, UPDATE and
-   DELETE that touches a tenant-owned model, and raises when there is no scope.
+   DELETE that touches a tenant-owned model (``org_id = :scope OR org_id IS NULL`` for
+   shared catalog models), and raises when there is no scope.
 2. ``before_flush`` checks that every new, changed or deleted tenant-owned object
    belongs to the scope's organization.
 
@@ -15,10 +16,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import event, false
+from sqlalchemy import event, false, or_
 from sqlalchemy.orm import ORMExecuteState, Session, UOWTransaction, with_loader_criteria
 
-from sentinel.db.base import OptionalTenantMixin, TenantOwned
+from sentinel.db.base import OptionalTenantMixin, SharedOrTenantMixin, StrictTenant, TenantOwned
 from sentinel.tenancy.scope import TenantScope
 
 SCOPE_KEY = "tenant_scope"
@@ -66,8 +67,21 @@ def _scope_statements(state: ORMExecuteState) -> None:
     # Always applied (not only when the selected entity is tenant-owned): the criteria
     # also reach tenant tables that appear only in joins and subqueries.
     org_id = scope.org_id
+    if not state.is_select:
+        # Bulk UPDATE / DELETE: own rows only, shared catalog rows included in the ban.
+        state.statement = state.statement.options(
+            with_loader_criteria(
+                TenantOwned, lambda cls: cls.org_id == org_id, include_aliases=True
+            )
+        )
+        return
     state.statement = state.statement.options(
-        with_loader_criteria(TenantOwned, lambda cls: cls.org_id == org_id, include_aliases=True)
+        with_loader_criteria(StrictTenant, lambda cls: cls.org_id == org_id, include_aliases=True),
+        with_loader_criteria(
+            SharedOrTenantMixin,
+            lambda cls: or_(cls.org_id == org_id, cls.org_id.is_(None)),
+            include_aliases=True,
+        ),
     )
 
 
@@ -84,5 +98,6 @@ def _check_writes(session: Session, flush_context: UOWTransaction, instances: An
             if isinstance(obj, OptionalTenantMixin) and obj.org_id is None:
                 continue  # platform-level row (e.g. a sign-in audit event): no tenant to leak
             raise TenantScopeMissingError(f"write to {name} without a tenant scope")
+        # Shared catalog rows (org_id NULL) are never written from a tenant session either.
         if obj.org_id != scope.org_id:  # type: ignore[attr-defined]
             raise TenantViolationError(f"write to {name} outside the scope's organization")

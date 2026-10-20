@@ -49,16 +49,32 @@ class TenantOwned:
         org_id = Column("org_id", Uuid)
 
 
-class TenantMixin(TenantOwned):
+class StrictTenant(TenantOwned):
+    """Marker: scoped sessions see only their own organization's rows."""
+
+
+class TenantMixin(StrictTenant):
     org_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("organizations.id", ondelete="CASCADE"), index=True
     )
 
 
-class OptionalTenantMixin(TenantOwned):
+class OptionalTenantMixin(StrictTenant):
     """Tenant-owned when ``org_id`` is set; platform-level rows have ``org_id = NULL``.
 
     Scoped sessions never see the platform-level rows.
+    """
+
+    org_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+
+
+class SharedOrTenantMixin(TenantOwned):
+    """Shared catalog row when ``org_id`` is NULL, otherwise private to one organization.
+
+    Scoped sessions read their own rows and every shared row, and write only their
+    own. Shared rows are written by system sessions (catalog import, platform admin).
     """
 
     org_id: Mapped[uuid.UUID | None] = mapped_column(

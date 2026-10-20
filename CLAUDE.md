@@ -257,7 +257,7 @@ make check      # lint + security + test — must pass before every commit
 
 ## Definition of done (per phase)
 1. Acceptance criteria in `docs/PLAN.md` all met.
-2. `make check` passes; coverage ≥ 85 % for `security`, `accounts`, `tenancy`,
+2. `make check` passes; coverage ≥ 85 % for `security`, `accounts`, `tenancy`, `graph`,
    `sources`, `contracts`, `engine` and `risk` once they exist.
 3. Docs updated (README, `docs/METHODOLOGY.md`, ADRs for decisions taken).
 4. End with a **phase report**: what was done, how to test it by hand, known gaps.
