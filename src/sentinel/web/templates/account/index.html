@@ -32,4 +32,23 @@
     </form>
   {% endif %}
 </section>
+
+<section class="card" id="veriler">
+  <h2>{{ t("privacy.export_title") }}</h2>
+  <p>{{ t("privacy.export_body") }}</p>
+  <p><a href="/hesap/veri">{{ t("privacy.export_link") }}</a></p>
+</section>
+
+<section class="card" id="sil">
+  <h2>{{ t("privacy.delete_title") }}</h2>
+  <p>{{ t("privacy.delete_body") }}</p>
+  <form method="post" action="/hesap/sil" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("password", "form.password", type="password", autocomplete="current-password", maxlength=128) }}
+    {% if viewer.user.totp_enabled_at %}
+    {{ ui.field("code", "form.totp_code", autocomplete="one-time-code", inputmode="numeric", maxlength=6) }}
+    {% endif %}
+    <button type="submit" class="secondary">{{ t("privacy.delete_submit") }}</button>
+  </form>
+</section>
 {% endblock %}

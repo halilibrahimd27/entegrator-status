@@ -257,3 +257,32 @@ def test_uvicorn_config_uses_the_filter() -> None:
         isinstance(f, RedactTokenPaths)
         for f in logging.getLogger("uvicorn.access").handlers[0].filters
     )
+
+
+@pytest.mark.parametrize("path", ["/", "/giris", "/kayit", "/aydinlatma", "/sifre-sifirla"])
+async def test_page_titles_are_plain_text(http: httpx2.AsyncClient, path: str) -> None:
+    """A template slip once put a whole section inside <title>; titles hold text only."""
+    html = (await http.get(path)).text
+    title = html.split("<title>", 1)[1].split("</title>", 1)[0]
+    assert "<" not in title
+    assert len(title) < 120
+
+
+async def test_signed_in_page_titles_are_plain_text(
+    http: httpx2.AsyncClient, outbox: list[Mail]
+) -> None:
+    await signed_in(http, outbox, EMAIL)
+    response = await post_form(http, "/orglar", {"name": "Başlık Testi"}, csrf_from="/orglar")
+    slug = response.headers["location"]
+    for path in (
+        "/hesap",
+        "/orglar",
+        slug,
+        f"{slug}/ayarlar",
+        f"{slug}/uyeler",
+        f"{slug}/tokenlar",
+        f"{slug}/denetim",
+    ):
+        html = (await http.get(path)).text
+        title = html.split("<title>", 1)[1].split("</title>", 1)[0]
+        assert "<" not in title, path

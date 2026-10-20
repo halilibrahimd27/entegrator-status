@@ -69,29 +69,29 @@ Acceptance
 
 ---
 
-## Phase 1 — Accounts and tenancy
+## Phase 1 — Accounts and tenancy ✅
 
 Goal: people sign up, form organisations, and can trust that their data stays theirs.
 
 Tasks
-- [ ] SQLAlchemy models + first Alembic migration: Organization, User, Membership
+- [x] SQLAlchemy models + first Alembic migration: Organization, User, Membership
       (`owner | admin | member | viewer`), Invitation, ApiToken, AuditLog; platform-admin
       flag on User.
-- [ ] Sign-up with e-mail verification, login (argon2id), rate limiting and lockout,
+- [x] Sign-up with e-mail verification, login (argon2id), rate limiting and lockout,
       password reset (single-use, expiring token; the link opens a form that POSTs the
       token, page sends `Referrer-Policy: no-referrer`).
-- [ ] Server-side sessions (`Secure; HttpOnly; SameSite=Strict`), CSRF on every form,
+- [x] Server-side sessions (`Secure; HttpOnly; SameSite=Strict`), CSRF on every form,
       session rotation on login, TOTP (optional for members, mandatory for platform
       admins).
-- [ ] Tenancy layer `sentinel/tenancy`: a `TenantScope` that every repository function
+- [x] Tenancy layer `sentinel/tenancy`: a `TenantScope` that every repository function
       requires; query helpers that refuse to run unscoped. Decide in an ADR whether
       PostgreSQL row-level security is added as a second layer.
-- [ ] Permission matrix in one module (role × action), used by every route.
-- [ ] Org API tokens: scoped, expiring, shown once, stored hashed with `TOKEN_HASH_KEY`.
-- [ ] Audit log: auth events, membership and role changes, token and credential operations.
-- [ ] KVKK: aydınlatma metni at sign-up, data export and account / org deletion
+- [x] Permission matrix in one module (role × action), used by every route.
+- [x] Org API tokens: scoped, expiring, shown once, stored hashed with `TOKEN_HASH_KEY`.
+- [x] Audit log: auth events, membership and role changes, token and credential operations.
+- [x] KVKK: aydınlatma metni at sign-up, data export and account / org deletion
       (org purge after 30 days).
-- [ ] Minimal server-rendered pages (Turkish copy from `tr.yaml`): sign-up, login, org
+- [x] Minimal server-rendered pages (Turkish copy from `tr.yaml`): sign-up, login, org
       switcher, members, tokens.
 
 Acceptance

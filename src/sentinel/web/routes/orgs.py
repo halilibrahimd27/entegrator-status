@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from starlette.responses import RedirectResponse, Response
 
 from sentinel import audit
+from sentinel.accounts.service import AccountError
 from sentinel.tenancy.orgs import OrgError
 from sentinel.web.org_context import InOrg
 from sentinel.web.routes.invites import pending_invitation
@@ -83,3 +84,28 @@ async def org_audit(request: Request, ctx: InOrg) -> Response:
     svc = services(request)
     entries = await audit.recent(svc.db, ctx.scope)
     return svc.renderer.page(request, "org/audit.html", ctx=ctx, section="audit", entries=entries)
+
+
+@router.post("/o/{slug}/sil")
+async def org_close(
+    request: Request,
+    ctx: InOrg,
+    confirm: Annotated[str, Form(max_length=63)],
+    password: Annotated[str, Form(max_length=256)],
+    code: Annotated[str, Form(max_length=16)] = "",
+) -> Response:
+    svc = services(request)
+    try:
+        await svc.privacy.close_org(
+            ctx.scope,
+            ctx.viewer.user.id,
+            password=password,
+            code=code,
+            confirm=confirm,
+            ip=client_ip(request),
+        )
+    except AccountError as exc:
+        return svc.renderer.page(
+            request, "org/settings.html", status=400, error=exc.key, ctx=ctx, section="settings"
+        )
+    return RedirectResponse("/orglar", status_code=303)

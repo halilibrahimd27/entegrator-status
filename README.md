@@ -19,9 +19,16 @@ your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phase 0 (foundation) of the [build plan](docs/PLAN.md) is done: configuration that fails
-closed, the SSRF-guarded outbound HTTP client, CI and the container setup. Next: accounts
-and tenancy (Phase 1).
+Phases 0–1 of the [build plan](docs/PLAN.md) are done:
+
+- configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
+- accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
+  server-side sessions, CSRF protection, TOTP (mandatory for platform admins)
+- organizations, roles, invitations and read-only API tokens, isolated per tenant by
+  the ORM session itself ([ADR 0005](docs/adr/0005-tenant-isolation.md))
+- KVKK: data export, account deletion, closing organizations, retention jobs
+
+Next: the shared catalog and dependency graph (Phase 2).
 
 ## Quick start
 
@@ -31,13 +38,13 @@ and [uv](https://github.com/astral-sh/uv) (only for `make lock`).
 ```bash
 make install   # venv + hashed dev dependencies + pre-commit hook
 make env       # .env with fresh random secrets (mode 600, gitignored)
-make dev       # web, prober, engine, postgres, redis
-curl -s http://127.0.0.1:8000/healthz
+make dev       # web, prober, engine, postgres, redis, mailpit
+open http://127.0.0.1:8000      # sign up; mails land in http://127.0.0.1:8025
 ```
 
 | Command | What it does |
 |---|---|
-| `make test` | pytest (no network) and the coverage gate for `sentinel.security` |
+| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and the coverage gates (security, accounts, tenancy) |
 | `make lint` | ruff, ruff format check, mypy --strict |
 | `make security` | bandit, pip-audit, gitleaks |
 | `make check` | all of the above; must pass before every commit |

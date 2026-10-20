@@ -5,11 +5,18 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi.responses import JSONResponse
 from starlette.responses import RedirectResponse, Response
 
 from sentinel.accounts.service import AccountError
-from sentinel.web.services import services
-from sentinel.web.session_auth import Viewer, csrf_protect, require_viewer, set_session_cookie
+from sentinel.web.services import client_ip, services
+from sentinel.web.session_auth import (
+    Viewer,
+    clear_session_cookie,
+    csrf_protect,
+    require_viewer,
+    set_session_cookie,
+)
 
 router = APIRouter(dependencies=[Depends(csrf_protect)])
 
@@ -82,3 +89,37 @@ async def totp_disable(
             request, "account/index.html", status=400, error=exc.key, notice=None
         )
     return RedirectResponse("/hesap?ok=totp_disabled", status_code=303)
+
+
+# --- KVKK: export and deletion ----------------------------------------------------
+
+
+@router.get("/hesap/veri")
+async def export_data(request: Request, viewer: SignedIn) -> Response:
+    data = await services(request).privacy.export(viewer.user.id)
+    return JSONResponse(
+        data,
+        headers={"Content-Disposition": 'attachment; filename="entegrator-status-verilerim.json"'},
+    )
+
+
+@router.post("/hesap/sil")
+async def delete_account(
+    request: Request,
+    viewer: SignedIn,
+    password: Annotated[str, Form(max_length=256)],
+    code: Annotated[str, Form(max_length=16)] = "",
+) -> Response:
+    svc = services(request)
+    try:
+        await svc.privacy.delete_account(
+            viewer.user.id, password=password, code=code, ip=client_ip(request)
+        )
+    except AccountError as exc:
+        return svc.renderer.page(
+            request, "account/index.html", status=400, error=exc.key, notice=None
+        )
+    request.state.viewer = None  # the page below is rendered for a signed-out visitor
+    response = svc.renderer.message(request, "privacy.deleted_title", "privacy.deleted_body")
+    clear_session_cookie(request, response)
+    return response

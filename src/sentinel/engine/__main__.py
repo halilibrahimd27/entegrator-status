@@ -1,4 +1,4 @@
-from sentinel.runtime import run_service
+from sentinel.engine.service import main
 
 if __name__ == "__main__":
-    run_service("engine")
+    main()

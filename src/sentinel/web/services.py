@@ -9,6 +9,7 @@ from redis.asyncio import Redis
 
 from sentinel.accounts.mail import Mailer, build_mailer
 from sentinel.accounts.passwords import Passwords, make_hasher
+from sentinel.accounts.privacy import PrivacyService
 from sentinel.accounts.service import AccountService
 from sentinel.accounts.sessions import SessionManager
 from sentinel.accounts.throttle import Throttle
@@ -30,6 +31,7 @@ class AppServices:
     mailer: Mailer
     accounts: AccountService
     two_factor: TwoFactorService
+    privacy: PrivacyService
     orgs: OrgService
     invitations: InvitationService
     api_tokens: ApiTokenService
@@ -54,12 +56,8 @@ def build_services(settings: Settings) -> AppServices:
         mailer=mailer,
         throttle=throttle,
     )
-    two_factor = TwoFactorService(
-        db=db,
-        passwords=passwords,
-        throttle=throttle,
-        totp_box=TotpBox(settings.totp_encryption_key.get_secret_value()),
-    )
+    totp_box = TotpBox(settings.totp_encryption_key.get_secret_value())
+    two_factor = TwoFactorService(db=db, passwords=passwords, throttle=throttle, totp_box=totp_box)
     return AppServices(
         settings=settings,
         db=db,
@@ -67,6 +65,7 @@ def build_services(settings: Settings) -> AppServices:
         mailer=mailer,
         accounts=accounts,
         two_factor=two_factor,
+        privacy=PrivacyService(db=db, passwords=passwords, totp_box=totp_box),
         orgs=OrgService(db),
         invitations=InvitationService(db=db, settings=settings, mailer=mailer, throttle=throttle),
         api_tokens=ApiTokenService(db, settings),

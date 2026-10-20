@@ -16,7 +16,7 @@ from sentinel.accounts.tokens import digest
 from sentinel.config import Settings
 from sentinel.db.base import utcnow
 from sentinel.db.session import Database
-from sentinel.models import ApiToken
+from sentinel.models import ApiToken, Organization
 from sentinel.tenancy.orgs import OrgError
 from sentinel.tenancy.roles import Action, Role
 from sentinel.tenancy.scope import TenantScope
@@ -131,7 +131,11 @@ class ApiTokenService:
             return None
         prefix, raw = parts
         async with self._db.system("authenticate an API token by its prefix") as s:
-            token = await s.scalar(select(ApiToken).where(ApiToken.prefix == prefix))
+            token = await s.scalar(
+                select(ApiToken)
+                .join(Organization, Organization.id == ApiToken.org_id)
+                .where(ApiToken.prefix == prefix, Organization.deleted_at.is_(None))
+            )
             if token is None or not hmac.compare_digest(token.token_hash, self._digest(raw)):
                 return None
             now = self._clock()

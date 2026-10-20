@@ -11,6 +11,7 @@
   </form>
 </section>
 {% endif %}
+
 <section class="card wide">
   <h2>{{ t("org.leave_title") }}</h2>
   <p>{{ t("org.leave_body") }}</p>
@@ -19,4 +20,23 @@
     <button type="submit" class="secondary">{{ t("org.leave_submit") }}</button>
   </form>
 </section>
+
+{% if can(role, "org.delete") %}
+<section class="card wide">
+  <h2>{{ t("privacy.org_delete_title") }}</h2>
+  <p>{{ t("privacy.org_delete_body") }}</p>
+  <form method="post" action="/o/{{ ctx.org.slug }}/sil" novalidate>
+    {{ ui.csrf_field() }}
+    <div class="field">
+      <label for="f-confirm">{{ t("privacy.org_delete_confirm").format(slug=ctx.org.slug) }}</label>
+      <input id="f-confirm" name="confirm" type="text" autocomplete="off" maxlength="63" required>
+    </div>
+    {{ ui.field("password", "form.password", type="password", autocomplete="current-password", maxlength=128) }}
+    {% if ctx.viewer.user.totp_enabled_at %}
+    {{ ui.field("code", "form.totp_code", autocomplete="one-time-code", inputmode="numeric", maxlength=6) }}
+    {% endif %}
+    <button type="submit" class="secondary">{{ t("privacy.org_delete_submit") }}</button>
+  </form>
+</section>
+{% endif %}
 {% endblock %}
