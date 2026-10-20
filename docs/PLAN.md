@@ -262,7 +262,7 @@ Tasks
 - [x] Version classification: `major | minor | patch | prerelease` (semver), calver and
       non-semver tags handled explicitly; changelog / release-notes link extracted; release
       notes scanned for "breaking" markers.
-- [ ] Pinned vs. latest for imported dependencies (from `usage.version`): drift shown,
+- [x] Pinned vs. latest for imported dependencies (from `usage.version`): drift shown,
       unadopted majors become Risks with the release notes link.
 - [ ] `advisory` adapter: OSV.dev for package@version → security Risks with severity.
 - [ ] `eol` adapter: endoflife.date for runtimes, frameworks and databases → Risk N days

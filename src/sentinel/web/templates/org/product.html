@@ -29,7 +29,12 @@
         <td><a href="{{ base }}/servisler/{{ service.id }}">{{ service.name }}</a>
           {% if service.org_id is none %}<span class="badge shared">{{ t("products.shared_badge") }}</span>{% endif %}</td>
         <td>{{ component.name }}</td>
-        <td>{{ dep.usage.get("version", "—") }}</td>
+        {% set d = drift.get(dep.id) %}
+        <td>{{ dep.usage.get("version", "—") }}
+          {% if d %}<br><span class="hint">{{ t("drift.latest") }}:
+            {% if d.link %}<a href="{{ d.link }}" rel="noopener noreferrer nofollow">{{ d.latest }}</a>{% else %}{{ d.latest }}{% endif %}</span>
+            <span class="badge{% if d.lag == 'major' %} attention{% endif %}">{{ t("drift." ~ d.lag) if d.lag else t("drift.current") }}</span>
+          {% endif %}</td>
         {% set st = statuses.get(component.id) %}
         <td>{% if st %}{{ ui.state_line(st) }}{% endif %}</td>
         {% if editable %}

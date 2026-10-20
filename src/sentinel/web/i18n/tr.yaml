@@ -87,6 +87,15 @@ vendor:
   page_maintenance: "Bakım bildiriliyor"
   open_incidents: "Açık olay"
 
+drift:
+  latest: "Güncel"
+  current: "Güncel sürümde"
+  major: "Büyük sürüm geride"
+  minor: "Ara sürüm geride"
+  patch: "Yama geride"
+  prerelease: "Ön sürüm"
+  other: "Karşılaştırılamadı"
+
 risks:
   title: "Riskler"
   sunset: "Sağlayıcı bu ucun kapanış tarihini bildirdi (Sunset)"
