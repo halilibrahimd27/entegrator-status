@@ -16,6 +16,7 @@ from typing import Any
 import httpx2
 import pytest
 from fastapi import FastAPI
+from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -143,3 +144,17 @@ async def http(app: FastAPI) -> AsyncIterator[httpx2.AsyncClient]:
     transport = httpx2.ASGITransport(app=app)
     async with httpx2.AsyncClient(transport=transport, base_url=BASE_URL) as client:
         yield client
+
+
+@pytest.fixture
+async def redis_client() -> AsyncIterator[Redis]:
+    url = os.environ.get("TEST_REDIS_URL")
+    if not url:
+        pytest.fail("TEST_REDIS_URL is not set; run tests with `make test`")
+    client = Redis.from_url(url)
+    await client.flushdb()
+    try:
+        yield client
+    finally:
+        await client.flushdb()
+        await client.aclose()
