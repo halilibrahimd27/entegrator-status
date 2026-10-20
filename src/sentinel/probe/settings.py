@@ -10,6 +10,10 @@ from pydantic import AnyHttpUrl, Field, SecretStr, ValidationError, field_valida
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from sentinel.config import ConfigError, secret_problem
+from sentinel.security.addresses import parse_target
+from sentinel.security.errors import OutboundError
+
+MAX_CONTROL_TARGETS = 10
 
 
 class ProbeSettings(BaseSettings):
@@ -36,6 +40,19 @@ class ProbeSettings(BaseSettings):
         problem = secret_problem(value.get_secret_value())
         if problem:
             raise ValueError(problem)
+        return value
+
+    @field_validator("probe_control_targets")
+    @classmethod
+    def _targets(cls, value: str) -> str:
+        targets = [t.strip() for t in value.split(",") if t.strip()]
+        if len(targets) > MAX_CONTROL_TARGETS:
+            raise ValueError(f"at most {MAX_CONTROL_TARGETS} URLs")
+        for target in targets:
+            try:
+                parse_target(target)  # public https URLs only, like any probe target
+            except OutboundError:
+                raise ValueError(f"{target[:60]!r} is not a public https URL") from None
         return value
 
     @property

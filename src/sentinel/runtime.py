@@ -9,11 +9,14 @@ import signal
 from sentinel.config import Settings, load_settings_or_exit
 
 
-def configure_logging(settings: Settings) -> None:
+def configure_logging(settings: Settings | None = None, *, level: str | None = None) -> None:
     logging.basicConfig(
-        level=settings.log_level,
+        level=level or (settings.log_level if settings else "INFO"),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
+    # httpx logs every request URL at INFO; a source URL can carry a token in its query.
+    for noisy in ("httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 async def wait_for_shutdown() -> None:

@@ -19,7 +19,7 @@ your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phases 0–1 of the [build plan](docs/PLAN.md) are done:
+Phases 0–3 of the [build plan](docs/PLAN.md) are done:
 
 - configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
 - accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
@@ -31,8 +31,12 @@ Phases 0–1 of the [build plan](docs/PLAN.md) are done:
   [docs/CATALOG.md](docs/CATALOG.md)) plus private services, components and sources;
   third-degree view as server-rendered SVG; imports from SBOMs, lockfiles and compose
   files; proposals to the shared catalog with a platform-admin review queue
+- the prober: `http`, `tls_cert`, `dns` and `domain_expiry` checks; robots.txt,
+  one request per host at a time, `Retry-After` / `Crawl-delay` and backoff; results
+  buffered locally (SQLite) and shipped in signed batches, at-least-once; node
+  self-health from control targets; identical sources of different tenants probed once
 
-Next: the prober and availability checks (Phase 3).
+Next: the status engine (Phase 4): consensus across nodes, incidents, uptime.
 
 ## Quick start
 
@@ -42,13 +46,14 @@ and [uv](https://github.com/astral-sh/uv) (only for `make lock`).
 ```bash
 make install   # venv + hashed dev dependencies + pre-commit hook
 make env       # .env with fresh random secrets (mode 600, gitignored)
-make dev       # web, prober, engine, postgres, redis, mailpit
+make dev       # web, engine, postgres, redis, mailpit (+ prober once a node exists)
+make node      # register a local probe node (credentials go to .env), start the prober
 open http://127.0.0.1:8000      # sign up; mails land in http://127.0.0.1:8025
 ```
 
 | Command | What it does |
 |---|---|
-| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and the coverage gates (security, accounts, tenancy) |
+| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and the coverage gates (security, tenancy, accounts, sources, graph, catalog, probe) |
 | `make lint` | ruff, ruff format check, mypy --strict |
 | `make security` | bandit, pip-audit, gitleaks |
 | `make check` | all of the above; must pass before every commit |

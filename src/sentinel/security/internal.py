@@ -31,6 +31,10 @@ class CoreUnavailableError(Exception):
 class CoreRejectedError(Exception):
     """4xx other than a replay: the request itself is wrong; retrying will not help."""
 
+    def __init__(self, status_code: int, message: str = "") -> None:
+        super().__init__(f"HTTP {status_code}{': ' + message if message else ''}")
+        self.status_code = status_code
+
 
 class CoreClient:
     def __init__(
@@ -84,7 +88,7 @@ class CoreClient:
     async def jobs(self) -> list[dict[str, Any]]:
         response = await self._send("GET", "/ingest/v1/jobs", "-", b"")
         if response.status_code != 200:
-            raise CoreRejectedError(f"HTTP {response.status_code}")
+            raise CoreRejectedError(response.status_code)
         jobs: list[dict[str, Any]] = response.json()["jobs"]
         return jobs
 
@@ -95,6 +99,6 @@ class CoreClient:
         if response.status_code == 409:
             return 0
         if response.status_code != 202:
-            raise CoreRejectedError(f"HTTP {response.status_code}: {response.text[:200]}")
+            raise CoreRejectedError(response.status_code, response.text[:200])
         accepted: int = response.json()["accepted"]
         return accepted

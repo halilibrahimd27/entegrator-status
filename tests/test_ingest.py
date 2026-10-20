@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 import uuid
 from datetime import timedelta
 from typing import Any
@@ -12,67 +11,17 @@ import pytest
 from fastapi import FastAPI
 from sqlalchemy import func, select, update
 
+from probe_support import add_source, client_for, two_orgs
 from sentinel.db.base import utcnow
-from sentinel.models import Component, Observation, Organization, ProbeNode, Service, Source
+from sentinel.models import Observation, ProbeNode, Source
 from sentinel.probe.__main__ import main as probe_cli
 from sentinel.probe.nodes import NodeCredentials
 from sentinel.probe.settings import load_probe_settings_or_exit
 from sentinel.probe.signing import node_signing_key, sign, verify
-from sentinel.security.internal import CoreClient, CoreRejectedError
-from sentinel.sources.config import validate_source
+from sentinel.security.internal import CoreRejectedError
 from sentinel.tenancy.roles import Role
 from sentinel.tenancy.scope import TenantScope
 from sentinel.web.services import AppServices
-
-
-def client_for(
-    app: FastAPI, creds: NodeCredentials, *, skew: float = 0, key: str | None = None
-) -> CoreClient:
-    return CoreClient(
-        "http://core.test",
-        creds.node_id,
-        creds.token,
-        key or creds.signing_key,
-        user_agent="test",
-        transport=httpx.ASGITransport(app=app),
-        clock=lambda: time.time() + skew,
-    )
-
-
-async def add_source(
-    services: AppServices, org_id: uuid.UUID | None, url: str, kind: str = "http"
-) -> uuid.UUID:
-    config = {"url": url} if kind == "http" else {"ecosystem": "npm", "name": url}
-    valid = validate_source(kind, config)
-    async with services.db.system("test setup") as s:
-        service = Service(
-            org_id=org_id, slug=f"s-{uuid.uuid4().hex[:8]}", name="S", kind="other", tags=[]
-        )
-        s.add(service)
-        await s.flush()
-        component = Component(org_id=org_id, service_id=service.id, slug="c", name="C", tags=[])
-        s.add(component)
-        await s.flush()
-        source = Source(
-            org_id=org_id,
-            component_id=component.id,
-            kind=valid.kind.value,
-            identity=valid.identity,
-            config=valid.config,
-            interval_s=valid.interval_s,
-            timeout_s=valid.timeout_s,
-        )
-        s.add(source)
-        await s.flush()
-        return source.id
-
-
-async def two_orgs(services: AppServices) -> tuple[uuid.UUID, uuid.UUID]:
-    async with services.db.system("test setup") as s:
-        a, b = Organization(slug="a", name="A"), Organization(slug="b", name="B")
-        s.add_all([a, b])
-        await s.flush()
-        return a.id, b.id
 
 
 def result(ids: list[uuid.UUID], **overrides: Any) -> dict[str, Any]:

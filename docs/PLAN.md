@@ -144,33 +144,42 @@ Acceptance
 
 ---
 
-## Phase 3 — Prober (availability)
+## Phase 3 — Prober (availability) ✅
 
 Goal: polite, correct availability measurements shipped safely to the core.
 
 Tasks
-- [ ] Source adapter interface (`fetch → normalise → snapshot → diff → classify`) and
+- [x] Source adapter interface (`fetch → normalise → snapshot → diff → classify`) and
       registry; shared contract tests every adapter must pass.
-- [ ] Availability adapters: `http` (status, latency, optional body assertion, TLS info,
+- [x] Availability adapters: `http` (status, latency, optional body assertion, TLS info,
       `Deprecation` / `Sunset` headers recorded), `tls_cert` (days to expiry, issuer,
       chain validity), `dns`, `domain_expiry` (RDAP).
-- [ ] Scheduler with jitter; per-source interval, per-host concurrency = 1, global per-host
+- [x] Scheduler with jitter; per-source interval, per-host concurrency = 1, global per-host
       budget across tenants, `Retry-After` / backoff. Shared sources scheduled once and
       fanned out.
-- [ ] robots.txt module: cached per host (≤ 24 h), `Crawl-delay` honoured.
-- [ ] Error classification: `dns`, `connect_timeout`, `read_timeout`, `tls`, `http_4xx`,
+- [x] robots.txt module: cached per host (≤ 24 h), `Crawl-delay` honoured.
+- [x] Error classification: `dns`, `connect_timeout`, `read_timeout`, `tls`, `http_4xx`,
       `http_5xx`, `assertion`, `blocked_by_robots`, `rate_limited_by_us`.
-- [ ] Node self-health: 3 configurable control targets; failing ≥ 2 marks the node
+- [x] Node self-health: 3 configurable control targets; failing ≥ 2 marks the node
       unhealthy for the batch.
-- [ ] Ingest: local buffer (SQLite or file queue), batches to `POST /ingest/v1/results`
+- [x] Ingest: local buffer (SQLite or file queue), batches to `POST /ingest/v1/results`
       with HMAC signature + timestamp, at-least-once delivery, idempotent on the server.
-- [ ] `sentinel node register <name> <location>` prints a one-time token (stored hashed).
+- [x] `sentinel node register <name> <location>` prints a one-time token (stored hashed).
 
 Acceptance
 - Local fake servers cover every error class, Retry-After, the rate limiter (never two
   concurrent requests to one host), robots disallow and crawl-delay, replay rejection
   (old timestamp, reused batch id, bad signature) and buffering while ingest is down.
 - Two orgs depending on the same shared source → exactly one probe per interval.
+
+Notes
+- Exponential backoff on `429` and on `503` + `Retry-After`; a plain `5xx` keeps the
+  normal interval so a recovery is seen on time. `Retry-After` and `Crawl-delay` hold
+  the whole host.
+- Results whose host stays held longer than their interval are reported as
+  `rate_limited_by_us` (unknown, not down).
+- Results leave the node buffer only after the core accepted them; a refused result is
+  isolated and dropped so it cannot block the queue; `401/403` keeps everything.
 
 ---
 

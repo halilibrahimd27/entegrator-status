@@ -60,6 +60,12 @@ services:
     <<: *app
     command: ["python", "-m", "sentinel.probe"]
     profiles: ["probe"]
+    depends_on:
+      web:
+        condition: service_healthy
+    # No DATABASE_URL/REDIS_URL: a node talks to the core only through the signed
+    # ingest API. (Locally .env still carries core secrets; a remote node gets only
+    # PROBE_* plus PUBLIC_BASE_URL and CONTACT_EMAIL.)
     environment:
       PROBE_INGEST_URL: http://web:8000
       PROBE_BUFFER_PATH: /data/probe-buffer.sqlite3

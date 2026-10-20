@@ -57,6 +57,15 @@ class RobotsCache:
             allowed, float(delay) if delay else None, "allowed" if allowed else "disallowed"
         )
 
+    def crawl_delay(self, url: str) -> float | None:
+        """The cached ``Crawl-delay`` for ``url``'s origin; never fetches."""
+        parts = urlsplit(url)
+        entry = self._entries.get(f"{parts.scheme}://{parts.netloc}")
+        if entry is None or entry.parser is None:
+            return None
+        delay = entry.parser.crawl_delay(AGENT)
+        return float(delay) if delay else None
+
     async def _load(self, origin: str, allow_http: bool) -> _Entry:
         policy = FetchPolicy(
             allow_http=allow_http, max_bytes=ROBOTS_MAX_BYTES, timeouts=Timeouts(5, 10, 15)

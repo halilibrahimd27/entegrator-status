@@ -14,7 +14,8 @@ RUN python -m venv /opt/venv \
 FROM ${PYTHON_IMAGE} AS runtime
 RUN groupadd --system --gid 10001 sentinel \
     && useradd --system --uid 10001 --gid sentinel --no-create-home \
-       --home-dir /nonexistent --shell /usr/sbin/nologin sentinel
+       --home-dir /nonexistent --shell /usr/sbin/nologin sentinel \
+    && install -d -o 10001 -g 10001 -m 0700 /data  # prober buffer (a volume in compose)
 COPY --from=deps /opt/venv /opt/venv
 COPY src/ /app/src/
 COPY catalog/ /app/catalog/
