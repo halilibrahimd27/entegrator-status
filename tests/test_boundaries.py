@@ -38,3 +38,13 @@ def test_detector_catches_a_direct_import(tmp_path: Path) -> None:
     sample = tmp_path / "bad.py"
     sample.write_text("import httpx.client\nfrom requests import get\n", encoding="utf-8")
     assert imported_roots(sample) >= {"httpx", "requests"}
+
+
+def test_test_only_address_policy_is_not_used_in_production_code() -> None:
+    offenders = []
+    for path in PACKAGE.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Attribute) and node.attr == "for_tests":
+                offenders.append(str(path.relative_to(PACKAGE)))
+    assert offenders == []  # the definition is a FunctionDef; any use is an Attribute

@@ -20,6 +20,8 @@ import httpx
 
 from sentinel import __version__
 from sentinel.security.addresses import (
+    STRICT,
+    AddressPolicy,
     IPAddress,
     Resolver,
     Target,
@@ -94,8 +96,10 @@ class OutboundClient:
         resolver: Resolver = system_resolver,
         transport: httpx.AsyncBaseTransport | None = None,
         clock: Clock = time.monotonic,
+        policy: AddressPolicy = STRICT,
     ) -> None:
         self._user_agent = user_agent
+        self._policy = policy
         self._limiter = limiter or HostLimiter()
         self._resolver = resolver
         self._clock = clock
@@ -123,6 +127,18 @@ class OutboundClient:
     async def aclose(self) -> None:
         await self._client.aclose()
 
+    @property
+    def user_agent(self) -> str:
+        return self._user_agent
+
+    @property
+    def address_policy(self) -> AddressPolicy:
+        return self._policy
+
+    @property
+    def resolver(self) -> Resolver:
+        return self._resolver
+
     async def fetch(self, url: str, policy: FetchPolicy | None = None) -> FetchResult:
         """Fetch ``url`` under ``policy``. Raises :class:`OutboundError` subclasses only."""
         policy = policy or FetchPolicy()
@@ -132,8 +148,12 @@ class OutboundClient:
         try:
             async with asyncio.timeout(policy.timeouts.total_s):
                 while True:
-                    target = parse_target(current, allow_http=policy.allow_http)
-                    ip = await resolve_pinned(target, self._resolver, policy.timeouts.connect_s)
+                    target = parse_target(
+                        current, allow_http=policy.allow_http, policy=self._policy
+                    )
+                    ip = await resolve_pinned(
+                        target, self._resolver, policy.timeouts.connect_s, self._policy
+                    )
                     async with self._limiter.slot(target.host):
                         status, headers, body = await self._send(target, ip, policy)
                     location = headers.get("location")

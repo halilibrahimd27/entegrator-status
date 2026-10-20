@@ -69,6 +69,28 @@ def is_blocked_address(ip: IPAddress) -> bool:
 
 
 @dataclass(frozen=True)
+class AddressPolicy:
+    """Which addresses outbound requests may reach. Production uses ``STRICT`` only."""
+
+    exceptions: tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...] = ()
+
+    def blocks(self, ip: IPAddress) -> bool:
+        if any(ip.version == net.version and ip in net for net in self.exceptions):
+            return False
+        return is_blocked_address(ip)
+
+    @classmethod
+    def for_tests(cls) -> AddressPolicy:
+        """Loopback allowed, for local fake servers. A test fails if src/ uses this."""
+        return cls(
+            exceptions=(ipaddress.ip_network("127.0.0.0/8"), ipaddress.ip_network("::1/128"))
+        )
+
+
+STRICT = AddressPolicy()
+
+
+@dataclass(frozen=True)
 class Target:
     """A validated URL, split into the parts the pinned connection needs."""
 
@@ -84,7 +106,9 @@ class Target:
         return f"{literal}:{self.port}"
 
 
-def parse_target(raw_url: str, *, allow_http: bool = False) -> Target:
+def parse_target(
+    raw_url: str, *, allow_http: bool = False, policy: AddressPolicy = STRICT
+) -> Target:
     """Validate scheme, credentials and host. Does not touch the network."""
     try:
         url = httpx.URL(raw_url)
@@ -103,7 +127,7 @@ def parse_target(raw_url: str, *, allow_http: bool = False) -> Target:
     literal = _ip_literal(host)
     if literal is None and not _HOSTNAME_RE.match(host.rstrip(".")):
         raise URLPolicyError("host is not a valid host name")
-    if literal is not None and is_blocked_address(literal):
+    if literal is not None and policy.blocks(literal):
         raise AddressBlockedError("address is in a blocked range")
 
     port = url.port or DEFAULT_PORTS[url.scheme]
@@ -125,7 +149,9 @@ async def system_resolver(host: str, port: int) -> Sequence[IPAddress]:
     return addresses
 
 
-async def resolve_pinned(target: Target, resolver: Resolver, timeout_s: float) -> IPAddress:
+async def resolve_pinned(
+    target: Target, resolver: Resolver, timeout_s: float, policy: AddressPolicy = STRICT
+) -> IPAddress:
     """Resolve once and return the address to connect to.
 
     Every answer must be allowed: one blocked answer rejects the host, so a
@@ -141,7 +167,7 @@ async def resolve_pinned(target: Target, resolver: Resolver, timeout_s: float) -
         raise DNSResolutionError("name resolution timed out") from exc
     if not addresses:
         raise DNSResolutionError("name has no addresses")
-    if any(is_blocked_address(ip) for ip in addresses):
+    if any(policy.blocks(ip) for ip in addresses):
         raise AddressBlockedError("host resolves to a blocked range")
     return addresses[0]
 

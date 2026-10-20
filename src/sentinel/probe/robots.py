@@ -1,0 +1,75 @@
+"""robots.txt, cached per origin for up to 24 h (RFC 9309).
+
+4xx (no robots.txt) allows everything; 5xx or an unreachable file disallows everything
+until the next attempt. ``Crawl-delay`` is honoured by the scheduler.
+"""
+
+from __future__ import annotations
+
+import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from urllib.parse import urlsplit
+from urllib.robotparser import RobotFileParser
+
+from sentinel.security.errors import OutboundError
+from sentinel.security.http import FetchPolicy, OutboundClient, Timeouts
+
+ROBOTS_MAX_BYTES = 512 * 1024
+TTL_S = 24 * 3600
+RETRY_UNREACHABLE_S = 3600
+AGENT = "EntegratorStatus"
+
+
+@dataclass(frozen=True)
+class RobotsDecision:
+    allowed: bool
+    crawl_delay_s: float | None
+    reason: str  # "allowed", "disallowed", "unreachable"
+
+
+@dataclass
+class _Entry:
+    parser: RobotFileParser | None  # None: unreachable, disallow all
+    expires: float
+
+
+class RobotsCache:
+    def __init__(
+        self, http: OutboundClient, *, clock: Callable[[], float] = time.monotonic
+    ) -> None:
+        self._http = http
+        self._clock = clock
+        self._entries: dict[str, _Entry] = {}
+
+    async def check(self, url: str, *, allow_http: bool = False) -> RobotsDecision:
+        parts = urlsplit(url)
+        origin = f"{parts.scheme}://{parts.netloc}"
+        entry = self._entries.get(origin)
+        if entry is None or entry.expires <= self._clock():
+            entry = await self._load(origin, allow_http)
+            self._entries[origin] = entry
+        if entry.parser is None:
+            return RobotsDecision(False, None, "unreachable")
+        allowed = entry.parser.can_fetch(AGENT, url)
+        delay = entry.parser.crawl_delay(AGENT)
+        return RobotsDecision(
+            allowed, float(delay) if delay else None, "allowed" if allowed else "disallowed"
+        )
+
+    async def _load(self, origin: str, allow_http: bool) -> _Entry:
+        policy = FetchPolicy(
+            allow_http=allow_http, max_bytes=ROBOTS_MAX_BYTES, timeouts=Timeouts(5, 10, 15)
+        )
+        try:
+            result = await self._http.fetch(f"{origin}/robots.txt", policy)
+        except OutboundError:
+            return _Entry(None, self._clock() + RETRY_UNREACHABLE_S)
+        parser = RobotFileParser()
+        if 400 <= result.status_code < 500:
+            parser.parse([])  # RFC 9309: an unavailable robots.txt allows everything
+        elif result.status_code >= 300:
+            return _Entry(None, self._clock() + RETRY_UNREACHABLE_S)  # unreachable: disallow
+        else:
+            parser.parse(result.body.decode("utf-8", errors="replace").splitlines())
+        return _Entry(parser, self._clock() + TTL_S)
