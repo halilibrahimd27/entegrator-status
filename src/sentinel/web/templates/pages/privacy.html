@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ t("privacy.title") }}{% endblock %}
+{% block content %}
+<article class="card prose">
+  <h1>{{ t("privacy.title") }}</h1>
+  <p class="notice" role="note">{{ t("privacy.draft_notice") }}</p>
+  {% for key in ("controller", "data", "purposes", "legal_basis", "retention", "rights") %}
+  <p>{{ t("privacy." ~ key) }}</p>
+  {% endfor %}
+</article>
+{% endblock %}

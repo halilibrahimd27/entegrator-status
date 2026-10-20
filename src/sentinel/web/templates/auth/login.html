@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ t("login.title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("login.title") }}</h1>
+  {{ ui.error_box(error) }}
+  {% if error == "login.unverified" %}
+  <p><a href="/dogrula-tekrar">{{ t("login.resend_link") }}</a></p>
+  {% endif %}
+  <form method="post" action="/giris" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("email", "form.email", type="email", value=form.get("email", ""), autocomplete="username", maxlength=320, autofocus=true) }}
+    {{ ui.field("password", "form.password", type="password", autocomplete="current-password", maxlength=128) }}
+    <button type="submit">{{ t("login.submit") }}</button>
+  </form>
+  <p><a href="/sifre-sifirla">{{ t("login.forgot") }}</a></p>
+  <p>{{ t("login.no_account") }} <a href="/kayit">{{ t("nav.signup") }}</a></p>
+</section>
+{% endblock %}

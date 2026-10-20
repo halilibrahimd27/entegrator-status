@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ t("account.totp_setup_title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("account.totp_setup_title") }}</h1>
+  <p>{{ t("account.totp_setup_body") }}</p>
+  {{ ui.error_box(error) }}
+  {# Server-generated SVG from segno (no user markup, no script). #}
+  <div class="qr">{{ enrolment.qr_svg | safe }}</div>
+  <p>{{ t("account.totp_secret") }}: <code class="secret">{{ enrolment.secret }}</code></p>
+  <form method="post" action="/hesap/2fa/onayla" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("code", "form.totp_code", autocomplete="one-time-code", inputmode="numeric", maxlength=6, autofocus=true) }}
+    <button type="submit">{{ t("account.totp_confirm") }}</button>
+  </form>
+</section>
+{% endblock %}

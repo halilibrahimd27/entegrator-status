@@ -18,7 +18,7 @@ from typing import Any
 from sqlalchemy import event, false
 from sqlalchemy.orm import ORMExecuteState, Session, UOWTransaction, with_loader_criteria
 
-from sentinel.db.base import TenantOwned
+from sentinel.db.base import OptionalTenantMixin, TenantOwned
 from sentinel.tenancy.scope import TenantScope
 
 SCOPE_KEY = "tenant_scope"
@@ -81,6 +81,8 @@ def _check_writes(session: Session, flush_context: UOWTransaction, instances: An
             continue
         name = type(obj).__name__
         if scope is None:
+            if isinstance(obj, OptionalTenantMixin) and obj.org_id is None:
+                continue  # platform-level row (e.g. a sign-in audit event): no tenant to leak
             raise TenantScopeMissingError(f"write to {name} without a tenant scope")
         if obj.org_id != scope.org_id:  # type: ignore[attr-defined]
             raise TenantViolationError(f"write to {name} outside the scope's organization")

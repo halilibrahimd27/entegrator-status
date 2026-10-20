@@ -224,7 +224,6 @@ def upgrade() -> None:
         "user_sessions",
         sa.Column("user_id", sa.Uuid(), nullable=False),
         sa.Column("token_hash", sa.LargeBinary(length=32), nullable=False),
-        sa.Column("csrf_token", sa.String(length=64), nullable=False),
         sa.Column("mfa_verified", sa.Boolean(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("last_seen_at", sa.DateTime(timezone=True), nullable=False),

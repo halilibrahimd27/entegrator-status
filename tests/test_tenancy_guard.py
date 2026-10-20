@@ -186,6 +186,13 @@ async def test_unscoped_write_is_refused(
             s.add(AuditEvent(org_id=a, action="unscoped"))
 
 
+async def test_unscoped_session_may_write_platform_level_rows(db: Database) -> None:
+    async with db.session() as s:
+        s.add(AuditEvent(org_id=None, action="account.login"))
+    async with db.system("test check") as s:
+        assert (await s.scalars(select(AuditEvent.action))).all() == ["account.login"]
+
+
 async def test_system_sessions_need_a_reason(db: Database) -> None:
     with pytest.raises(ValueError, match="reason"):
         async with db.system(""):

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ t("account.title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("account.title") }}</h1>
+  {{ ui.notice_box(notice) }}
+  {{ ui.error_box(error) }}
+  <dl class="facts">
+    <dt>{{ t("account.name") }}</dt><dd>{{ viewer.user.display_name }}</dd>
+    <dt>{{ t("account.email") }}</dt><dd>{{ viewer.user.email }}</dd>
+  </dl>
+</section>
+
+<section class="card" id="2fa">
+  <h2>{{ t("account.totp_title") }}</h2>
+  {% if viewer.user.totp_enabled_at %}
+    <p><strong>{{ t("account.totp_on") }}</strong></p>
+    {% if not viewer.user.is_platform_admin %}
+    <p>{{ t("account.totp_disable_body") }}</p>
+    <form method="post" action="/hesap/2fa/kapat" novalidate>
+      {{ ui.csrf_field() }}
+      {{ ui.field("password", "form.password", type="password", autocomplete="current-password", maxlength=128) }}
+      {{ ui.field("code", "form.totp_code", autocomplete="one-time-code", inputmode="numeric", maxlength=6) }}
+      <button type="submit" class="secondary">{{ t("account.totp_disable") }}</button>
+    </form>
+    {% endif %}
+  {% else %}
+    <p>{{ t("account.totp_off") }}</p>
+    <form method="post" action="/hesap/2fa/baslat">
+      {{ ui.csrf_field() }}
+      <button type="submit">{{ t("account.totp_start") }}</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

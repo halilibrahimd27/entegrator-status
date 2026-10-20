@@ -62,7 +62,7 @@ allowed-confusables = ["ı", "İ"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-mypy_path = "src"
+mypy_path = ["src", "tests"]
 files = ["src/sentinel", "tests", "tools"]
 explicit_package_bases = true
 plugins = ["pydantic.mypy"]
@@ -78,6 +78,8 @@ filterwarnings = ["error"]
 [tool.coverage.run]
 source = ["src/sentinel"]
 branch = true
+# SQLAlchemy's asyncio layer runs on greenlets; without this, code after awaits is lost.
+concurrency = ["greenlet", "thread"]
 
 [tool.coverage.report]
 show_missing = true

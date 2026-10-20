@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ t("reset.title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("reset.title") }}</h1>
+  <p>{{ t("reset.request_body") }}</p>
+  {{ ui.error_box(error) }}
+  <form method="post" action="/sifre-sifirla" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("email", "form.email", type="email", autocomplete="email", maxlength=320, autofocus=true) }}
+    <button type="submit">{{ t("reset.request_submit") }}</button>
+  </form>
+</section>
+{% endblock %}

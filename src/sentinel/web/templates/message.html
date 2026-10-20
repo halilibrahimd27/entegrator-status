@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t(title) }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t(title) }}</h1>
+  <p>{{ t(body) }}</p>
+  {% if links %}
+  <ul class="links">
+    {% for href, key in links %}<li><a href="{{ href }}">{{ t(key) }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endblock %}

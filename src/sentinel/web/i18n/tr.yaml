@@ -6,6 +6,8 @@ site:
   tagline: "Bağımlılıkların için durum ve değişiklik takibi"
   disclaimer: "Bağımsız ölçümdür, resmî değildir"
   methodology_link: "Yöntem"
+  privacy_link: "Aydınlatma metni"
+  skip_to_content: "İçeriğe geç"
 
 status:
   operational: "Çalışıyor"
@@ -13,3 +15,154 @@ status:
   down: "Erişim sorunu"
   unverified: "Doğrulanmadı"
   maintenance: "Planlı bakım"
+
+nav:
+  label: "Ana menü"
+  login: "Giriş yap"
+  signup: "Kayıt ol"
+  account: "Hesabım"
+  logout: "Çıkış yap"
+  orgs: "Organizasyonlar"
+
+home:
+  title: "Bağımlılıkların bozulmadan önce haberin olsun"
+  body: "Ürününün kullandığı servisleri, API'leri ve paketleri tanımla; erişim sorunlarını, sözleşme değişikliklerini, sürümleri ve duyuruları senin yerine takip edelim."
+
+form:
+  email: "E-posta"
+  password: "Parola"
+  new_password: "Yeni parola"
+  display_name: "Ad soyad"
+  totp_code: "Doğrulama kodu"
+  privacy_ack: "Aydınlatma metnini okudum."
+
+throttled: "Çok fazla deneme yapıldı. Biraz bekleyip tekrar dene."
+not_found: "Bulunamadı."
+
+signup:
+  title: "Kayıt ol"
+  submit: "Hesap oluştur"
+  have_account: "Zaten hesabın var mı?"
+  done_title: "E-postanı kontrol et"
+  done_body: "Hesabını doğrulaman için bir bağlantı gönderdik. Bağlantı 24 saat geçerli."
+  disabled: "Şu anda yeni kayıt alınmıyor."
+  privacy_required: "Devam etmek için aydınlatma metnini okuduğunu onaylaman gerekiyor."
+  invalid_email: "Geçerli bir e-posta adresi gir."
+  name_required: "Adını gir."
+
+password:
+  too_short: "Parola en az 12 karakter olmalı."
+  too_long: "Parola en fazla 128 karakter olabilir."
+  too_simple: "Parola çok basit; daha çeşitli karakterler kullan."
+  contains_email: "Parola e-posta adresini içermemeli."
+  hint: "En az 12 karakter. Bir parola yöneticisi kullanmanı öneririz."
+
+verify:
+  title: "E-posta doğrulama"
+  body: "Hesabını doğrulamak için düğmeye bas."
+  submit: "Doğrula"
+  done_title: "E-posta doğrulandı"
+  done_body: "Artık giriş yapabilirsin."
+  invalid_title: "Bağlantı geçersiz"
+  invalid_body: "Bu bağlantının süresi dolmuş ya da daha önce kullanılmış. Yeni bir doğrulama e-postası isteyebilirsin."
+  resend_title: "Doğrulama e-postasını yeniden gönder"
+  resend_submit: "Yeniden gönder"
+  resend_done_title: "E-postanı kontrol et"
+  resend_done_body: "Bu adrese ait doğrulanmamış bir hesap varsa yeni bir bağlantı gönderdik."
+
+login:
+  title: "Giriş yap"
+  submit: "Giriş yap"
+  failed: "E-posta veya parola hatalı."
+  unverified: "Önce e-posta adresini doğrulaman gerekiyor."
+  resend_link: "Doğrulama e-postasını yeniden gönder"
+  forgot: "Parolamı unuttum"
+  no_account: "Hesabın yok mu?"
+  totp_title: "İki adımlı doğrulama"
+  totp_body: "Doğrulama uygulamandaki 6 haneli kodu gir."
+  totp_submit: "Doğrula"
+  totp_failed: "Kod hatalı ya da daha önce kullanılmış."
+
+reset:
+  title: "Parola sıfırlama"
+  request_body: "Hesabının e-posta adresini gir; bir sıfırlama bağlantısı gönderelim."
+  request_submit: "Bağlantı gönder"
+  sent_title: "E-postanı kontrol et"
+  sent_body: "Bu adrese kayıtlı, doğrulanmış bir hesap varsa sıfırlama bağlantısı gönderdik. Bağlantı 1 saat geçerli."
+  form_title: "Yeni parola belirle"
+  submit: "Parolayı değiştir"
+  invalid: "Bu bağlantının süresi dolmuş ya da daha önce kullanılmış."
+  done_title: "Parola değiştirildi"
+  done_body: "Tüm oturumların kapatıldı. Yeni parolanla giriş yapabilirsin."
+
+account:
+  title: "Hesabım"
+  email: "E-posta"
+  name: "Ad"
+  totp_title: "İki adımlı doğrulama (TOTP)"
+  totp_on: "Açık"
+  totp_off: "Kapalı"
+  totp_start: "Etkinleştir"
+  totp_setup_title: "İki adımlı doğrulamayı etkinleştir"
+  totp_setup_body: "Doğrulama uygulamanla QR kodu tara ya da anahtarı elle gir, sonra uygulamanın gösterdiği kodu yaz."
+  totp_secret: "Anahtar"
+  totp_confirm: "Onayla"
+  totp_confirm_failed: "Kod doğrulanamadı. Tekrar dene."
+  totp_enabled: "İki adımlı doğrulama açıldı."
+  totp_disable: "Kapat"
+  totp_disable_body: "Kapatmak için parolanı ve güncel kodu gir."
+  totp_disabled: "İki adımlı doğrulama kapatıldı."
+  totp_admin_required: "Platform yöneticileri için iki adımlı doğrulama zorunlu. Devam etmek için etkinleştir."
+
+totp:
+  already_enabled: "İki adımlı doğrulama zaten açık."
+  not_enabled: "İki adımlı doğrulama kapalı."
+  required_for_admin: "Platform yöneticileri iki adımlı doğrulamayı kapatamaz."
+  disable_failed: "Parola veya kod hatalı."
+
+privacy:
+  title: "Aydınlatma metni"
+  draft_notice: "Taslak: bu metin yayından önce hukuki olarak gözden geçirilecektir."
+  controller: "Veri sorumlusu: Entegratör Status işletmecisi (iletişim bilgisi yayından önce eklenecek)."
+  data: "İşlenen veriler: ad, e-posta adresi, parolanın tek yönlü özeti, oturum kayıtları, güvenlik kayıtları (IP adresinin kısaltılmış hali)."
+  purposes: "Amaçlar: hesabın oluşturulması ve güvenliği, hizmetin sunulması, yasal yükümlülüklerin yerine getirilmesi."
+  legal_basis: "Hukuki sebep: sözleşmenin kurulması ve ifası, veri sorumlusunun meşru menfaati (güvenlik), hukuki yükümlülük (KVKK md. 5/2)."
+  retention: "Saklama: doğrulanmayan kayıtlar 48 saat, kapatılan organizasyonlar 30 gün sonra silinir."
+  rights: "Haklarınız: KVKK md. 11 kapsamındaki başvuru haklarınızı hesap sayfanızdan veri dışa aktarma ve silme işlemleriyle ya da iletişim adresi üzerinden kullanabilirsiniz."
+
+errors:
+  bad_request_title: "İstek işlenemedi"
+  bad_request_body: "Gönderilen bilgiler eksik ya da geçersiz. Sayfayı yenileyip tekrar dene."
+  not_found_title: "Sayfa bulunamadı"
+  not_found_body: "Aradığın sayfa yok ya da erişim iznin yok."
+  csrf_title: "Form süresi doldu"
+  csrf_body: "Güvenlik nedeniyle formu yeniden açıp tekrar gönder."
+
+mail:
+  verify:
+    subject: "Entegratör Status: e-posta adresini doğrula"
+    body: |
+      Merhaba,
+
+      Hesabını doğrulamak için şu bağlantıyı aç (24 saat geçerli):
+      {link}
+
+      Bu kaydı sen yapmadıysan bu e-postayı yok sayabilirsin.
+  signup_exists:
+    subject: "Entegratör Status: kayıt denemesi"
+    body: |
+      Merhaba,
+
+      Bu e-posta adresiyle yeni bir hesap açılmak istendi, ancak adresin zaten kayıtlı.
+      Parolanı hatırlamıyorsan giriş sayfasındaki "Parolamı unuttum" bağlantısını kullanabilirsin.
+
+      Bu denemeyi sen yapmadıysan bir şey yapmana gerek yok.
+  reset:
+    subject: "Entegratör Status: parola sıfırlama"
+    body: |
+      Merhaba,
+
+      Parolanı sıfırlamak için şu bağlantıyı aç (1 saat geçerli):
+      {link}
+
+      Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; parolan değişmez.

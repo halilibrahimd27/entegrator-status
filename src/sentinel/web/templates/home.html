@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ t("site.tagline") }}{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>{{ t("home.title") }}</h1>
+  <p>{{ t("home.body") }}</p>
+  <p class="actions">
+    <a class="button" href="/kayit">{{ t("nav.signup") }}</a>
+    <a href="/giris">{{ t("nav.login") }}</a>
+  </p>
+</section>
+{% endblock %}

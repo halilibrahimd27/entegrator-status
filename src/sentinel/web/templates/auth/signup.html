@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ t("signup.title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("signup.title") }}</h1>
+  {{ ui.error_box(error) }}
+  <form method="post" action="/kayit" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("display_name", "form.display_name", value=form.get("display_name", ""), autocomplete="name", maxlength=120, autofocus=true) }}
+    {{ ui.field("email", "form.email", type="email", value=form.get("email", ""), autocomplete="email", maxlength=320) }}
+    {{ ui.field("password", "form.password", type="password", autocomplete="new-password", hint_key="password.hint", maxlength=128) }}
+    <div class="field checkbox">
+      <input id="f-privacy" name="privacy_ack" type="checkbox" value="true" required>
+      <label for="f-privacy">{{ t("form.privacy_ack") }} <a href="/aydinlatma">{{ t("site.privacy_link") }}</a></label>
+    </div>
+    <button type="submit">{{ t("signup.submit") }}</button>
+  </form>
+  <p>{{ t("signup.have_account") }} <a href="/giris">{{ t("nav.login") }}</a></p>
+</section>
+{% endblock %}

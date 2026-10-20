@@ -1,0 +1,23 @@
+{% macro csrf_field() %}<input type="hidden" name="csrf" value="{{ csrf }}">{% endmacro %}
+
+{% macro error_box(error) %}
+{% if error %}<p class="error" role="alert">{{ t(error) }}</p>{% endif %}
+{% endmacro %}
+
+{% macro notice_box(notice) %}
+{% if notice %}<p class="notice" role="status">{{ t(notice) }}</p>{% endif %}
+{% endmacro %}
+
+{% macro field(name, label_key, type="text", value="", autocomplete="", required=true, hint_key=None, maxlength=None, inputmode=None, autofocus=false) %}
+<div class="field">
+  <label for="f-{{ name }}">{{ t(label_key) }}</label>
+  <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value }}"
+    {%- if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}
+    {%- if required %} required{% endif %}
+    {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+    {%- if inputmode %} inputmode="{{ inputmode }}"{% endif %}
+    {%- if autofocus %} autofocus{% endif %}
+    {%- if hint_key %} aria-describedby="h-{{ name }}"{% endif %}>
+  {% if hint_key %}<p class="hint" id="h-{{ name }}">{{ t(hint_key) }}</p>{% endif %}
+</div>
+{% endmacro %}

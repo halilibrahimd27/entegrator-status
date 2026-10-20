@@ -45,7 +45,6 @@ class UserSession(IdMixin, Base):
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     token_hash: Mapped[bytes] = mapped_column(LargeBinary(32), unique=True)
-    csrf_token: Mapped[str] = mapped_column(String(64))
     mfa_verified: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(default=utcnow)

@@ -13,14 +13,19 @@ import socket
 from collections.abc import AsyncIterator
 from typing import Any
 
+import httpx2
 import pytest
+from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from sentinel.config import SECRET_FIELDS
+from sentinel.accounts.mail import Mail, MemoryMailer
+from sentinel.config import SECRET_FIELDS, load_settings
 from sentinel.db.base import Base
 from sentinel.db.migrate import upgrade
 from sentinel.db.session import Database
+from sentinel.web.app import create_app
+from sentinel.web.services import AppServices
 
 _LOOPBACK = {"127.0.0.1", "::1", "localhost"}
 _FALLBACK_DB = "postgresql+asyncpg://sentinel@127.0.0.1:55432/sentinel_test"
@@ -103,3 +108,38 @@ async def db(_migrated_schema: None, database_url: str) -> AsyncIterator[Databas
         async with database.engine.begin() as connection:
             await connection.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
         await database.dispose()
+
+
+BASE_URL = "https://status.example.invalid"
+
+
+@pytest.fixture
+async def app(valid_env: dict[str, str], db: Database) -> AsyncIterator[FastAPI]:
+    """The real app with its lifespan, on the test database and Redis."""
+    application = create_app(load_settings())
+    async with application.router.lifespan_context(application):
+        services: AppServices = application.state.services
+        await services.redis.flushdb()
+        try:
+            yield application
+        finally:
+            await services.redis.flushdb()
+
+
+@pytest.fixture
+def services(app: FastAPI) -> AppServices:
+    svc: AppServices = app.state.services
+    return svc
+
+
+@pytest.fixture
+def outbox(services: AppServices) -> list[Mail]:
+    assert isinstance(services.mailer, MemoryMailer)
+    return services.mailer.outbox
+
+
+@pytest.fixture
+async def http(app: FastAPI) -> AsyncIterator[httpx2.AsyncClient]:
+    transport = httpx2.ASGITransport(app=app)
+    async with httpx2.AsyncClient(transport=transport, base_url=BASE_URL) as client:
+        yield client

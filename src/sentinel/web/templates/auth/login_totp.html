@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ t("login.totp_title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("login.totp_title") }}</h1>
+  <p>{{ t("login.totp_body") }}</p>
+  {{ ui.error_box(error) }}
+  <form method="post" action="/giris/2fa" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("code", "form.totp_code", autocomplete="one-time-code", inputmode="numeric", maxlength=6, autofocus=true) }}
+    <button type="submit">{{ t("login.totp_submit") }}</button>
+  </form>
+</section>
+{% endblock %}

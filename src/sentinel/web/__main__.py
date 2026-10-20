@@ -1,6 +1,7 @@
 import uvicorn
 
 from sentinel.config import load_settings_or_exit
+from sentinel.web.logging import uvicorn_log_config
 
 
 def main() -> None:
@@ -12,6 +13,7 @@ def main() -> None:
         port=settings.web_port,
         reload=settings.web_reload,
         server_header=False,
+        log_config=uvicorn_log_config(),
         log_level=settings.log_level.lower(),
     )
 

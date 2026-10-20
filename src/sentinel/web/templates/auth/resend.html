@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t("verify.resend_title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("verify.resend_title") }}</h1>
+  {{ ui.error_box(error) }}
+  <form method="post" action="/dogrula-tekrar" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("email", "form.email", type="email", autocomplete="email", maxlength=320, autofocus=true) }}
+    <button type="submit">{{ t("verify.resend_submit") }}</button>
+  </form>
+</section>
+{% endblock %}

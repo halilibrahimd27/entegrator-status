@@ -179,7 +179,7 @@ org panel + public status pages + JSON API (web, server-rendered) ◀── read
   new kind of dependency means adding an adapter, not changing the core.
 
 Package layout (src layout):
-`sentinel/{config,db,models,tenancy,catalog,graph,sources,probe,engine,contracts,risk,alerts,web,admin,security}`.
+`sentinel/{config,db,models,accounts,tenancy,catalog,graph,sources,probe,engine,contracts,risk,alerts,web,admin,security}`.
 
 ### Domain vocabulary (use these names in code)
 - **Organization**, **User**, **Membership** (role), **ApiToken**, **AuditLog**.
@@ -257,7 +257,7 @@ make check      # lint + security + test — must pass before every commit
 
 ## Definition of done (per phase)
 1. Acceptance criteria in `docs/PLAN.md` all met.
-2. `make check` passes; coverage ≥ 85 % for `security`, `tenancy`, `sources`,
-   `contracts`, `engine` and `risk` once they exist.
+2. `make check` passes; coverage ≥ 85 % for `security`, `accounts`, `tenancy`,
+   `sources`, `contracts`, `engine` and `risk` once they exist.
 3. Docs updated (README, `docs/METHODOLOGY.md`, ADRs for decisions taken).
 4. End with a **phase report**: what was done, how to test it by hand, known gaps.

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t("verify.title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("verify.title") }}</h1>
+  <p>{{ t("verify.body") }}</p>
+  {# A button, not an automatic GET: link scanners in mail clients must not spend the token. #}
+  <form method="post" action="/dogrula/{{ token }}">
+    {{ ui.csrf_field() }}
+    <button type="submit">{{ t("verify.submit") }}</button>
+  </form>
+</section>
+{% endblock %}
