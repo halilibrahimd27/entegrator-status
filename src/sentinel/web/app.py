@@ -13,8 +13,9 @@ from starlette.responses import RedirectResponse, Response
 
 from sentinel import __version__
 from sentinel.config import Settings, load_settings
+from sentinel.tenancy.scope import PermissionDeniedError
 from sentinel.web.headers import SecurityHeaders
-from sentinel.web.routes import account, auth, pages
+from sentinel.web.routes import account, api, auth, invites, members, orgs, pages
 from sentinel.web.services import build_services, services
 from sentinel.web.session_auth import (
     AdminTotpRequiredError,
@@ -48,7 +49,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.add_middleware(SecurityHeaders, hsts=settings.cookies_secure)
     app.mount("/static", StaticFiles(packages=[("sentinel.web", "static")]), name="static")
-    for router in (pages.router, auth.router, account.router):
+    for router in (
+        pages.router,
+        auth.router,
+        account.router,
+        orgs.router,
+        members.router,
+        invites.router,
+        api.router,
+    ):
         app.include_router(router)
 
     @app.get("/healthz", include_in_schema=False)
@@ -74,6 +83,11 @@ def _register_error_pages(app: FastAPI) -> None:
             request, "errors.csrf_title", "errors.csrf_body", status=403
         )
 
+    async def forbidden(request: Request, exc: Exception) -> Response:
+        return services(request).renderer.message(
+            request, "errors.forbidden_title", "errors.forbidden_body", status=403
+        )
+
     async def bad_form(request: Request, exc: Exception) -> Response:
         return services(request).renderer.message(
             request, "errors.bad_request_title", "errors.bad_request_body", status=400
@@ -93,5 +107,7 @@ def _register_error_pages(app: FastAPI) -> None:
     app.add_exception_handler(SecondFactorRequiredError, to_second_factor)
     app.add_exception_handler(AdminTotpRequiredError, to_admin_totp)
     app.add_exception_handler(CsrfError, csrf_failed)
+    app.add_exception_handler(PermissionDeniedError, forbidden)
+    app.add_exception_handler(api.ApiAuthError, api.unauthorized)
     app.add_exception_handler(RequestValidationError, bad_form)
     app.add_exception_handler(StarletteHTTPException, http_error)

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ t("invite.title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("invite.title") }}</h1>
+  <p>{{ t("invite.body").format(org=preview.org_name, role=t("roles." ~ preview.role.value)) }}</p>
+  <p>{{ t("invite.for_email").format(email=preview.email) }}</p>
+  <p>{{ t("invite.sign_in_first") }}</p>
+  <p class="actions">
+    <a class="button" href="/orglar">{{ t("invite.continue") }}</a>
+    <a href="/kayit">{{ t("nav.signup") }}</a>
+  </p>
+</section>
+{% endblock %}

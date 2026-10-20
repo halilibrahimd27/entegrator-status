@@ -18,7 +18,7 @@ async def home(
     request: Request, viewer: Annotated[Viewer | None, Depends(optional_viewer)]
 ) -> Response:
     if viewer is not None:
-        return RedirectResponse("/hesap", status_code=303)
+        return RedirectResponse("/orglar", status_code=303)
     return services(request).renderer.page(request, "home.html")
 
 

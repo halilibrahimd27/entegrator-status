@@ -6,6 +6,8 @@ import re
 import secrets
 
 import httpx2
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
 
 from sentinel.accounts.mail import Mail
 
@@ -65,8 +67,29 @@ async def signed_in(client: httpx2.AsyncClient, outbox: list[Mail], email: str) 
     await registered(client, outbox, email)
     response = await login(client, email)
     assert response.status_code == 303, response.text
-    assert response.headers["location"] == "/hesap"
+    assert response.headers["location"] == "/orglar"
 
 
 async def logout(client: httpx2.AsyncClient) -> httpx2.Response:
     return await post_form(client, "/cikis", {}, csrf_from="/hesap")
+
+
+def api_routes(app: FastAPI) -> list[tuple[str, APIRoute]]:
+    """``(full path, route)`` for every API route, looking inside included routers.
+
+    FastAPI keeps included routers as nested objects in ``app.routes``; iterating
+    ``app.routes`` alone finds none of their routes.
+    """
+    found: list[tuple[str, APIRoute]] = []
+
+    def walk(routes: list[object], prefix: str) -> None:
+        for route in routes:
+            inner = getattr(route, "original_router", None)
+            if inner is not None:
+                context = getattr(route, "include_context", None)
+                walk(list(inner.routes), prefix + getattr(context, "prefix", ""))
+            elif isinstance(route, APIRoute):
+                found.append((prefix + route.path, route))
+
+    walk(list(app.routes), "")
+    return found

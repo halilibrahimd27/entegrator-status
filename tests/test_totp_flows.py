@@ -86,7 +86,7 @@ async def test_second_factor_at_sign_in_with_replay_protection(
     at(monkeypatch, services, later)
     ok = await post_form(http, "/giris/2fa", {"code": code_at(secret, later)})
     assert ok.status_code == 303
-    assert ok.headers["location"] == "/hesap"
+    assert ok.headers["location"] == "/orglar"
     assert (await http.get("/hesap")).status_code == 200
 
 

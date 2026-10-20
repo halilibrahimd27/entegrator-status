@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ t("orgs.title") }}{% endblock %}
+{% block content %}
+{% if invitation %}
+<section class="card notice-card">
+  <h2>{{ t("invite.card_title") }}</h2>
+  <p>{{ t("invite.body").format(org=invitation.org_name, role=t("roles." ~ invitation.role.value)) }}</p>
+  <div class="actions">
+    <form method="post" action="/davet/kabul" class="inline">
+      {{ ui.csrf_field() }}
+      <button type="submit">{{ t("invite.accept") }}</button>
+    </form>
+    <form method="post" action="/davet/vazgec" class="inline">
+      {{ ui.csrf_field() }}
+      <button type="submit" class="secondary">{{ t("invite.decline") }}</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+<section class="card wide">
+  <h1>{{ t("orgs.title") }}</h1>
+  {{ ui.error_box(error) }}
+  {% if orgs %}
+  <table>
+    <thead><tr><th scope="col">{{ t("orgs.name") }}</th><th scope="col">{{ t("orgs.your_role") }}</th></tr></thead>
+    <tbody>
+    {% for org in orgs %}
+      <tr><td><a href="/o/{{ org.slug }}">{{ org.name }}</a></td><td>{{ t("roles." ~ org.role.value) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("orgs.empty") }}</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>{{ t("orgs.create_title") }}</h2>
+  <form method="post" action="/orglar" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("name", "orgs.name", maxlength=120) }}
+    <button type="submit">{{ t("orgs.create_submit") }}</button>
+  </form>
+</section>
+{% endblock %}

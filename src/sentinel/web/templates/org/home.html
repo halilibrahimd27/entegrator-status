@@ -1,0 +1,8 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+<section class="card wide">
+  <h1>{{ t("org.home") }}</h1>
+  <p>{{ t("org.home_body") }}</p>
+</section>
+{% endblock %}

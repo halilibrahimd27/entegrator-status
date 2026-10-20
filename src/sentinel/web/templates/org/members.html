@@ -1,0 +1,87 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("members.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+<section class="card wide">
+  <h1>{{ t("members.title") }}</h1>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{{ t("members.name") }}</th>
+        <th scope="col">{{ t("members.email") }}</th>
+        <th scope="col">{{ t("members.role") }}</th>
+        <th scope="col">{{ t("members.joined") }}</th>
+        {% if can(role, "members.change_role") %}<th scope="col"><span class="sr-only">{{ t("members.change_role") }}</span></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for m in members %}
+      <tr>
+        <td>{{ m.display_name }}</td>
+        <td>{{ m.email }}</td>
+        <td>{{ t("roles." ~ m.role.value) }}</td>
+        <td>{{ m.joined_at | local }}</td>
+        {% if can(role, "members.change_role") %}
+        <td class="row-actions">
+          <form method="post" action="/o/{{ ctx.org.slug }}/uyeler/{{ m.membership_id }}/rol" class="inline">
+            {{ ui.csrf_field() }}
+            <label class="sr-only" for="role-{{ m.membership_id }}">{{ t("members.change_role") }}</label>
+            <select id="role-{{ m.membership_id }}" name="role">
+              {% for r in roles %}<option value="{{ r.value }}"{% if r == m.role %} selected{% endif %}>{{ t("roles." ~ r.value) }}</option>{% endfor %}
+            </select>
+            <button type="submit" class="secondary">{{ t("members.save_role") }}</button>
+          </form>
+          {% if m.user_id != ctx.viewer.user.id %}
+          <form method="post" action="/o/{{ ctx.org.slug }}/uyeler/{{ m.membership_id }}/cikar" class="inline">
+            {{ ui.csrf_field() }}
+            <button type="submit" class="secondary">{{ t("members.remove") }}</button>
+          </form>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if can(role, "members.invite") %}
+<section class="card wide">
+  <h2>{{ t("members.invite_title") }}</h2>
+  <form method="post" action="/o/{{ ctx.org.slug }}/uyeler/davet" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("email", "members.email", type="email", autocomplete="off", maxlength=320) }}
+    <div class="field">
+      <label for="f-role">{{ t("members.role") }}</label>
+      <select id="f-role" name="role">
+        {% for r in roles %}<option value="{{ r.value }}"{% if r.value == "member" %} selected{% endif %}>{{ t("roles." ~ r.value) }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit">{{ t("members.invite_submit") }}</button>
+  </form>
+
+  <h3>{{ t("members.pending_title") }}</h3>
+  {% if pending %}
+  <table>
+    <thead><tr><th scope="col">{{ t("members.email") }}</th><th scope="col">{{ t("members.role") }}</th><th scope="col">{{ t("members.expires") }}</th><th scope="col"><span class="sr-only">{{ t("members.revoke") }}</span></th></tr></thead>
+    <tbody>
+    {% for i in pending %}
+      <tr>
+        <td>{{ i.email }}</td>
+        <td>{{ t("roles." ~ i.role.value) }}</td>
+        <td>{{ i.expires_at | local }}</td>
+        <td>
+          <form method="post" action="/o/{{ ctx.org.slug }}/davetler/{{ i.id }}/iptal" class="inline">
+            {{ ui.csrf_field() }}
+            <button type="submit" class="secondary">{{ t("members.revoke") }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("members.pending_empty") }}</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

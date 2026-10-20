@@ -1,0 +1,46 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("tokens.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% if created %}
+<section class="card wide notice-card" role="status">
+  <h2>{{ t("tokens.created_title") }}</h2>
+  <p>{{ t("tokens.created_body") }}</p>
+  <p><code class="secret">{{ created }}</code></p>
+</section>
+{% endif %}
+<section class="card wide">
+  <h1>{{ t("tokens.title") }}</h1>
+  <p>{{ t("tokens.body") }}</p>
+  {% if tokens %}
+  <table>
+    <thead><tr><th scope="col">{{ t("tokens.name") }}</th><th scope="col">{{ t("tokens.prefix") }}</th><th scope="col">{{ t("tokens.expires") }}</th><th scope="col">{{ t("tokens.last_used") }}</th><th scope="col"><span class="sr-only">{{ t("tokens.revoke") }}</span></th></tr></thead>
+    <tbody>
+    {% for tok in tokens %}
+      <tr>
+        <td>{{ tok.name }}</td>
+        <td><code>es_{{ tok.prefix }}_…</code></td>
+        <td>{{ tok.expires_at | local }}</td>
+        <td>{{ tok.last_used_at | local }}</td>
+        <td>
+          <form method="post" action="/o/{{ ctx.org.slug }}/tokenlar/{{ tok.id }}/iptal" class="inline">
+            {{ ui.csrf_field() }}
+            <button type="submit" class="secondary">{{ t("tokens.revoke") }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("tokens.empty") }}</p>
+  {% endif %}
+</section>
+<section class="card wide">
+  <form method="post" action="/o/{{ ctx.org.slug }}/tokenlar" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("name", "tokens.name", maxlength=80) }}
+    {{ ui.field("days", "tokens.days", type="number", value="90", inputmode="numeric") }}
+    <button type="submit">{{ t("tokens.create_submit") }}</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set role = ctx.scope.role.value %}
+{% block content %}
+<div class="org">
+  <header class="org-header">
+    <p class="org-name">{{ ctx.org.name }}</p>
+    <nav aria-label="{{ t('org.nav_label') }}" class="tabs">
+      {% set base = "/o/" ~ ctx.org.slug %}
+      <a href="{{ base }}"{% if section == "home" %} aria-current="page"{% endif %}>{{ t("org.home") }}</a>
+      <a href="{{ base }}/uyeler"{% if section == "members" %} aria-current="page"{% endif %}>{{ t("org.members") }}</a>
+      {% if can(role, "tokens.manage") %}
+      <a href="{{ base }}/tokenlar"{% if section == "tokens" %} aria-current="page"{% endif %}>{{ t("org.tokens") }}</a>
+      {% endif %}
+      {% if can(role, "audit.view") %}
+      <a href="{{ base }}/denetim"{% if section == "audit" %} aria-current="page"{% endif %}>{{ t("org.audit") }}</a>
+      {% endif %}
+      <a href="{{ base }}/ayarlar"{% if section == "settings" %} aria-current="page"{% endif %}>{{ t("org.settings") }}</a>
+    </nav>
+  </header>
+  {{ ui.error_box(error) }}
+  {% block org_content %}{% endblock %}
+</div>
+{% endblock %}

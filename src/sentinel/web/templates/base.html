@@ -13,6 +13,7 @@
     <a class="brand" href="/">{{ t("site.name") }}</a>
     <nav aria-label="{{ t('nav.label') }}">
       {% if viewer %}
+        <a href="/orglar">{{ t("nav.orgs") }}</a>
         <a href="/hesap">{{ t("nav.account") }}</a>
         <form method="post" action="/cikis" class="inline">
           {{ ui.csrf_field() }}

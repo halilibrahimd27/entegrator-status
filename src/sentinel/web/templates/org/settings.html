@@ -1,0 +1,22 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("org.settings") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% if can(role, "org.update") %}
+<section class="card wide">
+  <h1>{{ t("org.rename_title") }}</h1>
+  <form method="post" action="/o/{{ ctx.org.slug }}/ayarlar" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("name", "orgs.name", value=ctx.org.name, maxlength=120) }}
+    <button type="submit">{{ t("org.rename_submit") }}</button>
+  </form>
+</section>
+{% endif %}
+<section class="card wide">
+  <h2>{{ t("org.leave_title") }}</h2>
+  <p>{{ t("org.leave_body") }}</p>
+  <form method="post" action="/o/{{ ctx.org.slug }}/ayril">
+    {{ ui.csrf_field() }}
+    <button type="submit" class="secondary">{{ t("org.leave_submit") }}</button>
+  </form>
+</section>
+{% endblock %}

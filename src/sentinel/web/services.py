@@ -16,6 +16,9 @@ from sentinel.accounts.totp import TotpBox
 from sentinel.accounts.two_factor import TwoFactorService
 from sentinel.config import Settings
 from sentinel.db.session import Database
+from sentinel.tenancy.api_tokens import ApiTokenService
+from sentinel.tenancy.invitations import InvitationService
+from sentinel.tenancy.orgs import OrgService
 from sentinel.web.templating import Renderer
 
 
@@ -27,6 +30,9 @@ class AppServices:
     mailer: Mailer
     accounts: AccountService
     two_factor: TwoFactorService
+    orgs: OrgService
+    invitations: InvitationService
+    api_tokens: ApiTokenService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -61,6 +67,9 @@ def build_services(settings: Settings) -> AppServices:
         mailer=mailer,
         accounts=accounts,
         two_factor=two_factor,
+        orgs=OrgService(db),
+        invitations=InvitationService(db=db, settings=settings, mailer=mailer, throttle=throttle),
+        api_tokens=ApiTokenService(db, settings),
         renderer=Renderer(),
     )
 

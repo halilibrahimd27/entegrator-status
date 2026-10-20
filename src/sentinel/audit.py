@@ -4,11 +4,17 @@ from __future__ import annotations
 
 import ipaddress
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sentinel.models import AuditEvent
+from sentinel.db.session import Database
+from sentinel.models import AuditEvent, User
+from sentinel.tenancy.roles import Action
+from sentinel.tenancy.scope import TenantScope
 
 
 def ip_prefix(ip: str | None) -> str | None:
@@ -45,3 +51,24 @@ def record(
             ip_prefix=ip_prefix(ip),
         )
     )
+
+
+@dataclass(frozen=True)
+class AuditEntry:
+    occurred_at: datetime
+    action: str
+    actor: str | None
+    details: dict[str, Any]
+
+
+async def recent(db: Database, scope: TenantScope, limit: int = 100) -> list[AuditEntry]:
+    """The organization's latest audit events (tenant-scoped; platform rows excluded)."""
+    scope.require(Action.AUDIT_VIEW)
+    async with db.tenant(scope) as s:
+        rows = await s.execute(
+            select(AuditEvent, User.display_name)
+            .outerjoin(User, User.id == AuditEvent.actor_user_id)
+            .order_by(AuditEvent.occurred_at.desc())
+            .limit(limit)
+        )
+        return [AuditEntry(e.occurred_at, e.action, name, e.details) for e, name in rows.all()]

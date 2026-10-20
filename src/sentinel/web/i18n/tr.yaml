@@ -130,7 +130,94 @@ privacy:
   retention: "Saklama: doğrulanmayan kayıtlar 48 saat, kapatılan organizasyonlar 30 gün sonra silinir."
   rights: "Haklarınız: KVKK md. 11 kapsamındaki başvuru haklarınızı hesap sayfanızdan veri dışa aktarma ve silme işlemleriyle ya da iletişim adresi üzerinden kullanabilirsiniz."
 
+roles:
+  owner: "Sahip"
+  admin: "Yönetici"
+  member: "Üye"
+  viewer: "İzleyici"
+
+orgs:
+  title: "Organizasyonlar"
+  empty: "Henüz bir organizasyonun yok. Bir tane oluştur ya da bir davet bekle."
+  create_title: "Yeni organizasyon"
+  name: "Organizasyon adı"
+  create_submit: "Oluştur"
+  invalid_name: "Ad 2 ile 120 karakter arasında olmalı."
+  your_role: "Rolün"
+
+org:
+  nav_label: "Organizasyon menüsü"
+  home: "Genel bakış"
+  members: "Üyeler"
+  tokens: "API token'ları"
+  audit: "Denetim kaydı"
+  settings: "Ayarlar"
+  home_body: "Bağımlılık grafın ve izlenen servisler burada görünecek. Ürünlerini ve bağımlılıklarını eklemek bir sonraki aşamada gelecek."
+  rename_title: "Organizasyon adı"
+  rename_submit: "Kaydet"
+  leave_title: "Organizasyondan ayrıl"
+  leave_body: "Ayrılırsan bu organizasyonun verilerine erişimin biter."
+  leave_submit: "Ayrıl"
+
+members:
+  title: "Üyeler"
+  name: "Ad"
+  email: "E-posta"
+  role: "Rol"
+  joined: "Katılma"
+  change_role: "Rolü değiştir"
+  save_role: "Kaydet"
+  remove: "Çıkar"
+  invite_title: "Üye davet et"
+  invite_submit: "Davet gönder"
+  pending_title: "Bekleyen davetler"
+  pending_empty: "Bekleyen davet yok."
+  expires: "Son geçerlilik"
+  revoke: "İptal et"
+  last_owner: "Organizasyonda en az bir sahip kalmalı."
+  already_member: "Bu kişi zaten üye."
+
+tokens:
+  title: "API token'ları"
+  body: "Token'lar organizasyonun verilerini salt okunur olarak sorgulamak içindir. İstekte Authorization: Bearer başlığıyla gönderilir."
+  name: "Token adı"
+  days: "Geçerlilik (gün)"
+  create_submit: "Token oluştur"
+  created_title: "Token oluşturuldu"
+  created_body: "Bu token'ı şimdi kopyala; bir daha gösterilmeyecek."
+  prefix: "Önek"
+  expires: "Son geçerlilik"
+  last_used: "Son kullanım"
+  revoke: "İptal et"
+  empty: "Etkin token yok."
+  invalid_name: "Token adı 1 ile 80 karakter arasında olmalı."
+  invalid_days: "Geçerlilik 1 ile 365 gün arasında olmalı."
+
+audit_log:
+  title: "Denetim kaydı"
+  when: "Zaman"
+  who: "Kim"
+  what: "İşlem"
+  empty: "Henüz kayıt yok."
+  system: "Sistem"
+
+invite:
+  title: "Organizasyon daveti"
+  body: "{org} organizasyonuna {role} rolüyle davet edildin."
+  for_email: "Davet şu adrese gönderildi: {email}"
+  accept: "Daveti kabul et"
+  decline: "Vazgeç"
+  sign_in_first: "Kabul etmek için bu adresle giriş yap ya da kayıt ol, sonra organizasyonlar sayfana dön."
+  continue: "Organizasyonlarıma git"
+  card_title: "Bekleyen bir davetin var"
+  invalid_title: "Davet geçersiz"
+  invalid_body: "Bu davetin süresi dolmuş, iptal edilmiş ya da daha önce kullanılmış."
+  invalid: "Bu davetin süresi dolmuş, iptal edilmiş ya da daha önce kullanılmış."
+  wrong_account: "Bu davet başka bir e-posta adresine gönderilmiş. O adresle giriş yap."
+
 errors:
+  forbidden_title: "Yetkin yok"
+  forbidden_body: "Bu işlem için rolün yeterli değil."
   bad_request_title: "İstek işlenemedi"
   bad_request_body: "Gönderilen bilgiler eksik ya da geçersiz. Sayfayı yenileyip tekrar dene."
   not_found_title: "Sayfa bulunamadı"
@@ -157,6 +244,16 @@ mail:
       Parolanı hatırlamıyorsan giriş sayfasındaki "Parolamı unuttum" bağlantısını kullanabilirsin.
 
       Bu denemeyi sen yapmadıysan bir şey yapmana gerek yok.
+  invite:
+    subject: "Entegratör Status: {org} organizasyonuna davet"
+    body: |
+      Merhaba,
+
+      {inviter} seni Entegratör Status'ta "{org}" organizasyonuna davet etti.
+      Daveti görmek için şu bağlantıyı aç (7 gün geçerli):
+      {link}
+
+      Bu daveti beklemiyorsan bu e-postayı yok sayabilirsin.
   reset:
     subject: "Entegratör Status: parola sıfırlama"
     body: |

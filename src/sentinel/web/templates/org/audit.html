@@ -1,0 +1,23 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("audit_log.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+<section class="card wide">
+  <h1>{{ t("audit_log.title") }}</h1>
+  {% if entries %}
+  <table>
+    <thead><tr><th scope="col">{{ t("audit_log.when") }}</th><th scope="col">{{ t("audit_log.who") }}</th><th scope="col">{{ t("audit_log.what") }}</th></tr></thead>
+    <tbody>
+    {% for e in entries %}
+      <tr>
+        <td>{{ e.occurred_at | local }}</td>
+        <td>{{ e.actor or t("audit_log.system") }}</td>
+        <td><code>{{ e.action }}</code></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("audit_log.empty") }}</p>
+  {% endif %}
+</section>
+{% endblock %}

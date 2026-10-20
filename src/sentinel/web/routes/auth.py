@@ -24,7 +24,7 @@ Email = Annotated[str, Form(max_length=320)]
 Password = Annotated[str, Form(max_length=256)]
 OptionalViewer = Annotated[Viewer | None, Depends(optional_viewer)]
 NO_REFERRER = {"Referrer-Policy": "no-referrer"}  # pages whose URL holds a token
-HOME_AFTER_LOGIN = "/hesap"
+HOME_AFTER_LOGIN = "/orglar"
 
 
 def _status(key: str) -> int:

@@ -13,14 +13,24 @@ import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.dependencies.models import Dependant
-from fastapi.routing import APIRoute
 
 from sentinel.accounts.mail import Mail
 from sentinel.web.headers import CSP
 from sentinel.web.i18n import messages
 from sentinel.web.logging import RedactTokenPaths, redact, uvicorn_log_config
-from sentinel.web.session_auth import csrf_protect
-from support import PASSWORD, csrf, link_in, login, post_form, registered, signed_in, signup, verify
+from sentinel.web.session_auth import csrf_protect, optional_viewer
+from support import (
+    PASSWORD,
+    api_routes,
+    csrf,
+    link_in,
+    login,
+    post_form,
+    registered,
+    signed_in,
+    signup,
+    verify,
+)
 
 SRC = Path(__file__).resolve().parents[1] / "src" / "sentinel"
 EMAIL = "guvenlik@example.invalid"
@@ -114,15 +124,24 @@ def _calls(dependant: Dependant) -> Iterator[object]:
 
 
 def test_every_unsafe_route_is_csrf_protected(app: FastAPI) -> None:
+    routes = api_routes(app)
+    unsafe = [(path, r) for path, r in routes if (r.methods or set()) & UNSAFE]
+    assert len(routes) > 25  # the discovery itself works
+    assert len(unsafe) > 15
     unprotected = [
-        f"{sorted(route.methods or set())} {route.path}"
-        for route in app.routes
-        if isinstance(route, APIRoute)
-        and (route.methods or set()) & UNSAFE
-        and not route.path.startswith(CSRF_EXEMPT_PREFIXES)
-        and csrf_protect not in set(_calls(route.dependant))
+        f"{sorted(r.methods or set())} {path}"
+        for path, r in unsafe
+        if not path.startswith(CSRF_EXEMPT_PREFIXES)
+        and csrf_protect not in set(_calls(r.dependant))
     ]
     assert unprotected == []
+
+
+def test_api_routes_take_no_cookies(app: FastAPI) -> None:
+    """Token-authenticated routes must not depend on the session (no CSRF exemption abuse)."""
+    for path, route in api_routes(app):
+        if path.startswith(CSRF_EXEMPT_PREFIXES):
+            assert optional_viewer not in set(_calls(route.dependant)), path
 
 
 def _copy_keys_used() -> set[str]:

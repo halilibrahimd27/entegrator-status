@@ -49,7 +49,7 @@ async def test_sign_up_verify_and_sign_in(
 
     signed = await login(http, EMAIL)
     assert signed.status_code == 303
-    assert signed.headers["location"] == "/hesap"
+    assert signed.headers["location"] == "/orglar"
     account = await http.get("/hesap")
     assert account.status_code == 200
     assert EMAIL in account.text
