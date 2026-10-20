@@ -64,14 +64,26 @@ class Timeouts:
 
 @dataclass(frozen=True)
 class FetchPolicy:
-    method: Literal["GET", "HEAD"] = "GET"
+    """How one fetch may behave. ``POST`` exists only for read queries (ADR 0003 rule 2):
+    it needs ``read_query=True`` and a JSON body, and never follows a redirect."""
+
+    method: Literal["GET", "HEAD", "POST"] = "GET"
     allow_http: bool = False
     max_redirects: int = MAX_REDIRECTS
     max_bytes: int = PAGE_MAX_BYTES
     timeouts: Timeouts = field(default_factory=Timeouts)
     headers: Mapping[str, str] = field(default_factory=dict)
+    json_body: bytes | None = None
+    read_query: bool = False
 
     def __post_init__(self) -> None:
+        if self.method == "POST":
+            if not self.read_query or self.json_body is None:
+                raise ValueError("POST is only for flagged read queries with a JSON body")
+            if self.max_redirects != 0:
+                raise ValueError("a read query never follows redirects")
+        elif self.json_body is not None or self.read_query:
+            raise ValueError("only a POST read query carries a body")
         for name, value in self.headers.items():
             if name.lower() not in REQUEST_HEADERS:
                 raise ValueError(f"header {name!r} may not be set by a fetch")
@@ -190,8 +202,10 @@ class OutboundClient:
         request = self._client.build_request(
             policy.method,
             target.url.copy_with(host=str(ip)),
+            content=policy.json_body,
             headers={
                 **policy.headers,
+                **({"Content-Type": "application/json"} if policy.json_body is not None else {}),
                 "Host": target.host_header,
                 "User-Agent": self._user_agent,
                 # Size caps count decoded bytes; asking for identity keeps them honest.

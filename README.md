@@ -19,7 +19,7 @@ your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phases 0–5 of the [build plan](docs/PLAN.md) are done:
+Phases 0–6 of the [build plan](docs/PLAN.md) are done:
 
 - configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
 - accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
@@ -46,8 +46,13 @@ Phases 0–5 of the [build plan](docs/PLAN.md) are done:
   effective dates; manual announcements; dated risks from `Sunset` / `Deprecation`
   headers and expiring certificates and domains
   ([ADR 0009](docs/adr/0009-change-sources.md))
+- releases, advisories and lifecycle: GitHub, npm, PyPI and Docker Hub releases
+  classified major / minor / patch / pre-release (semver, PEP 440, calver); pinned vs.
+  latest on product pages; risks for unadopted majors, OSV advisories that affect the
+  pinned version, and end of life within 180 days
+  ([ADR 0010](docs/adr/0010-registries.md))
 
-Next: releases, advisories and lifecycle (Phase 6).
+Next: API contract drift and authenticated checks (Phase 7).
 
 ## Quick start
 

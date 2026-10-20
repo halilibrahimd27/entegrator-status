@@ -26,7 +26,14 @@ if TYPE_CHECKING:
     from sentinel.probe.nodes import IngestResult, SnapshotIn
 
 CONTENT_KINDS = frozenset(
-    {SourceKind.FEED, SourceKind.STATUS_PAGE, SourceKind.PAGE_WATCH, SourceKind.RELEASE}
+    {
+        SourceKind.FEED,
+        SourceKind.STATUS_PAGE,
+        SourceKind.PAGE_WATCH,
+        SourceKind.RELEASE,
+        SourceKind.ADVISORY,
+        SourceKind.EOL,
+    }
 )
 NODE_FRESH = timedelta(minutes=10)
 FAILING_AFTER = 5

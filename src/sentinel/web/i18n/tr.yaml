@@ -110,6 +110,13 @@ risks:
   overdue: "Tarih geçti"
   days_left: "{n} gün kaldı"
   more: "Açıklama"
+  severity: "Önem"
+  severity_LOW: "Düşük"
+  severity_MODERATE: "Orta"
+  severity_HIGH: "Yüksek"
+  severity_CRITICAL: "Kritik"
+  version: "Kullanılan sürüm"
+  cycle: "Sürüm hattı"
 
 categories:
   maintenance: "Bakım"

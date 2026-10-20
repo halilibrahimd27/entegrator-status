@@ -250,7 +250,7 @@ Acceptance
 
 ---
 
-## Phase 6 — Releases, advisories and lifecycle
+## Phase 6 — Releases, advisories and lifecycle ✅
 
 Goal: "a dependency update broke production" stops being a surprise.
 
@@ -264,9 +264,11 @@ Tasks
       notes scanned for "breaking" markers.
 - [x] Pinned vs. latest for imported dependencies (from `usage.version`): drift shown,
       unadopted majors become Risks with the release notes link.
-- [ ] `advisory` adapter: OSV.dev for package@version → security Risks with severity.
-- [ ] `eol` adapter: endoflife.date for runtimes, frameworks and databases → Risk N days
-      before end of life.
+- [x] `advisory` adapter: OSV.dev for package@version → security Risks with severity.
+      (One query per package; the engine checks every pinned version against the
+      affected ranges, so each organization gets risks for the versions it uses.)
+- [x] `eol` adapter: endoflife.date for runtimes, frameworks and databases → Risk N days
+      before end of life. (N = 180; ended cycles at once.)
 
 Acceptance
 - Registry fixtures for each ecosystem; semver edge cases (pre-releases, build metadata,

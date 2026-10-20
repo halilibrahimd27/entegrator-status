@@ -48,3 +48,14 @@ def test_test_only_address_policy_is_not_used_in_production_code() -> None:
             if isinstance(node, ast.Attribute) and node.attr == "for_tests":
                 offenders.append(str(path.relative_to(PACKAGE)))
     assert offenders == []  # the definition is a FunctionDef; any use is an Attribute
+
+
+def test_only_the_advisory_adapter_sends_read_queries() -> None:
+    """POST is the read-query exception (ADR 0003 rule 2): one adapter, one endpoint."""
+    users = set()
+    for path in PACKAGE.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.keyword) and node.arg == "read_query":
+                users.add(str(path.relative_to(PACKAGE)))
+    assert users == {"sources/adapters/advisory.py"}

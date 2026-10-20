@@ -1,5 +1,6 @@
 """Source adapters. Each kind registers one adapter; the prober looks them up by kind."""
 
+from sentinel.sources.adapters.advisory import AdvisoryAdapter
 from sentinel.sources.adapters.base import (
     REGISTRY,
     Adapter,
@@ -10,6 +11,7 @@ from sentinel.sources.adapters.base import (
 )
 from sentinel.sources.adapters.dns import DnsAdapter
 from sentinel.sources.adapters.domain_expiry import DomainExpiryAdapter
+from sentinel.sources.adapters.eol import EolAdapter
 from sentinel.sources.adapters.feed import FeedAdapter
 from sentinel.sources.adapters.http import HttpAdapter
 from sentinel.sources.adapters.page_watch import PageWatchAdapter
@@ -26,6 +28,8 @@ for _adapter in (
     StatusPageAdapter(),
     PageWatchAdapter(),
     ReleaseAdapter(),
+    AdvisoryAdapter(),
+    EolAdapter(),
 ):
     REGISTRY[_adapter.kind] = _adapter
 

@@ -54,6 +54,13 @@ Only what an organisation adds to its dependency graph, plus the curated shared 
   in the title becomes the effective date (midnight, Turkey time).
 - Vendor-declared maintenance counts as maintenance only when it was announced before
   it started.
+- Releases come from each registry's documented, robots-allowed endpoint (PyPI through
+  its RSS feed, because its robots.txt disallows the JSON API). A new version is
+  classified against the closest older stable version; in `0.y.z` a minor bump counts
+  as major. Release notes are read for "breaking" markers and not stored.
+- Advisories come from OSV.dev; a pinned version is affected when OSV lists it or it
+  falls in an affected range. End-of-life dates come from endoflife.date; a risk opens
+  180 days before the end of life of the cycle a pinned version belongs to.
 - Contract changes are `breaking`, `non_breaking` or `cosmetic`; releases `major`,
   `minor`, `patch` or `prerelease`; announcements `maintenance`, `deprecation`,
   `security`, `package_update`, `incident` or `other`.

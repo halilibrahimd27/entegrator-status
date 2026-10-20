@@ -83,6 +83,10 @@
         {% set days = (risk.due_at - now).days %}
         <span class="hint">{{ t("risks.overdue") if days < 0 else t("risks.days_left").format(n=days) }}</span>
       {% else %}<span class="hint">{{ t("risks.no_date") }}</span>{% endif %}
+      {% if risk.kind == "advisory" %}<br><code>{{ risk.detail.get("id") }}</code> {{ risk.detail.get("title") or "" }}
+        {% if risk.detail.get("severity") %} · {{ t("risks.severity") }}: {{ t("risks.severity_" ~ risk.detail["severity"]) }}{% endif %}
+        · {{ t("risks.version") }}: {{ risk.detail.get("version") }}{% endif %}
+      {% if risk.kind == "eol" %} · {{ t("risks.cycle") }}: {{ risk.detail.get("cycle") }}{% endif %}
       {% if risk.link %} · <a href="{{ risk.link }}" rel="noopener noreferrer nofollow">{{ t("risks.more") }}</a>{% endif %}
     </li>
     {% endfor %}

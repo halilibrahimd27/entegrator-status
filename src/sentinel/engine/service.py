@@ -16,6 +16,7 @@ from sentinel.engine.retention import run_retention
 from sentinel.engine.rollups import run_rollups
 from sentinel.engine.status import StatusEngine
 from sentinel.risk.drift import run_drift
+from sentinel.risk.lifecycle import run_lifecycle
 from sentinel.risk.scan import run_risks
 from sentinel.runtime import configure_logging
 
@@ -67,6 +68,9 @@ async def serve(
             "drift: %s",
             asdict(drift),
         )
+        lifecycle = await run_lifecycle(db)
+        level = logging.INFO if lifecycle.opened or lifecycle.resolved else logging.DEBUG
+        log.log(level, "lifecycle: %s", asdict(lifecycle))
         risks = await run_risks(db)
         log.log(
             logging.INFO if risks.opened or risks.resolved else logging.DEBUG,

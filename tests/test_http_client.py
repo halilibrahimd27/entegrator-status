@@ -330,3 +330,34 @@ async def test_conditional_headers_are_sent_but_ours_cannot_be_replaced() -> Non
 def test_only_safe_headers_with_safe_values(headers: dict[str, str]) -> None:
     with pytest.raises(ValueError, match="header"):
         FetchPolicy(headers=headers)
+
+
+async def test_read_query_posts_json_and_never_follows_redirects() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(302, headers={"Location": "https://elsewhere.example/"})
+
+    policy = FetchPolicy(method="POST", json_body=b'{"q":1}', read_query=True, max_redirects=0)
+    async with client(handler) as c:
+        with pytest.raises(TooManyRedirectsError):
+            await c.fetch("https://portal.example/v1/query", policy)
+    assert len(seen) == 1
+    assert seen[0].method == "POST"
+    assert seen[0].content == b'{"q":1}'
+    assert seen[0].headers["content-type"] == "application/json"
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"method": "POST", "json_body": b"{}", "max_redirects": 0},  # not flagged
+        {"method": "POST", "read_query": True, "max_redirects": 0},  # no body
+        {"method": "POST", "json_body": b"{}", "read_query": True},  # would follow redirects
+        {"json_body": b"{}"},  # a GET with a body
+    ],
+)
+def test_post_is_only_a_flagged_read_query(kwargs: dict[str, object]) -> None:
+    with pytest.raises(ValueError, match=r"POST|read query|body"):
+        FetchPolicy(**kwargs)  # type: ignore[arg-type]
