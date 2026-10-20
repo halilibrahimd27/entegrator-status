@@ -24,10 +24,11 @@ class Action(StrEnum):
     AUDIT_VIEW = "audit.view"
     GRAPH_VIEW = "graph.view"
     GRAPH_EDIT = "graph.edit"
+    STATUS_MANAGE = "status.manage"  # manual incidents, maintenance windows
 
 
 _VIEW = {Action.ORG_VIEW, Action.MEMBERS_VIEW, Action.GRAPH_VIEW}
-_MEMBER = _VIEW | {Action.GRAPH_EDIT}
+_MEMBER = _VIEW | {Action.GRAPH_EDIT, Action.STATUS_MANAGE}
 _ADMIN = _MEMBER | {
     Action.ORG_UPDATE,
     Action.MEMBERS_INVITE,

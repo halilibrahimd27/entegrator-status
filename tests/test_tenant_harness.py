@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from datetime import timedelta
 
 import httpx2
 from fastapi import FastAPI
@@ -23,11 +24,14 @@ from org_support import (
     new_token,
 )
 from sentinel.accounts.mail import Mail
+from sentinel.db.base import utcnow
 from sentinel.models import (
     ApiToken,
     Component,
     Dependency,
+    Incident,
     Invitation,
+    MaintenanceWindow,
     Membership,
     Organization,
     Product,
@@ -35,7 +39,13 @@ from sentinel.models import (
     Source,
 )
 from sentinel.web.services import AppServices
+from sentinel.web.templating import LOCAL_TZ
 from support import api_routes, post_form, signed_in
+
+
+def local_input(delta: timedelta) -> str:
+    return (utcnow() + delta).astimezone(LOCAL_TZ).strftime("%Y-%m-%dT%H:%M")
+
 
 FORM = {
     "name": "Yeni Ad",
@@ -47,6 +57,11 @@ FORM = {
     "token": "t" * 24,
     "confirm": "x",
     "password": "x",
+    "title": "Başlık",
+    "body": "Açıklama",
+    "status": "investigating",
+    "starts_at": local_input(timedelta(days=1)),
+    "ends_at": local_input(timedelta(days=1, hours=2)),
 }
 UPLOAD = {"file": ("requirements.txt", b"httpx==0.28.1\n")}
 Model = (
@@ -58,6 +73,8 @@ Model = (
     | type[Component]
     | type[Source]
     | type[Dependency]
+    | type[Incident]
+    | type[MaintenanceWindow]
 )
 ID_PARAMS: dict[str, Model] = {
     "membership_id": Membership,
@@ -68,6 +85,8 @@ ID_PARAMS: dict[str, Model] = {
     "component_id": Component,
     "source_id": Source,
     "dependency_id": Dependency,
+    "incident_id": Incident,
+    "window_id": MaintenanceWindow,
 }
 
 
@@ -131,6 +150,24 @@ async def build_tenant(
         csrf_from=f"{base}/urunler/{product_id}",
     )
     assert linked.status_code == 303, linked.text
+    opened = await post_form(
+        owner,
+        f"{base}/urunler/{product_id}/olaylar",
+        {"title": "Fatura gönderimi yavaş", "body": "İnceliyoruz.", "status": "investigating"},
+        csrf_from=f"{base}/urunler/{product_id}",
+    )
+    assert opened.status_code == 303, opened.text
+    planned = await post_form(
+        owner,
+        f"{base}/bilesenler/{component_id}/bakim",
+        {
+            "title": "Veritabanı bakımı",
+            "starts_at": local_input(timedelta(days=2)),
+            "ends_at": local_input(timedelta(days=2, hours=1)),
+        },
+        csrf_from=f"{base}/servisler/{service_id}",
+    )
+    assert planned.status_code == 303, planned.text
     return slug
 
 
@@ -148,7 +185,7 @@ async def test_every_org_route_hides_other_tenants(
         b = await build_tenant(app, services, outbox, bob, "bob@example.invalid", "Beta")
         ids_b = await ids_of(services, b)
         routes = org_routes(app)
-        assert len(routes) >= 30  # the discovery itself works (phase 2d: products, catalog)
+        assert len(routes) >= 34  # the discovery itself works (phase 4b: status routes)
 
         failures = []
         for method, template in routes:

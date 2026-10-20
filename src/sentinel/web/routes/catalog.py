@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Form, Query, Request
 from starlette.responses import RedirectResponse, Response
 
 from sentinel.catalog.service import CatalogError
+from sentinel.db.base import utcnow
 from sentinel.models import Component, ServiceKind, Source, SourceKind
 from sentinel.models import Service as ServiceModel
 from sentinel.sources.config import KIND_CONFIG
@@ -121,7 +122,7 @@ async def create_from_openapi(
     return RedirectResponse(f"/o/{ctx.org.slug}/servisler/{service.id}", status_code=303)
 
 
-async def _service_page(
+async def service_page(
     request: Request,
     ctx: OrgContext,
     service_id: uuid.UUID,
@@ -138,6 +139,7 @@ async def _service_page(
             request, "errors.not_found_title", "errors.not_found_body", status=status_of(exc)
         )
     proposals = [p for p in await svc.proposals.of_org(ctx.scope) if p.service_id == service_id]
+    component_ids = [c.id for c in service.components]
     return svc.renderer.page(
         request,
         "org/service.html",
@@ -149,12 +151,15 @@ async def _service_page(
         detail_view=service,
         proposals=proposals,
         source_kinds=list(SourceKind),
+        statuses=await svc.status.current(ctx.scope, component_ids),
+        now=utcnow(),
+        windows=await svc.notices.component_windows(ctx.scope, component_ids),
     )
 
 
 @router.get("/o/{slug}/servisler/{service_id}")
 async def service(request: Request, ctx: InOrg, service_id: uuid.UUID) -> Response:
-    return await _service_page(request, ctx, service_id)
+    return await service_page(request, ctx, service_id)
 
 
 @router.post("/o/{slug}/servisler/{service_id}/bilesen")
@@ -166,7 +171,7 @@ async def add_component(
             ctx.scope, service_id, name, tags, client_ip(request)
         )
     except CatalogError as exc:
-        return await _service_page(request, ctx, service_id, status=status_of(exc), error=exc.key)
+        return await service_page(request, ctx, service_id, status=status_of(exc), error=exc.key)
     return RedirectResponse(f"/o/{ctx.org.slug}/servisler/{service_id}", status_code=303)
 
 
@@ -199,7 +204,7 @@ async def add_source(request: Request, ctx: InOrg, component_id: uuid.UUID) -> R
             return svc.renderer.message(
                 request, "errors.not_found_title", "errors.not_found_body", status=404
             )
-        return await _service_page(
+        return await service_page(
             request, ctx, back, status=status_of(exc), error=exc.key, detail=exc.detail
         )
     service_id = await _service_of_component(request, ctx, source.component_id)
@@ -262,5 +267,5 @@ async def propose(request: Request, ctx: InOrg, service_id: uuid.UUID, note: Tex
     try:
         await services(request).proposals.propose(ctx.scope, service_id, note, client_ip(request))
     except CatalogError as exc:
-        return await _service_page(request, ctx, service_id, status=status_of(exc), error=exc.key)
+        return await service_page(request, ctx, service_id, status=status_of(exc), error=exc.key)
     return RedirectResponse(f"/o/{ctx.org.slug}/servisler/{service_id}", status_code=303)

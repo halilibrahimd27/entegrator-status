@@ -193,8 +193,11 @@ Tasks
 - [x] Incident lifecycle: auto-open after N failing rounds with ≥ 2 healthy nodes,
       auto-resolve after M successes, merge flaps within 10 minutes, root-cause hint from
       error classes ("TLS sertifika hatası", "zaman aşımı", "HTTP 5xx").
-- [ ] Maintenance windows (manual or from announcements) suppress incidents and are
+- [x] Maintenance windows (manual or from announcements) suppress incidents and are
       excluded from uptime. Orgs may add manual incidents for their own products.
+      (Organizations declare windows for their own components, before they start;
+      windows on shared components are platform-level and arrive with announcements
+      in Phase 5, with an admin form in Phase 10.)
 - [ ] Rollups: minute buckets → hourly latency p50/p95 → daily uptime; uptime
       24 h / 7 d / 30 d / 90 d from consensus only.
 - [ ] Retention: raw observations 30 days, minute buckets 120 days, daily forever.

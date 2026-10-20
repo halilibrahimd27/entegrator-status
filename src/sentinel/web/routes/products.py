@@ -11,6 +11,7 @@ from starlette.responses import RedirectResponse, Response
 from sentinel.catalog.parsers import MAX_UPLOAD_BYTES, ImportFormatError
 from sentinel.catalog.service import CatalogError
 from sentinel.graph.service import GraphError
+from sentinel.models.status import MANUAL_STATUSES
 from sentinel.web import graph_svg
 from sentinel.web.i18n import t
 from sentinel.web.org_context import InOrg, OrgContext
@@ -65,7 +66,7 @@ async def create_product(
     return RedirectResponse(f"{_products_url(ctx)}/{product.id}", status_code=303)
 
 
-async def _product_page(
+async def product_page(
     request: Request,
     ctx: OrgContext,
     product_id: uuid.UUID,
@@ -89,6 +90,7 @@ async def _product_page(
         title=t("products.graph_title").format(product=product.name),
         description=t("products.graph_desc").format(count=len(graph.nodes)),
     )
+    dependencies = await svc.catalog.dependencies(ctx.scope, product_id)
     return svc.renderer.page(
         request,
         "org/product.html",
@@ -98,7 +100,10 @@ async def _product_page(
         ctx=ctx,
         section="products",
         product=product,
-        dependencies=await svc.catalog.dependencies(ctx.scope, product_id),
+        dependencies=dependencies,
+        statuses=await svc.status.current(ctx.scope, [c.id for _, c, _ in dependencies]),
+        incidents=await svc.notices.product_incidents(ctx.scope, product_id),
+        incident_statuses=[s.value for s in MANUAL_STATUSES],
         results=await svc.catalog.find_components(ctx.scope, query),
         query=query,
         svg=svg,
@@ -113,7 +118,7 @@ async def product(
     product_id: uuid.UUID,
     q: Annotated[str, Query(max_length=80)] = "",
 ) -> Response:
-    return await _product_page(request, ctx, product_id, query=q)
+    return await product_page(request, ctx, product_id, query=q)
 
 
 @router.post("/o/{slug}/urunler/{product_id}/ayarlar")
@@ -125,7 +130,7 @@ async def update_product(
             ctx.scope, product_id, name, description, client_ip(request)
         )
     except CatalogError as exc:
-        return await _product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
+        return await product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
     return RedirectResponse(f"{_products_url(ctx)}/{product_id}", status_code=303)
 
 
@@ -134,7 +139,7 @@ async def delete_product(request: Request, ctx: InOrg, product_id: uuid.UUID) ->
     try:
         await services(request).catalog.delete_product(ctx.scope, product_id, client_ip(request))
     except CatalogError as exc:
-        return await _product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
+        return await product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
     return RedirectResponse(_products_url(ctx), status_code=303)
 
 
@@ -162,7 +167,7 @@ async def add_dependency(
             ip=client_ip(request),
         )
     except GraphError as exc:
-        return await _product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
+        return await product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
     return RedirectResponse(f"{_products_url(ctx)}/{product_id}", status_code=303)
 
 
@@ -187,7 +192,7 @@ async def import_preview(
     try:
         preview = await svc.imports.preview(ctx.scope, product_id, file.filename or "", content)
     except ImportFormatError as exc:
-        return await _product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
+        return await product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
     return svc.renderer.page(
         request,
         "org/import_preview.html",
@@ -205,5 +210,5 @@ async def import_confirm(
     try:
         await services(request).imports.confirm(ctx.scope, product_id, token, client_ip(request))
     except ImportFormatError as exc:
-        return await _product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
+        return await product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
     return RedirectResponse(f"{_products_url(ctx)}/{product_id}", status_code=303)

@@ -3,6 +3,7 @@
 {% block org_content %}
 {% set base = "/o/" ~ ctx.org.slug %}
 {% set editable = can(role, "graph.edit") %}
+{% set manage = can(role, "status.manage") %}
 <section class="card wide">
   <h1>{{ product.name }}</h1>
   {% if product.description %}<p>{{ product.description }}</p>{% endif %}
@@ -19,6 +20,7 @@
       <th scope="col">{{ t("products.service") }}</th>
       <th scope="col">{{ t("products.component") }}</th>
       <th scope="col">{{ t("products.version") }}</th>
+      <th scope="col">{{ t("status.column") }}</th>
       {% if editable %}<th scope="col"><span class="sr-only">{{ t("products.remove") }}</span></th>{% endif %}
     </tr></thead>
     <tbody>
@@ -28,6 +30,8 @@
           {% if service.org_id is none %}<span class="badge shared">{{ t("products.shared_badge") }}</span>{% endif %}</td>
         <td>{{ component.name }}</td>
         <td>{{ dep.usage.get("version", "—") }}</td>
+        {% set st = statuses.get(component.id) %}
+        <td>{% if st %}{{ ui.state_line(st) }}{% endif %}</td>
         {% if editable %}
         <td>
           <form method="post" action="{{ base }}/bagimliliklar/{{ dep.id }}/sil" class="inline">
@@ -42,6 +46,66 @@
   </table>
   {% else %}
   <p>{{ t("products.dependencies_empty") }}</p>
+  {% endif %}
+</section>
+
+<section class="card wide" id="olaylar">
+  <h2>{{ t("incidents.title") }}</h2>
+  {% if incidents %}
+  <ul class="timeline">
+  {% for view in incidents %}
+    {% set inc = view.incident %}
+    <li>
+      <strong>{{ inc.title }}</strong> <span class="badge">{{ t("incident_status." ~ inc.status) }}</span>
+      <p class="hint">{{ t("incidents.started") }}: {{ inc.started_at|local }}{% if inc.resolved_at %} · {{ t("incidents.resolved") }}: {{ inc.resolved_at|local }}{% endif %}</p>
+      {% for update in view.updates %}
+      <p><span class="badge">{{ t("incident_status." ~ update.status) }}</span> <span class="hint">{{ update.created_at|local }}</span> {{ update.body }}</p>
+      {% endfor %}
+      {% if manage %}
+      <details>
+        <summary>{{ t("incidents.update_title") }}</summary>
+        <form method="post" action="{{ base }}/olaylar/{{ inc.id }}/guncelle" novalidate>
+          {{ ui.csrf_field() }}
+          <div class="field">
+            <label for="us-{{ inc.id }}">{{ t("incidents.field_status") }}</label>
+            <select id="us-{{ inc.id }}" name="status">
+              {% for s in incident_statuses %}<option value="{{ s }}"{% if s == inc.status %} selected{% endif %}>{{ t("incident_status." ~ s) }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="ub-{{ inc.id }}">{{ t("incidents.field_body") }}</label>
+            <textarea id="ub-{{ inc.id }}" name="body" rows="3" maxlength="4000" required></textarea>
+          </div>
+          <button type="submit">{{ t("incidents.update_submit") }}</button>
+        </form>
+      </details>
+      {% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}
+  <p>{{ t("incidents.empty") }}</p>
+  {% endif %}
+  {% if manage %}
+  <details{% if error and error.startswith("status.") %} open{% endif %}>
+    <summary>{{ t("incidents.open_title") }}</summary>
+    <p class="hint">{{ t("incidents.open_hint") }}</p>
+    <form method="post" action="{{ base }}/urunler/{{ product.id }}/olaylar" novalidate>
+      {{ ui.csrf_field() }}
+      {{ ui.field("title", "incidents.field_title", maxlength=200) }}
+      <div class="field">
+        <label for="f-incident-body">{{ t("incidents.field_body") }}</label>
+        <textarea id="f-incident-body" name="body" rows="3" maxlength="4000" required></textarea>
+      </div>
+      <div class="field">
+        <label for="f-incident-status">{{ t("incidents.field_status") }}</label>
+        <select id="f-incident-status" name="status">
+          {% for s in incident_statuses %}<option value="{{ s }}">{{ t("incident_status." ~ s) }}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit">{{ t("incidents.open_submit") }}</button>
+    </form>
+  </details>
   {% endif %}
 </section>
 

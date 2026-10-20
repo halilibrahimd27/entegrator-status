@@ -4,6 +4,14 @@
 {% if error %}<p class="error" role="alert">{{ t(error) }}</p>{% endif %}
 {% endmacro %}
 
+{% macro state_badge(state) %}<span class="state state-{{ state }}">{{ t("status." ~ state) }}</span>{% endmacro %}
+
+{% macro state_line(st) %}
+{{ state_badge(st.state) }}
+{%- if st.since %} <span class="hint">{{ t("status.since") }}: {{ st.since|local }}</span>{% endif %}
+{%- if st.cause and st.state in ("down", "unverified") %} <span class="hint">{{ t("status.cause") }}: {{ t("causes." ~ st.cause) }}</span>{% endif %}
+{% endmacro %}
+
 {% macro notice_box(notice) %}
 {% if notice %}<p class="notice" role="status">{{ t(notice) }}</p>{% endif %}
 {% endmacro %}

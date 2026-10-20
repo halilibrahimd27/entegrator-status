@@ -5,6 +5,7 @@
 {% set base = "/o/" ~ ctx.org.slug %}
 {% set editable = can(role, "graph.edit") %}
 {% set own = svc.org_id is not none %}
+{% set manage = can(role, "status.manage") %}
 <section class="card wide">
   <h1>{{ svc.name }}
     <span class="badge{% if not own %} shared{% endif %}">{{ t("products.own_badge") if own else t("products.shared_badge") }}</span></h1>
@@ -17,6 +18,11 @@
 {% for component in detail_view.components %}
 <section class="card wide">
   <h2>{{ component.name }}{% for tag in component.tags %} <span class="badge">{{ tag }}</span>{% endfor %}</h2>
+  {% set st = statuses.get(component.id) %}
+  {% if st %}
+  <p>{{ ui.state_line(st) }}</p>
+  {% if st.state == "unverified" %}<p class="hint">{{ t("status.unverified_hint") }}</p>{% endif %}
+  {% endif %}
   {% set sources = detail_view.sources[component.id] %}
   {% if sources %}
   <table>
@@ -41,6 +47,48 @@
   </table>
   {% else %}
   <p>{{ t("service.sources_empty") }}</p>
+  {% endif %}
+
+  {% set planned = windows[component.id] %}
+  {% if planned %}
+  <h3>{{ t("maintenance.title") }}</h3>
+  <ul class="links">
+    {% for w in planned %}
+    <li>{{ w.title }} · {{ w.starts_at|local }} – {{ w.ends_at|local }}
+      <span class="badge">{{ t("maintenance.running") if w.starts_at <= now else t("maintenance.planned") }}</span>
+      {% if manage and w.org_id is not none %}
+      <form method="post" action="{{ base }}/bakimlar/{{ w.id }}/sil" class="inline">
+        {{ ui.csrf_field() }}
+        <button type="submit" class="secondary">{{ t("maintenance.end_now") if w.starts_at <= now else t("maintenance.cancel") }}</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if manage and component.org_id is not none %}
+  <details>
+    <summary>{{ t("maintenance.add_title") }}</summary>
+    <form method="post" action="{{ base }}/bilesenler/{{ component.id }}/bakim" novalidate>
+      {{ ui.csrf_field() }}
+      <p class="hint">{{ t("maintenance.hint") }}</p>
+      <div class="field">
+        <label for="mt-{{ component.id }}">{{ t("maintenance.field_title") }}</label>
+        <input id="mt-{{ component.id }}" name="title" type="text" maxlength="200" required>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="ms-{{ component.id }}">{{ t("maintenance.starts") }}</label>
+          <input id="ms-{{ component.id }}" name="starts_at" type="datetime-local" required>
+        </div>
+        <div class="field">
+          <label for="me-{{ component.id }}">{{ t("maintenance.ends") }}</label>
+          <input id="me-{{ component.id }}" name="ends_at" type="datetime-local" required>
+        </div>
+      </div>
+      <button type="submit">{{ t("maintenance.submit") }}</button>
+    </form>
+  </details>
   {% endif %}
 
   {% set upstream = detail_view.upstream[component.id] %}
