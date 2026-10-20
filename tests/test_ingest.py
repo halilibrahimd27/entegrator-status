@@ -82,14 +82,14 @@ async def test_jobs_group_identical_sources(app: FastAPI, services: AppServices)
     private_a = await add_source(services, a, "https://same.example.invalid/")
     private_b = await add_source(services, b, "https://same.example.invalid/")
     other = await add_source(services, b, "https://other.example.invalid/")
-    await add_source(services, a, "left-pad", kind="release")  # not probed yet
+    package = await add_source(services, a, "left-pad", kind="release")  # a change source
     disabled = await add_source(services, a, "https://disabled.example.invalid/")
     async with services.db.system("test change") as s:
         await s.execute(update(Source).where(Source.id == disabled).values(enabled=False))
 
     creds = await services.nodes.register("n1", "test")
     jobs = await client_for(app, creds).jobs()
-    by_sources = sorted(tuple(sorted(j["source_ids"])) for j in jobs)
+    by_sources = sorted(tuple(sorted(j["source_ids"])) for j in jobs if j["kind"] == "http")
     assert by_sources == sorted(
         [
             (str(shared),),
@@ -97,7 +97,9 @@ async def test_jobs_group_identical_sources(app: FastAPI, services: AppServices)
             (str(other),),
         ]
     )
-    assert all(j["kind"] == "http" for j in jobs)
+    releases = [j for j in jobs if j["kind"] == "release"]
+    assert [j["source_ids"] for j in releases] == [[str(package)]]
+    assert {j["kind"] for j in jobs} == {"http", "release"}  # the disabled source is not listed
 
 
 async def test_ingest_stores_observations_per_source(app: FastAPI, services: AppServices) -> None:

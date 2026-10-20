@@ -13,6 +13,7 @@ from sentinel.sources.adapters.domain_expiry import DomainExpiryAdapter
 from sentinel.sources.adapters.feed import FeedAdapter
 from sentinel.sources.adapters.http import HttpAdapter
 from sentinel.sources.adapters.page_watch import PageWatchAdapter
+from sentinel.sources.adapters.release import ReleaseAdapter
 from sentinel.sources.adapters.status_page import StatusPageAdapter
 from sentinel.sources.adapters.tls_cert import TlsCertAdapter
 
@@ -24,6 +25,7 @@ for _adapter in (
     FeedAdapter(),
     StatusPageAdapter(),
     PageWatchAdapter(),
+    ReleaseAdapter(),
 ):
     REGISTRY[_adapter.kind] = _adapter
 

@@ -55,6 +55,8 @@ changes:
   detected: "Görüldü"
   effective: "Geçerlilik tarihi"
   manual: "Elle girildi"
+  breaking_notes: "Sürüm notlarında kırıcı değişiklik ibaresi var"
+  deprecated_release: "Sağlayıcı bu sürümü kullanımdan kaldırdı"
   add_title: "Duyuru ekle"
   add_hint: "Sağlayıcının duyurusunu otomatik okuyamadığımız durumlar için (ör. robots.txt izin vermiyorsa). Yalnızca organizasyonuna görünür."
   field_title: "Başlık"
@@ -107,6 +109,10 @@ categories:
   package_update: "Paket / şema güncellemesi"
   incident: "Olay"
   other: "Diğer"
+  major: "Büyük sürüm"
+  minor: "Ara sürüm"
+  patch: "Yama sürümü"
+  prerelease: "Ön sürüm"
 
 watch:
   last_checked: "Son kontrol"

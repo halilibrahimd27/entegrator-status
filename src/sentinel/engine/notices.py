@@ -34,6 +34,7 @@ from sentinel.models import (
     MaintenanceWindow,
     Product,
 )
+from sentinel.models.changes import ANNOUNCEMENT_CATEGORIES
 from sentinel.models.status import MANUAL_STATUSES
 from sentinel.sources.feeds import safe_link
 from sentinel.tenancy.roles import Action
@@ -319,6 +320,8 @@ class NoticeService:
             kind = ChangeCategory(category)
         except ValueError:
             raise NoticeError("changes.invalid_category") from None
+        if kind not in ANNOUNCEMENT_CATEGORIES:
+            raise NoticeError("changes.invalid_category")  # release classes come from versions
         url = link.strip() or None
         if url is not None and safe_link(url, url) != url:
             raise NoticeError("changes.invalid_link")  # absolute http(s) only

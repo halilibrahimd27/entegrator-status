@@ -255,9 +255,11 @@ Acceptance
 Goal: "a dependency update broke production" stops being a surprise.
 
 Tasks
-- [ ] `release` adapters: GitHub releases/tags (optional platform `GITHUB_TOKEN` for rate
+- [x] `release` adapters: GitHub releases/tags (optional platform `GITHUB_TOKEN` for rate
       limits), npm registry, PyPI JSON, OCI / Docker Hub tags; conditional requests.
-- [ ] Version classification: `major | minor | patch | prerelease` (semver), calver and
+      ([ADR 0010](adr/0010-registries.md): PyPI through its RSS feed because robots.txt
+      disallows the JSON API; `GITHUB_TOKEN` waits for Phase 7.)
+- [x] Version classification: `major | minor | patch | prerelease` (semver), calver and
       non-semver tags handled explicitly; changelog / release-notes link extracted; release
       notes scanned for "breaking" markers.
 - [ ] Pinned vs. latest for imported dependencies (from `usage.version`): drift shown,

@@ -12,8 +12,9 @@ from starlette.responses import RedirectResponse, Response
 
 from sentinel.catalog.service import CatalogError
 from sentinel.db.base import utcnow
-from sentinel.models import ChangeCategory, Component, ServiceKind, Source, SourceKind
+from sentinel.models import Component, ServiceKind, Source, SourceKind
 from sentinel.models import Service as ServiceModel
+from sentinel.models.changes import ANNOUNCEMENT_CATEGORIES
 from sentinel.sources.config import KIND_CONFIG
 from sentinel.web.org_context import InOrg, OrgContext
 from sentinel.web.routes.products import status_of
@@ -159,7 +160,7 @@ async def service_page(
         changes=await svc.changes.recent(ctx.scope, component_ids),
         watch=await svc.changes.watch(ctx.scope, source_ids),
         vendor=await svc.changes.vendor(ctx.scope, component_ids),
-        categories=[c.value for c in ChangeCategory],
+        categories=[c.value for c in ANNOUNCEMENT_CATEGORIES],
         risks=await svc.risks.open(ctx.scope, component_ids),
         now=utcnow(),
         windows=await svc.notices.component_windows(ctx.scope, component_ids),

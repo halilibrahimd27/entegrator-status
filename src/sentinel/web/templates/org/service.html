@@ -96,6 +96,8 @@
     <li>
       <span class="badge">{{ t("categories." ~ change.category) }}</span>
       {% if change.origin == "manual" %}<span class="badge">{{ t("changes.manual") }}</span>{% endif %}
+      {% if change.detail.get("breaking_notes") %}<span class="badge attention">{{ t("changes.breaking_notes") }}</span>{% endif %}
+      {% if change.detail.get("deprecated") %}<span class="badge attention">{{ t("changes.deprecated_release") }}</span>{% endif %}
       {% if change.link %}<a href="{{ change.link }}" rel="noopener noreferrer nofollow">{{ change.title }}</a>{% else %}{{ change.title }}{% endif %}
       <br><span class="hint">{{ t("changes.detected") }}: {{ change.detected_at|local }}
         {%- if change.published_at %} · {{ t("changes.published") }}: {{ change.published_at|local }}{% endif %}

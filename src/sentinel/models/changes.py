@@ -26,6 +26,7 @@ class ChangeKind(StrEnum):
     ANNOUNCEMENT = "announcement"  # a feed or page item, or one entered by hand
     VENDOR_INCIDENT = "vendor_incident"  # declared on the vendor's status page
     VENDOR_MAINTENANCE = "vendor_maintenance"
+    RELEASE = "release"  # a new version of a package, repository or image
 
 
 class ChangeCategory(StrEnum):
@@ -35,6 +36,21 @@ class ChangeCategory(StrEnum):
     PACKAGE_UPDATE = "package_update"
     INCIDENT = "incident"
     OTHER = "other"
+    # releases (sentinel.sources.versions)
+    MAJOR = "major"
+    MINOR = "minor"
+    PATCH = "patch"
+    PRERELEASE = "prerelease"
+
+
+ANNOUNCEMENT_CATEGORIES = (
+    ChangeCategory.MAINTENANCE,
+    ChangeCategory.DEPRECATION,
+    ChangeCategory.SECURITY,
+    ChangeCategory.PACKAGE_UPDATE,
+    ChangeCategory.INCIDENT,
+    ChangeCategory.OTHER,
+)
 
 
 class Attention(StrEnum):
@@ -100,6 +116,7 @@ class Change(IdMixin, CreatedAtMixin, SharedOrTenantMixin, Base):
     detected_at: Mapped[datetime]
     fingerprint: Mapped[str] = mapped_column(String(64))
     origin: Mapped[str] = mapped_column(String(16), default="auto")  # auto | manual
+    detail: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )

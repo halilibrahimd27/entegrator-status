@@ -29,9 +29,10 @@ class Risk(IdMixin, CreatedAtMixin, SharedOrTenantMixin, Base):
     __table_args__ = (
         CheckConstraint(f"kind IN ({', '.join(repr(k.value) for k in RiskKind)})", name="kind"),
         Index(
-            "uq_risks_open_per_source",
+            "uq_risks_open_per_subject",
             "source_id",
             "kind",
+            "subject",
             unique=True,
             postgresql_where="resolved_at IS NULL",
         ),
@@ -43,6 +44,9 @@ class Risk(IdMixin, CreatedAtMixin, SharedOrTenantMixin, Base):
     )
     component_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("components.id", ondelete="CASCADE"))
     kind: Mapped[str] = mapped_column(String(32))
+    # what the risk is about within its source: "" for the source itself, a dependency
+    # id for a pinned version, an advisory id for a vulnerability
+    subject: Mapped[str] = mapped_column(String(120), default="", server_default="")
     due_at: Mapped[datetime | None]  # None: deprecated without a date
     link: Mapped[str | None] = mapped_column(String(2000))
     detail: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)

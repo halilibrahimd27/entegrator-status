@@ -100,7 +100,11 @@ async def run_risks(db: Database, clock: Callable[[], datetime] = utcnow) -> Ris
             (risk.source_id, risk.kind): risk
             for risk in (
                 await s.scalars(
-                    select(Risk).where(Risk.source_id.in_(sources), Risk.resolved_at.is_(None))
+                    select(Risk).where(
+                        Risk.source_id.in_(sources),
+                        Risk.resolved_at.is_(None),
+                        Risk.subject == "",  # source-level risks; others have their own scans
+                    )
                 )
             ).all()
         }

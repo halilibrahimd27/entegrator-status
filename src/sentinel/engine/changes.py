@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from sentinel.db.base import utcnow
 from sentinel.db.session import Database
+from sentinel.engine.releases import apply_releases
 from sentinel.engine.vendor import apply_status_page
 from sentinel.models import Change, ChangeKind, Snapshot, Source, SourceKind
 from sentinel.sources.classify import classify, effective_date
@@ -79,6 +80,8 @@ async def _diff(s: AsyncSession, snapshot: Snapshot) -> int:
     )
     if source.kind == SourceKind.STATUS_PAGE:
         return await apply_status_page(s, source, snapshot, previous)
+    if source.kind == SourceKind.RELEASE:
+        return await apply_releases(s, source, snapshot, previous)
     if source.kind not in ITEM_KINDS or previous is None:
         return 0  # previous None: the baseline
     seen = {str(item.get("id")) for item in previous.items}
