@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=../pack.schema.json
+# Demo and test data only: every address is *.example.invalid and nothing is probed.
+id: examples
+name: Örnek paket
+description: Testler ve demo için örnek servisler. Gerçek değildir.
+
+services:
+  - slug: ornek-odeme
+    name: Örnek Ödeme API
+    kind: saas_api
+    homepage: https://odeme.example.invalid/
+    tags: [payments]
+    components:
+      - slug: api
+        name: REST API v2
+        sources:
+          - kind: http
+            config: {url: "https://api.odeme.example.invalid/health"}
+            source: "örnek veri, gerçek değil"
+          - kind: tls_cert
+            config: {host: api.odeme.example.invalid}
+            source: "örnek veri, gerçek değil"
+          - kind: status_page
+            config:
+              url: "https://status.odeme.example.invalid/api/v2/summary.json"
+              provider: statuspage
+            source: "örnek veri, gerçek değil"
+      - slug: webhook
+        name: Webhook teslimatı
+
+  - slug: ornek-bulut
+    name: Örnek Bulut
+    kind: cloud
+    components:
+      - slug: eu-west
+        name: eu-west bölgesi
+
+  - slug: ornek-kargo
+    name: Örnek Kargo API
+    kind: saas_api
+    components:
+      - slug: api
+        name: Gönderi API'si
+        sources:
+          - kind: api_contract
+            config: {url: "https://api.kargo.example.invalid/openapi.json", format: openapi}
+            source: "örnek veri, gerçek değil"
+
+edges:
+  - from: ornek-odeme/api
+    to: ornek-bulut/eu-west
+    note: Ödeme API'si bu bölgede çalışır (örnek).
+  - from: ornek-kargo/api
+    to: ornek-bulut/eu-west

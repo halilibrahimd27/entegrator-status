@@ -11,7 +11,7 @@ TEST_DATABASE_URL ?= postgresql+asyncpg://sentinel@127.0.0.1:55432/sentinel_test
 TEST_REDIS_URL ?= redis://127.0.0.1:56379/0
 export TEST_DATABASE_URL TEST_REDIS_URL
 
-.PHONY: help install lock env dev test-services test lint security migrate check
+.PHONY: help install lock env dev test-services test lint security migrate catalog catalog-schema check
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -41,7 +41,7 @@ test-services: ## Start the throwaway test Postgres/Redis (skipped in CI)
 
 test: test-services ## pytest (no network) + coverage gates
 	$(BIN)/pytest --cov --cov-report=term-missing
-	@for pkg in security tenancy accounts sources graph; do \
+	@for pkg in security tenancy accounts sources graph catalog; do \
 		echo "coverage gate: sentinel.$$pkg"; \
 		$(BIN)/coverage report --include="src/sentinel/$$pkg/*" --fail-under=85 > /dev/null || exit 1; \
 	done
@@ -58,5 +58,12 @@ security: ## bandit, pip-audit, gitleaks
 
 migrate: ## alembic upgrade head (dev stack)
 	docker compose run --rm migrate
+
+catalog: ## Validate catalog packs and show the import plan against the dev stack
+	PYTHONPATH=src $(BIN)/python -m sentinel.catalog validate
+	docker compose run --rm migrate python -m sentinel.catalog import
+
+catalog-schema: ## Regenerate catalog/pack.schema.json from the models
+	PYTHONPATH=src $(BIN)/python -m sentinel.catalog schema > catalog/pack.schema.json
 
 check: lint security test ## Everything CI runs; must pass before every commit

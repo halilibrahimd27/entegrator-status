@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../pack.schema.json
+# Turkish e-invoicing. Skeleton only: addresses are added by a human after checking
+# them in a browser (docs/CATALOG.md). ebelge.gib.gov.tr disallows automated access
+# in robots.txt; its pages are never scraped and GİB announcements are entered by hand.
+id: tr-efatura
+name: Türkiye e-Fatura
+description: GİB ve GİB'in yetkilendirdiği özel entegratörler.
+
+services:
+  - slug: gib
+    name: Gelir İdaresi Başkanlığı (e-Belge)
+    kind: authority
+    tags: [efatura]
+    components:
+      - slug: efatura-merkez
+        name: e-Fatura merkezi uygulama
+        description: >-
+          Özel entegratörlerin bağlandığı merkezi servis. Yalnızca entegratörlere açık
+          olduğu için kaynak tanımlanmaz; bağımlılık ve duyurular üzerinden izlenir.
+      - slug: earsiv
+        name: e-Arşiv Fatura
+      - slug: eirsaliye
+        name: e-İrsaliye
+      - slug: duyurular
+        name: e-Belge duyuruları
+        description: robots.txt otomatik erişime izin vermiyor; duyurular elle girilir.
+
+# Every integrator component tagged efatura_service depends on GİB's central service.
+tag_rules:
+  - tag: efatura_service
+    to: gib/efatura-merkez

@@ -1,0 +1,878 @@
+{
+  "$defs": {
+    "PackComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "slug": {
+          "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+          "title": "Slug",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "tags": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,62}$",
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "sources": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PackSource"
+          },
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "slug",
+        "name"
+      ],
+      "title": "PackComponent",
+      "type": "object"
+    },
+    "PackEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "description": "service-slug/component-slug",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,62}/[a-z0-9][a-z0-9-]{0,62}$",
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "description": "service-slug/component-slug",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,62}/[a-z0-9][a-z0-9-]{0,62}$",
+          "title": "To",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "title": "PackEdge",
+      "type": "object"
+    },
+    "PackService": {
+      "additionalProperties": false,
+      "properties": {
+        "slug": {
+          "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+          "title": "Slug",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ServiceKind"
+        },
+        "homepage": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Homepage"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "tags": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,62}$",
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "purl": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "pattern": "^pkg:[a-z]+/.+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purl"
+        },
+        "components": {
+          "items": {
+            "$ref": "#/$defs/PackComponent"
+          },
+          "minItems": 1,
+          "title": "Components",
+          "type": "array"
+        }
+      },
+      "required": [
+        "slug",
+        "name",
+        "kind",
+        "components"
+      ],
+      "title": "PackService",
+      "type": "object"
+    },
+    "PackSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/SourceKind"
+        },
+        "config": {
+          "additionalProperties": true,
+          "title": "Config",
+          "type": "object"
+        },
+        "interval_s": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval S"
+        },
+        "timeout_s": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout S"
+        },
+        "allow_http": {
+          "default": false,
+          "title": "Allow Http",
+          "type": "boolean"
+        },
+        "availability_ignores_robots": {
+          "default": false,
+          "title": "Availability Ignores Robots",
+          "type": "boolean"
+        },
+        "source": {
+          "description": "Where the URL came from (page checked by hand, documentation link).",
+          "maxLength": 500,
+          "minLength": 3,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "config",
+        "source"
+      ],
+      "title": "PackSource",
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "http"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "maxLength": 2000,
+                    "title": "Url",
+                    "type": "string"
+                  },
+                  "method": {
+                    "default": "GET",
+                    "enum": [
+                      "GET",
+                      "HEAD"
+                    ],
+                    "title": "Method",
+                    "type": "string"
+                  },
+                  "expected_status": {
+                    "default": [
+                      200
+                    ],
+                    "items": {
+                      "maximum": 599,
+                      "minimum": 100,
+                      "type": "integer"
+                    },
+                    "maxItems": 10,
+                    "minItems": 1,
+                    "title": "Expected Status",
+                    "type": "array"
+                  },
+                  "body_must_contain": {
+                    "anyOf": [
+                      {
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Body Must Contain"
+                  },
+                  "latency_degraded_ms": {
+                    "anyOf": [
+                      {
+                        "maximum": 60000,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Latency Degraded Ms"
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "title": "HttpConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "tls_cert"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "host": {
+                    "maxLength": 253,
+                    "title": "Host",
+                    "type": "string"
+                  },
+                  "port": {
+                    "default": 443,
+                    "maximum": 65535,
+                    "minimum": 1,
+                    "title": "Port",
+                    "type": "integer"
+                  },
+                  "warn_days": {
+                    "default": 21,
+                    "maximum": 365,
+                    "minimum": 1,
+                    "title": "Warn Days",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "host"
+                ],
+                "title": "TlsCertConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "dns"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "host": {
+                    "maxLength": 253,
+                    "title": "Host",
+                    "type": "string"
+                  },
+                  "record_type": {
+                    "default": "A",
+                    "enum": [
+                      "A",
+                      "AAAA",
+                      "CNAME",
+                      "MX",
+                      "TXT",
+                      "NS"
+                    ],
+                    "title": "Record Type",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "host"
+                ],
+                "title": "DnsConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "domain_expiry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "domain": {
+                    "maxLength": 253,
+                    "title": "Domain",
+                    "type": "string"
+                  },
+                  "warn_days": {
+                    "default": 30,
+                    "maximum": 365,
+                    "minimum": 1,
+                    "title": "Warn Days",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "domain"
+                ],
+                "title": "DomainExpiryConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "status_page"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "maxLength": 2000,
+                    "title": "Url",
+                    "type": "string"
+                  },
+                  "provider": {
+                    "enum": [
+                      "statuspage",
+                      "instatus",
+                      "rss"
+                    ],
+                    "title": "Provider",
+                    "type": "string"
+                  },
+                  "component_map": {
+                    "additionalProperties": {
+                      "maxLength": 63,
+                      "type": "string"
+                    },
+                    "default": {},
+                    "propertyNames": {
+                      "maxLength": 200
+                    },
+                    "title": "Component Map",
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "url",
+                  "provider"
+                ],
+                "title": "StatusPageConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "api_contract"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "maxLength": 2000,
+                    "title": "Url",
+                    "type": "string"
+                  },
+                  "format": {
+                    "enum": [
+                      "openapi",
+                      "wsdl",
+                      "json"
+                    ],
+                    "title": "Format",
+                    "type": "string"
+                  },
+                  "operations": {
+                    "default": [],
+                    "items": {
+                      "maxLength": 200,
+                      "type": "string"
+                    },
+                    "maxItems": 500,
+                    "title": "Operations",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "url",
+                  "format"
+                ],
+                "title": "ApiContractConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "release"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "maxLength": 214,
+                    "title": "Name",
+                    "type": "string"
+                  },
+                  "ecosystem": {
+                    "enum": [
+                      "github",
+                      "npm",
+                      "pypi",
+                      "oci"
+                    ],
+                    "title": "Ecosystem",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "ecosystem"
+                ],
+                "title": "ReleaseConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "feed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "maxLength": 2000,
+                    "title": "Url",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "title": "FeedConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "page_watch"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "maxLength": 2000,
+                    "title": "Url",
+                    "type": "string"
+                  },
+                  "item_selector": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "title": "Item Selector",
+                    "type": "string"
+                  },
+                  "title_selector": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "title": "Title Selector",
+                    "type": "string"
+                  },
+                  "date_selector": {
+                    "anyOf": [
+                      {
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Date Selector"
+                  },
+                  "link_selector": {
+                    "anyOf": [
+                      {
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Link Selector"
+                  }
+                },
+                "required": [
+                  "url",
+                  "item_selector",
+                  "title_selector"
+                ],
+                "title": "PageWatchConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "advisory"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "maxLength": 214,
+                    "title": "Name",
+                    "type": "string"
+                  },
+                  "ecosystem": {
+                    "enum": [
+                      "npm",
+                      "pypi",
+                      "go",
+                      "maven",
+                      "nuget",
+                      "packagist",
+                      "rubygems",
+                      "crates.io"
+                    ],
+                    "title": "Ecosystem",
+                    "type": "string"
+                  },
+                  "version": {
+                    "anyOf": [
+                      {
+                        "maxLength": 100,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Version"
+                  }
+                },
+                "required": [
+                  "name",
+                  "ecosystem"
+                ],
+                "title": "AdvisoryConfig",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "eol"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "config": {
+                "additionalProperties": false,
+                "properties": {
+                  "product": {
+                    "pattern": "^[a-z0-9][a-z0-9.+-]{0,62}$",
+                    "title": "Product",
+                    "type": "string"
+                  },
+                  "cycle": {
+                    "anyOf": [
+                      {
+                        "maxLength": 40,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Cycle"
+                  }
+                },
+                "required": [
+                  "product"
+                ],
+                "title": "EolConfig",
+                "type": "object"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PackTagRule": {
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,62}$",
+          "title": "Tag",
+          "type": "string"
+        },
+        "to": {
+          "description": "service-slug/component-slug",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,62}/[a-z0-9][a-z0-9-]{0,62}$",
+          "title": "To",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tag",
+        "to"
+      ],
+      "title": "PackTagRule",
+      "type": "object"
+    },
+    "ServiceKind": {
+      "enum": [
+        "saas_api",
+        "integrator",
+        "authority",
+        "cloud",
+        "package",
+        "container_image",
+        "domain",
+        "website",
+        "internal",
+        "other"
+      ],
+      "title": "ServiceKind",
+      "type": "string"
+    },
+    "SourceKind": {
+      "enum": [
+        "http",
+        "tls_cert",
+        "dns",
+        "domain_expiry",
+        "status_page",
+        "api_contract",
+        "release",
+        "feed",
+        "page_watch",
+        "advisory",
+        "eol"
+      ],
+      "title": "SourceKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "services": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PackService"
+      },
+      "title": "Services",
+      "type": "array"
+    },
+    "edges": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PackEdge"
+      },
+      "title": "Edges",
+      "type": "array"
+    },
+    "tag_rules": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PackTagRule"
+      },
+      "title": "Tag Rules",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "name"
+  ],
+  "title": "Entegratör Status catalog pack",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

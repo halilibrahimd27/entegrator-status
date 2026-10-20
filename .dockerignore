@@ -2,5 +2,6 @@
 *
 !requirements/runtime.txt
 !src/
+!catalog/
 **/__pycache__
 **/*.py[cod]

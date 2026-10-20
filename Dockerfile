@@ -17,6 +17,7 @@ RUN groupadd --system --gid 10001 sentinel \
        --home-dir /nonexistent --shell /usr/sbin/nologin sentinel
 COPY --from=deps /opt/venv /opt/venv
 COPY src/ /app/src/
+COPY catalog/ /app/catalog/
 ENV PATH=/opt/venv/bin:$PATH \
     PYTHONPATH=/app/src \
     PYTHONDONTWRITEBYTECODE=1 \
