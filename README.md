@@ -104,6 +104,9 @@ docs/              plan, methodology, ADRs
 ## Docs
 
 - [CLAUDE.md](CLAUDE.md): ground rules (tenancy, credentials, probing ethics, KVKK, security, stack)
+- [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md): running your own instance (install, upgrade, monitoring)
+- [docs/BACKUP.md](docs/BACKUP.md): backups, the restore drill, master key rotation
+- [docs/PROBE_NODE.md](docs/PROBE_NODE.md): running a probe node
 - [docs/PLAN.md](docs/PLAN.md): phased build plan
 - [docs/METHODOLOGY.md](docs/METHODOLOGY.md): what we observe and how
 - [docs/WEBHOOKS.md](docs/WEBHOOKS.md): receiving and verifying alert webhooks

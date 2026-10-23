@@ -1,4 +1,8 @@
-"""``python -m sentinel.probe`` runs the prober; ``... register NAME LOCATION`` adds a node."""
+"""``python -m sentinel.probe`` runs the prober.
+
+``... register NAME LOCATION [--credentials]`` adds a node and prints its credentials;
+``... disable NAME`` revokes a node (its token stops working); ``... list`` shows nodes.
+"""
 
 from __future__ import annotations
 
@@ -35,6 +39,48 @@ def register(name: str, location: str, *, credentials: bool = False) -> int:
     return asyncio.run(run())
 
 
+def manage(command: str, name: str | None = None) -> int:
+    from sqlalchemy import select
+
+    from sentinel import audit
+    from sentinel.config import load_settings_or_exit
+    from sentinel.db.session import Database
+    from sentinel.models import ProbeNode
+
+    settings = load_settings_or_exit()
+
+    async def run() -> int:
+        db = Database(settings.database_url.get_secret_value(), pool_size=1)
+        try:
+            async with db.system(f"probe CLI: {command} nodes") as s:
+                if command == "list":
+                    for row in (await s.scalars(select(ProbeNode).order_by(ProbeNode.name))).all():
+                        seen = row.last_seen_at.isoformat() if row.last_seen_at else "never"
+                        flags = ("enabled" if row.enabled else "disabled") + (
+                            ", credentials" if row.handles_credentials else ""
+                        )
+                        print(f"{row.name}\t{row.location}\t{flags}\tlast seen {seen}")
+                    return 0
+                node = await s.scalar(select(ProbeNode).where(ProbeNode.name == name))
+                if node is None:
+                    print(f"✗ no node named {name!r}", file=sys.stderr)
+                    return 1
+                node.enabled = False
+                audit.record(
+                    s,
+                    "platform.probe_node_disabled",
+                    target_type="probe_node",
+                    target_id=node.id,
+                    details={"name": node.name, "via": "cli"},
+                )
+                print(f"disabled {node.name}")
+                return 0
+        finally:
+            await db.dispose()
+
+    return asyncio.run(run())
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m sentinel.probe")
     sub = parser.add_subparsers(dest="command")
@@ -46,9 +92,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="this node may run authenticated checks (receives sealed secrets, ADR 0011)",
     )
+    sub.add_parser("disable", help="revoke a node: its token stops working").add_argument("name")
+    sub.add_parser("list", help="list registered nodes")
     args = parser.parse_args(argv)
     if args.command == "register":
         return register(args.name, args.location, credentials=args.credentials)
+    if args.command == "disable":
+        return manage("disable", args.name)
+    if args.command == "list":
+        return manage("list")
     from sentinel.probe.runner import main as run_prober
 
     run_prober()

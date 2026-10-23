@@ -308,3 +308,18 @@ def test_admin_cli_entrypoint(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["promote", "yok@example.invalid"]) == 1
     assert "no verified account" in capsys.readouterr().err
     assert main(["list"]) == 0
+
+
+@pytest.mark.usefixtures("app")
+def test_probe_node_cli(capsys: pytest.CaptureFixture[str]) -> None:
+    from sentinel.probe.__main__ import main
+
+    assert main(["register", "istanbul-1", "Türk Telekom, İstanbul"]) == 0
+    assert "PROBE_NODE_TOKEN=" in capsys.readouterr().out
+    assert main(["list"]) == 0
+    assert "istanbul-1\tTürk Telekom, İstanbul\tenabled\tlast seen never" in capsys.readouterr().out
+    assert main(["disable", "yok"]) == 1
+    assert main(["disable", "istanbul-1"]) == 0
+    capsys.readouterr()
+    assert main(["list"]) == 0
+    assert "\tdisabled\t" in capsys.readouterr().out

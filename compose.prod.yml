@@ -119,7 +119,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./backups:/backups # tools/backup.sh writes here
     networks: [data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
