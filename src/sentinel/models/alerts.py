@@ -65,6 +65,9 @@ class AlertChannel(IdMixin, CreatedAtMixin, TenantMixin, Base):
     enabled: Mapped[bool] = mapped_column(default=True)
     disabled_reason: Mapped[str | None] = mapped_column(String(64))
     failures: Mapped[int] = mapped_column(Integer, default=0)  # consecutive
+    # the subscribers of the organization's public status page: no rules, hidden in the
+    # alert settings, gets only the organization's own incident updates
+    public: Mapped[bool] = mapped_column(default=False, server_default="false")
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )

@@ -26,6 +26,7 @@ from sentinel.alerts.channels import (
     render,
     render_batch,
     render_digest,
+    render_notice,
     unsubscribe_token,
 )
 from sentinel.db.base import utcnow
@@ -203,7 +204,9 @@ class DeliveryWorker:
     ) -> None:
         org = await s.get(Organization, channel.org_id)
         home = f"{self._base}/o/{org.slug if org else ''}"
-        if len(events) == 1:
+        if channel.public:
+            message = render_notice(events[0], f"{self._base}/s/{org.slug if org else ''}")
+        elif len(events) == 1:
             product = events[0].product_id
             message = render(events[0], f"{home}/urunler/{product}" if product else home)
         else:

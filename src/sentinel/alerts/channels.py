@@ -94,6 +94,24 @@ def render(event: AlertEvent, panel_url: str) -> Message:
     return Message(subject, "\n".join(lines), payload)
 
 
+def render_notice(event: AlertEvent, page_url: str) -> Message:
+    """An organization's own incident update, for the subscribers of its public page."""
+    status = t(f"incident_status.{event.detail.get('status', 'investigating')}")
+    product = event.path[0] if event.path else ""
+    subject = f"{product}: {event.title} — {status}"[:200]
+    lines = [event.title, status, "", str(event.detail.get("body", "")), "", page_url]
+    payload = {
+        "event": str(event.id),
+        "type": "notice",
+        "product": product,
+        "title": event.title,
+        "status": event.detail.get("status"),
+        "body": event.detail.get("body"),
+        "occurred_at": event.occurred_at.isoformat(),
+    }
+    return Message(subject, "\n".join(lines), payload)
+
+
 def render_batch(events: list[AlertEvent], panel_url: str) -> Message:
     """One message for a day's events (channels in daily mode)."""
     parts = [render(e, panel_url) for e in events]

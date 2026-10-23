@@ -178,6 +178,55 @@ dashboard:
   all_risks: "Tüm riskler"
   all_planned: "Tüm takvim"
 
+public:
+  settings_title: "Herkese açık durum sayfası"
+  settings_body: "Müşterilerine ürünlerinin durumunu gösteren, giriş gerektirmeyen bir sayfa. Yalnızca seçtiğin ürünler görünür: senin açtığın olaylar ve (istersen) ürünün doğrudan kullandığı servislerin bizim ölçümlerimize göre durumu. Değişiklikler ve riskler gösterilmez."
+  live: "Sayfa yayında:"
+  badge_hint: "Rozet:"
+  subscribers: "Onaylı e-posta abonesi: {n}"
+  title: "Sayfa başlığı"
+  intro: "Kısa açıklama (isteğe bağlı)"
+  choose_products: "Sayfada görünecek ürünler"
+  flag_show_dependencies: "Ürünlerin doğrudan kullandığı servisleri ve 90 günlük çubukları göster"
+  flag_subscriptions: "Ziyaretçiler olaylardan e-postayla haberdar olmak için abone olabilsin (çift onaylı)"
+  flag_enabled: "Sayfa yayında"
+  settings_hint: "Bağımlılık durumları bizim bağımsız ölçümlerimizdir; sayfada bu açıkça yazar ve yöntem sayfasına bağlanır."
+  save: "Kaydet"
+  invalid_title: "Başlık 1-120 karakter olmalı."
+  invalid_intro: "Açıklama en fazla 2000 karakter olabilir."
+  too_many_products: "Bir sayfada en fazla 50 ürün olabilir."
+  no_products: "Sayfayı yayına almak için en az bir ürün seç."
+  invalid_email: "Geçerli bir e-posta adresi gir."
+  throttled: "Çok fazla deneme yapıldı; biraz sonra yeniden dene."
+  full: "Bu sayfanın abone sınırı doldu."
+  meta_description: "{org} ürünlerinin güncel durumu ve olay geçmişi."
+  updated: "Son güncelleme"
+  products: "Ürünler"
+  dependency: "Kullandığı servis"
+  incidents: "Son 30 günün olayları"
+  no_incidents: "Son 30 günde bildirilen bir olay yok."
+  state_operational: "Çalışıyor"
+  state_upstream: "Bağımlı bir serviste sorun"
+  state_incident: "Olay var"
+  summary_operational: "Tüm ürünler çalışıyor"
+  summary_upstream: "Kullanılan servislerden birinde sorun gözleniyor"
+  summary_incident: "Devam eden bir olay var"
+  upstream_hint: "Bu ürünün doğrudan kullandığı servislerden biri, bağımsız ölçümlerimize göre şu an erişilemiyor. Ürünün kendisi etkilenmemiş olabilir."
+  subscribe_link: "E-postayla haber al"
+  feed_link: "Atom akışı"
+  disclaimer: "Servis durumları bağımsız ölçümlerdir, sağlayıcıların resmî açıklaması değildir."
+  method_link: "Nasıl ölçüyoruz?"
+  powered: "Entegratör Status ile yayınlanıyor"
+  badge_label: "durum"
+  subscribe_title: "E-postayla haber al"
+  subscribe_body: "Adresini yaz; onay bağlantısına tıkladıktan sonra {org} ürünlerinde bir olay açıldığında ya da güncellendiğinde e-posta alırsın."
+  subscribe_hint: "Her e-postada tek tıkla abonelikten çıkma bağlantısı var. Onaylanmayan adresler 48 saat sonra silinir."
+  subscribe_button: "Abone ol"
+  subscribe_done: "Bir onay bağlantısı gönderdik (adres zaten aboneyse yeni e-posta gelmez). Gelen kutunu kontrol et."
+  email: "E-posta adresi"
+  honeypot: "Bu alanı boş bırak"
+  back: "Durum sayfasına dön"
+
 hints:
   common_cause: "{upstream} bileşenine bağlı {total} bileşenden {count} tanesi (%{ratio}) son 10 dakika içinde birlikte erişim sorunu yaşamaya başladı; ortak bir kaynaktan kaynaklanıyor olabilir."
 
@@ -505,6 +554,7 @@ org:
   digest: "Haftalık özet"
   catalog: "Katalog"
   alerts: "Uyarılar"
+  status_page: "Durum sayfası"
   members: "Üyeler"
   tokens: "API token'ları"
   credentials: "Kimlik bilgileri"
@@ -910,16 +960,31 @@ alerts:
       {link}
 
       Onaylamazsan bu adrese hiçbir uyarı gönderilmez ve adres 48 saat sonra silinir.
+  public_confirm_mail:
+    subject: "{org} durum sayfası: aboneliği onayla"
+    body: |
+      Merhaba,
+
+      Bu adres "{org}" durum sayfasının e-posta bildirimlerine abone olmak için girildi.
+      Onaylarsan "{org}" ürünlerinde bir olay açıldığında ya da güncellendiğinde haber alırsın.
+      Onaylamak için şu bağlantıyı aç (48 saat geçerli):
+      {link}
+
+      Bunu sen istemediysen hiçbir şey yapma; adres 48 saat sonra silinir.
   page:
     confirm_title: "Uyarı aboneliği"
     confirm_body: "\"{org}\" organizasyonu {address} adresini \"{channel}\" uyarı kanalına ekledi. Onaylarsan bağımlılıklarındaki olay, değişiklik ve riskler için bu adrese e-posta gelir."
     confirm_button: "Aboneliği onayla"
     confirm_ignore: "Bunu sen istemediysen hiçbir şey yapma; adres 48 saat sonra silinir."
     confirmed: "Onaylandı: \"{org}\" organizasyonunun \"{channel}\" kanalındaki uyarılar artık sana gelecek. Her e-postada tek tıkla abonelikten çıkma bağlantısı var."
+    confirm_body_public: "{address} adresi \"{org}\" durum sayfasının e-posta bildirimlerine abone olmak için girildi. Onaylarsan \"{org}\" ürünlerinde bir olay açıldığında ya da güncellendiğinde e-posta alırsın."
+    confirmed_public: "Onaylandı: \"{org}\" durum sayfasındaki olaylardan e-postayla haberdar olacaksın. Her e-postada tek tıkla abonelikten çıkma bağlantısı var."
     unsubscribe_title: "Abonelikten çık"
     unsubscribe_body: "{address} adresi \"{org}\" organizasyonunun \"{channel}\" uyarı kanalından çıkarılsın mı?"
     unsubscribe_button: "Abonelikten çık"
     unsubscribed: "Bu adrese \"{org}\" organizasyonunun \"{channel}\" kanalından artık uyarı gönderilmeyecek."
+    unsubscribe_body_public: "{address} adresi \"{org}\" durum sayfasının bildirimlerinden çıkarılsın mı?"
+    unsubscribed_public: "Bu adrese \"{org}\" durum sayfasından artık e-posta gönderilmeyecek."
     invalid_title: "Bağlantı geçersiz"
     invalid_body: "Bu bağlantı geçersiz ya da süresi dolmuş. Yeni bir onay bağlantısı için organizasyonun yöneticisine başvur."
   telegram:

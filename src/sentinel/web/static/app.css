@@ -141,3 +141,7 @@ textarea { width: 100%; font: inherit; padding: .6rem .7rem; color: var(--text);
 .state-at_risk { color: var(--warn); }
 .state-affected, .state-own_incident { color: var(--bad); }
 form.filters { margin: 1rem 0; }
+.state-upstream { color: var(--warn); }
+.state-incident { color: var(--bad); }
+.public-product, .public-incident { margin: 1rem 0; }
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

@@ -27,6 +27,7 @@ from sentinel.engine.notices import NoticeService
 from sentinel.engine.views import StatusViews
 from sentinel.graph.service import GraphService
 from sentinel.probe.nodes import NodeService
+from sentinel.public.service import StatusPageService
 from sentinel.risk.correlation import CorrelationViews
 from sentinel.risk.dashboard import DashboardViews
 from sentinel.risk.digest import DigestViews
@@ -69,6 +70,7 @@ class AppServices:
     credentials: CredentialService
     subscriptions: SubscriptionService
     alerts: AlertService
+    status_pages: StatusPageService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -99,6 +101,9 @@ def build_services(settings: Settings) -> AppServices:
     subscriptions = SubscriptionService(db, settings, mailer)
     telegram = settings.telegram_bot_token is not None and bool(settings.telegram_bot_username)
     correlation = CorrelationViews(db, ratio=settings.correlated_failure_ratio)
+    catalog = CatalogService(db)
+    notices = NoticeService(db)
+    status = StatusViews(db, graph)
     return AppServices(
         settings=settings,
         db=db,
@@ -110,13 +115,13 @@ def build_services(settings: Settings) -> AppServices:
         orgs=OrgService(db),
         invitations=InvitationService(db=db, settings=settings, mailer=mailer, throttle=throttle),
         api_tokens=ApiTokenService(db, settings),
-        catalog=CatalogService(db),
+        catalog=catalog,
         graph=graph,
         imports=ImportService(db, redis),
         proposals=ProposalService(db),
         nodes=NodeService(db, settings),
-        notices=NoticeService(db),
-        status=StatusViews(db, graph),
+        notices=notices,
+        status=status,
         changes=ChangeViews(db),
         risks=RiskViews(db),
         impact=impact,
@@ -127,6 +132,7 @@ def build_services(settings: Settings) -> AppServices:
         credentials=credentials,
         subscriptions=subscriptions,
         alerts=AlertService(db, credentials, subscriptions, telegram=telegram),
+        status_pages=StatusPageService(db, catalog, status, notices, subscriptions, throttle),
         renderer=Renderer(),
     )
 

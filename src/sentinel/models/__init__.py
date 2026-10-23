@@ -35,6 +35,7 @@ from sentinel.models.changes import (
 )
 from sentinel.models.credentials import Credential, CredentialKind, OrgDataKey
 from sentinel.models.orgs import ApiToken, Invitation, Membership, Organization
+from sentinel.models.pages import StatusPage
 from sentinel.models.probe import IngestBatch, Observation, ProbeNode
 from sentinel.models.risk import Risk, RiskDecision, RiskKind, RiskState
 from sentinel.models.status import (
@@ -101,6 +102,7 @@ __all__ = [
     "SourceRound",
     "SourceState",
     "SourceWatch",
+    "StatusPage",
     "TokenPurpose",
     "User",
     "UserSession",

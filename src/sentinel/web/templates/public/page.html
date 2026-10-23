@@ -1,0 +1,90 @@
+{% import "_ui.html" as ui with context %}
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title }}</title>
+  <meta name="description" content="{{ t('public.meta_description').format(org=page.org_name) }}">
+  <link rel="canonical" href="{{ page_url }}">
+  <link rel="alternate" type="application/atom+xml" href="{{ feed_url }}" title="{{ page.title }}">
+  <link rel="stylesheet" href="{{ assets }}/app.css">
+</head>
+<body class="public">
+  <a class="skip" href="#main">{{ t("site.skip_to_content") }}</a>
+  <header class="site-header">
+    <span class="brand">{{ page.title }}</span>
+  </header>
+  <main id="main">
+    <section class="card wide">
+      <h1>{{ page.title }}</h1>
+      {% if page.intro %}<p>{{ page.intro }}</p>{% endif %}
+      <p><span class="state state-{{ page.state }}">{{ t("public.summary_" ~ page.state) }}</span></p>
+      <p class="hint">{{ t("public.updated") }}: {{ page.generated_at|local }}</p>
+    </section>
+
+    <section class="card wide">
+      <h2>{{ t("public.products") }}</h2>
+      {% for p in page.products %}
+      <article class="public-product">
+        <h3>{{ p.name }}
+          <span class="state state-{{ p.state }}">{% if p.incident_status %}{{ t("incident_status." ~ p.incident_status) }}{% else %}{{ t("public.state_" ~ p.state) }}{% endif %}</span></h3>
+        {% if p.state == "upstream" %}<p class="hint">{{ t("public.upstream_hint") }}</p>{% endif %}
+        {% if p.dependencies %}
+        <table>
+          <thead><tr>
+            <th scope="col">{{ t("public.dependency") }}</th>
+            <th scope="col">{{ t("status.column") }}</th>
+            <th scope="col">{{ t("uptime.90d") }}</th>
+          </tr></thead>
+          <tbody>
+          {% for d in p.dependencies %}
+            <tr>
+              <td>{{ d.name }}
+                <ol class="bars" aria-label="{{ t('uptime.bars_label') }}">
+                  {% for bar in d.bars %}<li class="bar state-{{ bar.worst }}" title="{{ bar.day|day }}: {{ bar.uptime|percent }}"><span class="sr-only">{{ bar.day|day }}: {{ t("status." ~ bar.worst) }}, {{ bar.uptime|percent }}</span></li>{% endfor %}
+                </ol></td>
+              <td>{{ ui.state_badge(d.status.state) }}</td>
+              <td>{{ d.uptime|percent }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </section>
+
+    <section class="card wide">
+      <h2>{{ t("public.incidents") }}</h2>
+      {% if page.incidents %}
+      {% for item in page.incidents %}
+      {% set i = item.view.incident %}
+      <article class="public-incident">
+        <h3>{{ item.product }}: {{ i.title }}</h3>
+        <p class="hint">{{ t("incident_status." ~ i.status) }} · {{ i.started_at|local }}{% if i.resolved_at %} – {{ i.resolved_at|local }}{% endif %}</p>
+        <ul class="timeline">
+          {% for u in item.view.updates %}
+          <li><strong>{{ t("incident_status." ~ u.status) }}</strong> · {{ u.created_at|local }}<br>{{ u.body }}</li>
+          {% endfor %}
+        </ul>
+      </article>
+      {% endfor %}
+      {% else %}
+      <p>{{ t("public.no_incidents") }}</p>
+      {% endif %}
+    </section>
+
+    <section class="card wide">
+      <p>
+        {% if subscribe_url %}<a href="{{ subscribe_url }}">{{ t("public.subscribe_link") }}</a> · {% endif %}
+        <a href="{{ feed_url }}">{{ t("public.feed_link") }}</a>
+      </p>
+      <p class="hint">{{ t("public.disclaimer") }} <a href="{{ method_url }}">{{ t("public.method_link") }}</a></p>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <span>{{ t("public.powered") }}</span>
+  </footer>
+</body>
+</html>

@@ -26,6 +26,9 @@
       {% if can(role, "audit.view") %}
       <a href="{{ base }}/denetim"{% if section == "audit" %} aria-current="page"{% endif %}>{{ t("org.audit") }}</a>
       {% endif %}
+      {% if can(role, "org.update") %}
+      <a href="{{ base }}/durum-sayfasi"{% if section == "status_page" %} aria-current="page"{% endif %}>{{ t("org.status_page") }}</a>
+      {% endif %}
       <a href="{{ base }}/ayarlar"{% if section == "settings" %} aria-current="page"{% endif %}>{{ t("org.settings") }}</a>
     </nav>
   </header>

@@ -139,7 +139,13 @@ class AlertService:
     async def overview(self, scope: TenantScope) -> AlertsOverview:
         scope.require(Action.ALERTS_VIEW)
         async with self._db.tenant(scope) as s:
-            channels = (await s.scalars(select(AlertChannel).order_by(AlertChannel.name))).all()
+            channels = (
+                await s.scalars(
+                    select(AlertChannel)
+                    .where(AlertChannel.public.is_(False))
+                    .order_by(AlertChannel.name)
+                )
+            ).all()
             infos = {c.id: ChannelInfo(c) for c in channels}
             manage = can(scope.role, Action.ALERTS_MANAGE)
             for r in (
@@ -162,6 +168,7 @@ class AlertService:
             rows = await s.execute(
                 select(AlertDelivery, AlertEvent.title, AlertEvent.severity)
                 .join(AlertEvent, AlertEvent.id == AlertDelivery.event_id)
+                .where(AlertDelivery.channel_id.in_([c.id for c in channels]))
                 .order_by(AlertDelivery.created_at.desc())
                 .limit(LOG_SIZE)
             )
@@ -255,7 +262,7 @@ class AlertService:
         self, s: AsyncSession, scope: TenantScope, channel_id: uuid.UUID
     ) -> AlertChannel:
         channel = await s.get(AlertChannel, channel_id)
-        if channel is None:
+        if channel is None or channel.public:  # managed from the status page settings
             raise AlertError("not_found")
         return channel
 

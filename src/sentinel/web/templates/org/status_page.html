@@ -1,0 +1,39 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("public.settings_title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+<section class="card wide">
+  <h1>{{ t("public.settings_title") }}</h1>
+  <p>{{ t("public.settings_body") }}</p>
+  {% if settings.enabled %}
+  <p class="notice" role="status">{{ t("public.live") }} <a href="{{ public_url }}">{{ public_url }}</a></p>
+  <p class="hint">{{ t("public.badge_hint") }} <code>{{ public_url }}/rozet.svg</code> · {{ t("public.feed_link") }}: <code>{{ public_url }}/akis.atom</code></p>
+  {% endif %}
+  <p class="hint">{{ t("public.subscribers").format(n=settings.subscribers) }}</p>
+  <form method="post" action="/o/{{ ctx.org.slug }}/durum-sayfasi" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("title", "public.title", value=settings.title, maxlength=120) }}
+    <div class="field">
+      <label for="f-intro">{{ t("public.intro") }}</label>
+      <textarea id="f-intro" name="intro" rows="3" maxlength="2000">{{ settings.intro }}</textarea>
+    </div>
+    <fieldset>
+      <legend>{{ t("public.choose_products") }}</legend>
+      {% if not settings.products %}<p class="hint">{{ t("dashboard.no_products") }}</p>{% endif %}
+      {% for id, name in settings.products %}
+      <div class="field checkbox">
+        <input id="f-p-{{ id }}" name="product_ids" type="checkbox" value="{{ id }}"{% if id in settings.product_ids %} checked{% endif %}>
+        <label for="f-p-{{ id }}">{{ name }}</label>
+      </div>
+      {% endfor %}
+    </fieldset>
+    {% for flag, on in (("show_dependencies", settings.show_dependencies), ("subscriptions", settings.subscriptions), ("enabled", settings.enabled)) %}
+    <div class="field checkbox">
+      <input id="f-{{ flag }}" name="{{ flag }}" type="checkbox" value="true"{% if on %} checked{% endif %}>
+      <label for="f-{{ flag }}">{{ t("public.flag_" ~ flag) }}</label>
+    </div>
+    {% endfor %}
+    <p class="hint">{{ t("public.settings_hint") }}</p>
+    <button type="submit">{{ t("public.save") }}</button>
+  </form>
+</section>
+{% endblock %}

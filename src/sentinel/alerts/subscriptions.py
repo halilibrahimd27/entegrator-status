@@ -38,6 +38,7 @@ class Subscription:
     channel: str
     address: str
     unsubscribed: bool = False
+    public: bool = False  # a subscriber of a public status page
 
 
 class SubscriptionService:
@@ -75,9 +76,11 @@ class SubscriptionService:
             recipient.confirm_hash = digest(self._key, token, purpose=_CONFIRM)
             recipient.created_at = self._clock()  # the 48 hours start now
             address, org_name, channel_name = recipient.address, org.name, channel.name
+            public = channel.public
         link = f"{self._base}/abone/onay/{token}"
-        body = t("alerts.confirm_mail.body").format(org=org_name, channel=channel_name, link=link)
-        subject = t("alerts.confirm_mail.subject").format(org=org_name)
+        key = "alerts.public_confirm_mail" if public else "alerts.confirm_mail"
+        body = t(f"{key}.body").format(org=org_name, channel=channel_name, link=link)
+        subject = t(f"{key}.subject").format(org=org_name)
         await self._mailer.send(Mail(to=address, subject=subject, text=body))
 
     async def _pending(self, token: str) -> AlertRecipient | None:
@@ -137,7 +140,9 @@ class SubscriptionService:
             row = await s.get(AlertRecipient, recipient.id)
         if channel is None or org is None or row is None:
             return None
-        return Subscription(org.name, channel.name, row.address, row.unsubscribed_at is not None)
+        return Subscription(
+            org.name, channel.name, row.address, row.unsubscribed_at is not None, channel.public
+        )
 
     # -- Telegram ------------------------------------------------------------------------
 

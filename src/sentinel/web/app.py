@@ -30,8 +30,10 @@ from sentinel.web.routes import (
     orgs,
     pages,
     products,
+    public,
     risks,
     status,
+    status_page,
     subscriptions,
 )
 from sentinel.web.services import build_services, services
@@ -81,6 +83,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         risks.router,
         credentials.router,
         alerts.router,
+        status_page.router,
+        public.router,
         subscriptions.router,
         admin.router,
         api.router,

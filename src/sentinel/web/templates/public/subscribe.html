@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ t("public.subscribe_title") }} · {{ page.title }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("public.subscribe_title") }}</h1>
+  {% if done %}
+  <p class="notice" role="status">{{ t("public.subscribe_done") }}</p>
+  {% else %}
+  <p>{{ t("public.subscribe_body").format(org=page.org_name) }}</p>
+  {{ ui.error_box(error) }}
+  <form method="post" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("email", "public.email", type="email", autocomplete="email", maxlength=320) }}
+    <div class="hp" aria-hidden="true">
+      <label for="f-website">{{ t("public.honeypot") }}</label>
+      <input id="f-website" name="website" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <button type="submit">{{ t("public.subscribe_button") }}</button>
+  </form>
+  <p class="hint">{{ t("public.subscribe_hint") }} <a href="/aydinlatma">{{ t("site.privacy_link") }}</a></p>
+  {% endif %}
+  <p><a href="/s/{{ page.slug }}">{{ t("public.back") }}</a></p>
+</section>
+{% endblock %}

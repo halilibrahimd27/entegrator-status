@@ -7,6 +7,9 @@ of Phase 8 (``sentinel.risk.impact``), evaluated at the time of the event. Rules
 read only for the event's own organization, so nothing routes one organization's events
 to another. On its very first run the job only sets its cursor: switching alerts on
 must not replay history.
+
+The organization's own incident updates go to the subscribers of its public status page
+(``AlertChannel.public``) when the product is on the page; they never pass through rules.
 """
 
 from __future__ import annotations
@@ -38,10 +41,13 @@ from sentinel.models import (
     Dependency,
     Incident,
     IncidentKind,
+    IncidentUpdate,
     JobCursor,
+    Organization,
     Product,
     Risk,
     Service,
+    StatusPage,
 )
 from sentinel.risk.impact import LEVELS, applies, attenuate, change_rule, risk_rule
 
@@ -227,6 +233,7 @@ async def run_events(db: Database, clock: Callable[[], datetime] = utcnow) -> Ev
                         "occurred_at": when or now,
                     }
                 )
+        rows += await _notice_rows(s, since)
         created: list[AlertEvent] = []
         if rows:
             ids = (
@@ -241,7 +248,10 @@ async def run_events(db: Database, clock: Callable[[], datetime] = utcnow) -> Ev
                 (await s.scalars(select(AlertEvent).where(AlertEvent.id.in_(ids)))).all()
             )
         report.events = len(created)
-        deliveries = await _deliveries(s, created, now)
+        deliveries = await _deliveries(s, [e for e in created if e.subject_type != "notice"], now)
+        deliveries += await _public_deliveries(
+            s, [e for e in created if e.subject_type == "notice"], now
+        )
         report.deliveries = len(deliveries)
         report.delivery_ids = deliveries
         cursor.position = now
@@ -262,7 +272,9 @@ async def _deliveries(s: AsyncSession, events: list[AlertEvent], now: datetime) 
         for c in (
             await s.scalars(
                 select(AlertChannel).where(
-                    AlertChannel.org_id.in_(orgs), AlertChannel.enabled.is_(True)
+                    AlertChannel.org_id.in_(orgs),
+                    AlertChannel.enabled.is_(True),
+                    AlertChannel.public.is_(False),  # page subscribers never get rule events
                 )
             )
         ).all()
@@ -301,6 +313,104 @@ async def _deliveries(s: AsyncSession, events: list[AlertEvent], now: datetime) 
     if not rows:
         return []
     # several rules may route the same event to the same channel: still one message
+    return list(
+        (
+            await s.scalars(
+                insert(AlertDelivery)
+                .values(rows)
+                .on_conflict_do_nothing()
+                .returning(AlertDelivery.id)
+            )
+        ).all()
+    )
+
+
+async def _notice_rows(s: AsyncSession, since: datetime) -> list[dict[str, Any]]:
+    """Own incident updates on products shown on a public page with subscriptions on."""
+    rows: list[dict[str, Any]] = []
+    found = (
+        await s.execute(
+            select(IncidentUpdate, Incident, Product, Organization)
+            .join(Incident, Incident.id == IncidentUpdate.incident_id)
+            .join(Product, Product.id == Incident.product_id)
+            .join(Organization, Organization.id == Product.org_id)
+            .where(IncidentUpdate.created_at > since, Incident.kind == IncidentKind.MANUAL)
+        )
+    ).all()
+    pages: dict[uuid.UUID, StatusPage | None] = {}
+    for update, incident, product, org in found:
+        if org.id not in pages:
+            pages[org.id] = await s.scalar(
+                select(StatusPage).where(
+                    StatusPage.org_id == org.id,
+                    StatusPage.enabled.is_(True),
+                    StatusPage.subscriptions.is_(True),
+                )
+            )
+        page = pages[org.id]
+        if page is None or str(product.id) not in page.product_ids:
+            continue
+        rows.append(
+            {
+                "org_id": org.id,
+                "product_id": product.id,
+                "subject_type": "notice",
+                "subject_id": update.id,
+                "phase": "new",
+                "severity": "medium",
+                "reason": "notice",
+                "title": (incident.title or "")[:300],
+                "link": None,
+                "path": [product.name],
+                "detail": {"status": update.status, "body": update.body[:2000], "slug": org.slug},
+                "occurred_at": update.created_at,
+            }
+        )
+    return rows
+
+
+async def _public_deliveries(
+    s: AsyncSession, events: list[AlertEvent], now: datetime
+) -> list[uuid.UUID]:
+    if not events:
+        return []
+    channels = {
+        c.org_id: c
+        for c in (
+            await s.scalars(
+                select(AlertChannel).where(
+                    AlertChannel.org_id.in_({e.org_id for e in events}),
+                    AlertChannel.public.is_(True),
+                    AlertChannel.enabled.is_(True),
+                )
+            )
+        ).all()
+    }
+    rows: list[dict[str, Any]] = []
+    for event in events:
+        channel = channels.get(event.org_id)
+        if channel is None:
+            continue
+        for recipient_id in (
+            await s.scalars(
+                select(AlertRecipient.id).where(
+                    AlertRecipient.channel_id == channel.id,
+                    AlertRecipient.confirmed_at.is_not(None),
+                    AlertRecipient.unsubscribed_at.is_(None),
+                )
+            )
+        ).all():
+            rows.append(
+                {
+                    "org_id": event.org_id,
+                    "event_id": event.id,
+                    "channel_id": channel.id,
+                    "recipient_key": str(recipient_id),
+                    "next_attempt_at": now,
+                }
+            )
+    if not rows:
+        return []
     return list(
         (
             await s.scalars(
