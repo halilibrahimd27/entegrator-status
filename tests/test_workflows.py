@@ -12,7 +12,7 @@ PINNED = re.compile(r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$")
 
 def test_actions_are_pinned_by_sha() -> None:
     found = {path.name: USES.findall(path.read_text()) for path in sorted(WORKFLOWS.glob("*.yml"))}
-    assert {"ci.yml", "release.yml"} <= set(found)
+    assert {"ci.yml", "release.yml", "pages.yml"} <= set(found)
     loose = [(name, ref) for name, refs in found.items() for ref in refs if not PINNED.match(ref)]
     assert loose == []
 

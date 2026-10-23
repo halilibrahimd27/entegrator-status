@@ -1,147 +1,186 @@
 # Entegratör Status
 
-Status and change tracking for everything your product depends on.
+Status and change tracking for everything your product depends on — and for what
+*those* depend on.
 
-Map your dependencies (third-party APIs, SaaS vendors, integrators, cloud services,
-packages, container images, certificates, domains) and the shared catalog adds the
-dependencies of those dependencies. Entegratör Status watches every node and tells you,
-once and early, when something upstream breaks or changes in a way that can break you.
+[Türkçe](#türkçe) · [Self-hosting](docs/SELF_HOSTING.md) · [Methodology](docs/METHODOLOGY.md) ·
+[Changelog](CHANGELOG.md) · License: [Apache-2.0](LICENSE)
 
-1. **Is it up?** Availability from at least two probe locations with consensus, next to
-   what the vendor's status page claims.
-2. **Did it change?** API contract drift (OpenAPI, JSON, WSDL/XSD), releases, advisories,
-   end-of-life dates, announcements and deprecation notices, classified by impact.
-3. **Does it affect me?** Impact follows the dependency graph up to the third degree:
-   *your product → your vendor → your vendor's upstream*.
+![The organization dashboard: each product's state and the reason behind it](docs/img/dashboard.png)
 
-Example: GİB updates the UBL-TR code lists → your e-invoice integrator has to adapt →
-your invoicing module is flagged before the effective date.
+Map your dependencies — third-party APIs, SaaS vendors, e-invoice integrators, cloud
+services, packages, container images, certificates, domains — and a curated shared
+catalog adds the dependencies of those dependencies. Entegratör Status watches every
+node and tells you, once and early, when something upstream breaks or changes in a way
+that can break you.
 
-## Status
+1. **Is it up?** Availability from at least two independent probe locations with
+   consensus, shown next to what the vendor's own status page claims.
+2. **Did it change?** API contract drift (OpenAPI, JSON responses, WSDL/XSD), releases,
+   security advisories, end-of-life dates, announcements and deprecation notices,
+   classified by what they mean for you.
+3. **Does it affect me?** Impact follows the dependency graph up to the third degree —
+   *your product → your vendor → your vendor's upstream* — with the reason path and a
+   severity that knows which operations you actually use.
 
-Phases 0–10 of the [build plan](docs/PLAN.md) are done:
+Example: the tax authority updates the UBL-TR code lists → your e-invoice integrator has
+to adapt → your invoicing module is flagged, with the effective date, before it breaks.
 
-- configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
-- accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
-  server-side sessions, CSRF protection, TOTP (mandatory for platform admins)
-- organizations, roles, invitations and read-only API tokens, isolated per tenant by
-  the ORM session itself ([ADR 0005](docs/adr/0005-tenant-isolation.md))
-- KVKK: data export, account deletion, closing organizations, retention jobs
-- the dependency graph: products, a curated shared catalog (YAML packs, see
-  [docs/CATALOG.md](docs/CATALOG.md)) plus private services, components and sources;
-  third-degree view as server-rendered SVG; imports from SBOMs, lockfiles and compose
-  files; proposals to the shared catalog with a platform-admin review queue
-- the prober: `http`, `tls_cert`, `dns` and `domain_expiry` checks; robots.txt,
-  one request per host at a time, `Retry-After` / `Crawl-delay` and backoff; results
-  buffered locally (SQLite) and shipped in signed batches, at-least-once; node
-  self-health from control targets; identical sources of different tenants probed once
-- the status engine: consensus of at least two healthy nodes with hysteresis, a
-  per-component timeline, automatic incidents with cause hints, maintenance windows,
-  manual incidents for your own products, uptime (24 h to 90 d), 90-day bars, an
-  organization status page and `GET /api/v1/status`
-  ([ADR 0008](docs/adr/0008-status-engine.md))
-- change sources: vendor status pages (Statuspage, Instatus, RSS) shown next to our
-  measurements, RSS/Atom feeds and watched pages (CSS selectors), each fetched by one
-  node with robots.txt every cycle; announcements classified in Turkish and English with
-  effective dates; manual announcements; dated risks from `Sunset` / `Deprecation`
-  headers and expiring certificates and domains
-  ([ADR 0009](docs/adr/0009-change-sources.md))
-- releases, advisories and lifecycle: GitHub, npm, PyPI and Docker Hub releases
-  classified major / minor / patch / pre-release (semver, PEP 440, calver); pinned vs.
-  latest on product pages; risks for unadopted majors, OSV advisories that affect the
-  pinned version, and end of life within 180 days
-  ([ADR 0010](docs/adr/0010-registries.md))
-- API contract drift: OpenAPI, JSON response shapes and WSDL/XSD normalised to
-  structural facts and classified breaking / non-breaking / cosmetic; authenticated
-  checks with the organization's own credentials (write-only vault, sent only to their
-  host, only through trusted probe nodes; [ADR 0011](docs/adr/0011-credentials.md))
-- impact: every incident, change and risk on the products it reaches (≤ 3 hops) with
-  the reason path and usage-aware severity; a risk register with per-organization
-  decisions; a planned-changes calendar; correlated-failure hints; a weekly digest
-- alerts: rules by product, service, kind and severity; e-mail (double opt-in, one-click
-  unsubscribe), Telegram, Slack-compatible and signed webhooks
-  ([docs/WEBHOOKS.md](docs/WEBHOOKS.md)); one message per event, channel and recipient;
-  retries, auto-disable, quiet hours, a daily batch and the weekly digest by e-mail
-- the panel: a dashboard with each product's derived state and why, filters, and a
-  read-only JSON API (`/api/v1/products`, `/impacts`, `/risks`, `/calendar`, `/status`)
-- public pages: an optional status page per organization (`/s/{org}`) with its own
-  incidents, an Atom feed, an SVG badge and e-mail subscriptions; a static export for
-  GitHub Pages ([docs/STATIC_EXPORT.md](docs/STATIC_EXPORT.md)); `/yontem`,
-  `/hakkinda/bot` and a correction form
+## What you get
 
-Next: release (Phase 11): production compose with HTTPS, release images, backups, the
-project site and going public.
+- **A dashboard** with each product's derived state and why, open upstream incidents,
+  recent changes, risks with a date (expiring certificates and domains, sunset headers,
+  end of life, known vulnerabilities in the versions you pin) and a calendar.
+- **Alerts** by e-mail, Telegram, Slack-compatible or signed webhooks
+  ([WEBHOOKS.md](docs/WEBHOOKS.md)), routed by product, service, kind and severity, with
+  quiet hours, daily batches and a weekly digest — one message per event and recipient.
+- **Public status pages** for your own customers (`/s/<org>`): your incidents, an Atom
+  feed, a badge and e-mail subscriptions — or a static copy on GitHub Pages without any
+  public server ([STATIC_EXPORT.md](docs/STATIC_EXPORT.md)).
+- **Authenticated checks** with your own credentials in a write-only vault, sent only to
+  the host they belong to ([ADR 0011](docs/adr/0011-credentials.md)).
+- **A read-only JSON API** for your own tooling (`/api/v1/products`, `/impacts`,
+  `/risks`, `/calendar`, `/status`).
+- **Multi-tenant** with isolation enforced by the database session itself
+  ([ADR 0005](docs/adr/0005-tenant-isolation.md)); KVKK-minded retention throughout.
 
-## Quick start
+| Product page: the third-degree graph and what reaches it | A public status page |
+|---|---|
+| ![Product page](docs/img/product.png) | ![Public status page](docs/img/public-page.png) |
 
-Requirements: Python 3.12, Docker with Compose, [gitleaks](https://github.com/gitleaks/gitleaks),
-and [uv](https://github.com/astral-sh/uv) (only for `make lock`).
+Screenshots use the fictional demo data from `tools/demo.py`.
+
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph nodes[Probe nodes, 2+ networks]
+    P1[prober] & P2[prober]
+  end
+  subgraph core[Your instance]
+    W[web: panel, API,<br/>public pages, ingest]
+    E[engine: consensus, changes,<br/>impact, alerts, retention]
+    DB[(PostgreSQL)]
+    R[(Redis)]
+  end
+  U[Upstream services:<br/>APIs, status pages, registries,<br/>feeds, certificates, DNS]
+  P1 & P2 -- GET/HEAD, robots.txt,<br/>rate limits --> U
+  P1 & P2 -- signed batches --> W
+  W --- DB
+  E --- DB
+  W --- R
+  E -- e-mail, Telegram,<br/>webhooks --> People
+  Caddy[Caddy, HTTPS] --> W
+```
+
+Probe nodes are small and outbound-only; they fetch jobs from the core, make read-only
+requests under strict rules (identified User-Agent, robots.txt, one request per host at a
+time, back-off on 429/503 — see [the bot rules](docs/METHODOLOGY.md#how-our-bot-behaves)),
+and ship signed results. The engine turns rounds from several nodes into a consensus
+state ("down" needs two healthy nodes and three failed rounds), turns snapshots into
+classified changes, propagates impact through the graph and sends alerts.
+
+## Run it
+
+**Try it locally** (Python 3.12, Docker with Compose):
 
 ```bash
-make install   # venv + hashed dev dependencies + pre-commit hook
-make env       # .env with fresh random secrets (mode 600, gitignored)
-make dev       # web, engine, postgres, redis, mailpit (+ prober once a node exists)
-make node      # register a local probe node (credentials go to .env), start the prober
-open http://127.0.0.1:8000      # sign up; mails land in http://127.0.0.1:8025
+make install && make env && make dev     # http://127.0.0.1:8000, mail in http://127.0.0.1:8025
+docker compose run --rm --no-deps -v ./tools:/app/tools:ro web python tools/demo.py
 ```
+
+The last line loads a fictional demo organization and prints a password to sign in with.
+
+**Run your own instance** on one server with HTTPS: [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)
+(`compose.prod.yml` with Caddy, images from GitHub Container Registry, backups and a
+restore drill in [docs/BACKUP.md](docs/BACKUP.md), probe nodes in
+[docs/PROBE_NODE.md](docs/PROBE_NODE.md)). Whoever runs an instance operates it; there is
+no hosted service and no telemetry.
+
+## Development
 
 | Command | What it does |
 |---|---|
-| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and the coverage gates (security, tenancy, accounts, sources, graph, catalog, probe, engine, risk) |
+| `make test` | pytest against throwaway PostgreSQL/Redis (no network) and per-package coverage gates |
 | `make lint` | ruff, ruff format check, mypy --strict |
 | `make security` | bandit, pip-audit, gitleaks |
 | `make check` | all of the above; must pass before every commit |
 | `make lock` | regenerate hashed lock files (14-day release cool-down) |
 
-## Layout
-
 ```
-src/sentinel/      application package (config, security, web, probe, engine, …)
-tests/             pytest suite
-docs/              plan, methodology, ADRs
+src/sentinel/   application (accounts, tenancy, catalog, graph, probe, engine, sources,
+                contracts, risk, alerts, public, admin, web, security)
+tests/          pytest suite (~900 tests; real PostgreSQL and Redis, no network)
+catalog/        the shared catalog as reviewed YAML packs
+docs/           plan, methodology, ADRs, runbooks
 ```
 
-## Docs
+Ground rules for contributors — tenancy, credentials, probing ethics, KVKK, security —
+are in [CLAUDE.md](CLAUDE.md); decisions are recorded in [docs/adr/](docs/adr/).
+Security issues: [SECURITY.md](SECURITY.md).
 
-- [CLAUDE.md](CLAUDE.md): ground rules (tenancy, credentials, probing ethics, KVKK, security, stack)
-- [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md): running your own instance (install, upgrade, monitoring)
-- [docs/BACKUP.md](docs/BACKUP.md): backups, the restore drill, master key rotation
-- [docs/PROBE_NODE.md](docs/PROBE_NODE.md): running a probe node
-- [docs/PLAN.md](docs/PLAN.md): phased build plan
-- [docs/METHODOLOGY.md](docs/METHODOLOGY.md): what we observe and how
-- [docs/WEBHOOKS.md](docs/WEBHOOKS.md): receiving and verifying alert webhooks
-- [docs/STATIC_EXPORT.md](docs/STATIC_EXPORT.md): a public status page on GitHub Pages
-- [docs/adr/](docs/adr/): architecture decisions
-- [SECURITY.md](SECURITY.md): reporting vulnerabilities
+## How it was built
 
----
+Entegratör Status was designed and reviewed by its maintainer
+([@halilibrahimd27](https://github.com/halilibrahimd27)) and implemented with
+[Claude Code](https://claude.com/claude-code), Anthropic's coding agent, phase by phase
+along [docs/PLAN.md](docs/PLAN.md). The ground rules in [CLAUDE.md](CLAUDE.md) were
+written first and bind every change; each phase ended with `make check` green (tests with
+coverage gates, `mypy --strict`, bandit, pip-audit, gitleaks) and CI green, and every
+non-obvious decision is an ADR. Bugs found along the way became tests first.
 
 ## License
 
-[Apache-2.0](LICENSE). Entegratör Status is self-hosted software: whoever runs an
-instance operates it ([ADR 0012](docs/adr/0012-distribution.md)).
+[Apache-2.0](LICENSE) — see [NOTICE](NOTICE).
 
 ---
 
 ## Türkçe
 
-Ürününün bağımlı olduğu her şey için durum ve değişiklik takibi.
+Ürününün bağımlı olduğu her şeyin — ve onların bağımlı olduklarının — durum ve
+değişiklik takibi.
 
-Bağımlılıklarını tanımla (üçüncü parti API'ler, SaaS, entegratörler, bulut servisleri,
-paketler, container image'ları, sertifikalar, domain'ler); ortak katalog onların
-bağımlılıklarını ekler. Entegratör Status her düğümü izler ve yukarıda bir şey bozulduğunda
-ya da seni bozacak şekilde değiştiğinde haber verir: bir kez, erken ve sınıflandırılmış
-olarak.
+Bağımlılıklarını tanımla (üçüncü parti API'ler, SaaS sağlayıcıları, e-Fatura
+entegratörleri, bulut servisleri, paketler, container imajları, sertifikalar, alan
+adları); elle derlenen ortak katalog onların bağımlılıklarını ekler. Entegratör Status
+her düğümü izler; yukarıda bir şey bozulduğunda ya da seni bozacak şekilde değiştiğinde
+bir kez, erken ve nedeniyle birlikte haber verir.
 
-- **Çalışıyor mu?** En az iki ölçüm noktasından erişilebilirlik; vendor'ın kendi durum
-  sayfasıyla yan yana.
-- **Değişti mi?** API sözleşme değişiklikleri, sürümler, güvenlik bildirimleri, destek
-  sonu tarihleri, duyurular ve kullanımdan kaldırma notları.
-- **Beni etkiler mi?** Etki bağımlılık grafında üç dereceye kadar izlenir:
-  *ürünün → vendor'ın → vendor'ın bağımlılığı*.
+- **Çalışıyor mu?** En az iki bağımsız ölçüm noktasından uzlaşmalı erişilebilirlik;
+  sağlayıcının kendi durum sayfasıyla yan yana.
+- **Değişti mi?** API sözleşme değişiklikleri (OpenAPI, JSON, WSDL/XSD), sürümler,
+  güvenlik bildirimleri, destek bitiş tarihleri, duyurular; senin için ne anlama
+  geldiğine göre sınıflandırılmış.
+- **Beni etkiler mi?** Etki bağımlılık grafında üç dereceye kadar izlenir —
+  *ürünün → sağlayıcın → sağlayıcının bağımlılığı* — kullandığın işlemlere göre önemle.
 
-Amaç, düzenli yapılan angaryayı (changelog okumak, durum sayfalarını takip etmek, bitiş
-tarihlerini elle kontrol etmek) ortadan kaldırmak ve gözden kaçan riskleri (bir
-bağımlılığın güncellemesiyle ürünün bozulması gibi) sıfırlamak.
+Örnek: GİB UBL-TR kod listelerini günceller → e-Fatura entegratörün uyum sağlamak
+zorundadır → fatura modülün, yürürlük tarihiyle birlikte, bozulmadan önce işaretlenir.
 
-Hızlı başlangıç yukarıdaki komutlarla aynıdır: `make install`, `make env`, `make dev`.
+Amaç; changelog okumak, durum sayfalarını takip etmek, bitiş tarihlerini elle kontrol
+etmek gibi düzenli angaryayı ortadan kaldırmak ve bir bağımlılığın değişikliğiyle ürünün
+bozulması gibi gözden kaçan riskleri yakalamak.
+
+**Neler var:** ürün bazında türetilmiş durum ve nedeni; e-posta, Telegram, Slack uyumlu
+ve imzalı webhook uyarıları (sessiz saatler, günlük toplu mesaj, haftalık özet);
+müşterilerin için herkese açık durum sayfası (Atom, rozet, e-posta aboneliği; istersen
+sunucusuz GitHub Pages kopyası); kendi kimlik bilgilerinle yetkili kontroller; salt okunur
+JSON API; kurumlar arası yalıtım ve KVKK'ya uygun saklama süreleri.
+
+**Denemek için:** `make install && make env && make dev`, ardından
+`docker compose run --rm --no-deps -v ./tools:/app/tools:ro web python tools/demo.py`
+(kurgusal bir demo kurum yükler ve giriş parolasını yazar).
+
+**Kendi kurulumun için:** [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) — tek sunucu,
+Caddy ile otomatik HTTPS, yedekleme ve geri yükleme tatbikatı, ölçüm noktaları. Kurulumu
+çalıştıran taraf onu işletir ve KVKK kapsamında veri sorumlusudur; barındırılan bir servis
+ya da telemetri yoktur.
+
+**Nasıl geliştirildi:** Bakımcı ([@halilibrahimd27](https://github.com/halilibrahimd27))
+tarafından tasarlandı ve gözden geçirildi; Anthropic'in kodlama ajanı
+[Claude Code](https://claude.com/claude-code) ile [docs/PLAN.md](docs/PLAN.md)'deki
+aşamalar sırasıyla uygulandı. Her aşama `make check` (testler, kapsam eşikleri,
+`mypy --strict`, bandit, pip-audit, gitleaks) ve CI yeşilken kapandı; kararlar ADR olarak
+kayıtlı.
+
+Lisans: [Apache-2.0](LICENSE).

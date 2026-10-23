@@ -1,0 +1,5 @@
+# The project site (GitHub Pages, built from docs/ by .github/workflows/pages.yml).
+title: Entegratör Status
+description: Status and change tracking for everything your product depends on — self-hosted, open source.
+theme: jekyll-theme-minimal
+lang: en

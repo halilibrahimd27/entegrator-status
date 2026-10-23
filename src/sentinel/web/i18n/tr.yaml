@@ -2,6 +2,7 @@
 # Ölçülü ve olgusal dil: "X çöktü" değil, "Erişim sorunu tespit edildi".
 
 site:
+  description: "Ürününün bağımlı olduğu servislerin durumu ve değişiklikleri: kesintiler, sürümler, API sözleşmeleri ve tarihli riskler, üç dereceye kadar."
   name: "Entegratör Status"
   tagline: "Bağımlılıkların için durum ve değişiklik takibi"
   disclaimer: "Bağımsız ölçümdür, resmî değildir"

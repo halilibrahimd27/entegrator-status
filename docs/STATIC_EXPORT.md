@@ -6,8 +6,8 @@ pushes them to a GitHub Pages repository the organization owns (any static host 
 the same way). This is the setup [ADR 0012](adr/0012-distribution.md) describes.
 
 What you get: `index.html`, `yontem.html` (methodology), `akis.atom`, `rozet.svg`,
-`static/app.css` and `.nojekyll`. Links between them are relative. The page is as fresh
-as your schedule (every 5 minutes is reasonable). E-mail subscriptions need a running
+`static/app.css`, `static/favicon.svg` and `.nojekyll`. Links between them are
+relative. The page is as fresh as your schedule (every 5 minutes is reasonable). E-mail subscriptions need a running
 instance that the internet can reach; without one the page has no subscribe link.
 
 ## 1. Switch the page on

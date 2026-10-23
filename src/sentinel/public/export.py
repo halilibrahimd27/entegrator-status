@@ -3,11 +3,11 @@
     python -m sentinel.public.export <slug> <out_dir> --site-url https://<OWNER>.github.io/<REPO>
         [--subscribe-url <PUBLIC_BASE_URL>] [--stamp-minutes 60]
 
-Writes ``index.html``, ``yontem.html``, ``akis.atom``, ``rozet.svg``, ``static/app.css``
-and ``.nojekyll`` into ``out_dir`` and leaves every other file there alone (a Pages
-repository may hold a ``CNAME`` or a README). Links between the files are relative; only
-the canonical URL and the feed use ``--site-url``. Subscribing needs a running
-instance that the internet can reach: pass ``--subscribe-url`` only then.
+Writes ``index.html``, ``yontem.html``, ``akis.atom``, ``rozet.svg``, ``static/app.css``,
+``static/favicon.svg`` and ``.nojekyll`` into ``out_dir`` and leaves every other file
+there alone (a Pages repository may hold a ``CNAME`` or a README). Links between the
+files are relative; only the canonical URL and the feed use ``--site-url``. Subscribing
+needs a running instance that the internet can reach: pass ``--subscribe-url`` only then.
 
 The "last updated" time is rounded down to ``--stamp-minutes``, so running the export
 every few minutes changes the files only when something on the page changed, plus once
@@ -76,6 +76,9 @@ async def export(
         ".nojekyll": "",
         "static/app.css": resources.files("sentinel.web")
         .joinpath("static/app.css")
+        .read_text(encoding="utf-8"),
+        "static/favicon.svg": resources.files("sentinel.web")
+        .joinpath("static/favicon.svg")
         .read_text(encoding="utf-8"),
     }
     return await asyncio.to_thread(_write, out, files)

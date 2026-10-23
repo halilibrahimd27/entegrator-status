@@ -47,6 +47,7 @@ async def test_export_writes_a_self_contained_site(
         "index.html",
         "rozet.svg",
         "static/app.css",
+        "static/favicon.svg",
         "yontem.html",
     ]
     assert text(tmp_path, "CNAME") == "durum.example.invalid\n"  # left alone
@@ -65,7 +66,7 @@ async def test_export_writes_a_self_contained_site(
     again = await export(
         services, slug, tmp_path, site_url=SITE, subscribe_url="https://status.example.invalid/"
     )
-    assert len(again) == 6
+    assert len(again) == 7
     first = text(tmp_path, "index.html")
     await export(
         services, slug, tmp_path, site_url=SITE, subscribe_url="https://status.example.invalid/"
