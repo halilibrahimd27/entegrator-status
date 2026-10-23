@@ -64,9 +64,18 @@ Only what an organisation adds to its dependency graph, plus the curated shared 
 - Contract changes are `breaking`, `non_breaking` or `cosmetic`; releases `major`,
   `minor`, `patch` or `prerelease`; announcements `maintenance`, `deprecation`,
   `security`, `package_update`, `incident` or `other`.
-- Impact follows dependency edges up to three hops. When the product's usage is known
-  (pinned version, operations used) severity is exact; otherwise the product is shown as
-  "possibly affected".
+- Impact follows dependency edges up to three hops and is computed from the current graph.
+  Severity is high / medium / low: the event's class, whether the product uses what
+  changed (known only for its direct dependencies, from `usage.operations`), and one
+  level less for every hop beyond the first. Without usage data a breaking change is
+  "possibly affected", never "affected".
+- Contracts are compared as structure only (operations, parameters, fields with type,
+  required, nullable, enum and cardinality, endpoints, security). A required request
+  field added, a response field removed or newly nullable, a SOAP version or endpoint
+  change are breaking; documentation changes are cosmetic.
+- When at least 40 % of the components that depend on one upstream go down within ten
+  minutes, the upstream is shown with a hint that the cause may be shared. It is a
+  hint, not a finding.
 
 ## Probe locations
 

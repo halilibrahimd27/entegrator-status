@@ -25,6 +25,8 @@ from sentinel.engine.notices import NoticeService
 from sentinel.engine.views import StatusViews
 from sentinel.graph.service import GraphService
 from sentinel.probe.nodes import NodeService
+from sentinel.risk.correlation import CorrelationViews
+from sentinel.risk.digest import DigestViews
 from sentinel.risk.impact import ImpactViews
 from sentinel.risk.register import RiskRegister
 from sentinel.risk.views import RiskViews
@@ -58,6 +60,8 @@ class AppServices:
     risks: RiskViews
     impact: ImpactViews
     register: RiskRegister
+    correlation: CorrelationViews
+    digest: DigestViews
     credentials: CredentialService
     renderer: Renderer
 
@@ -84,6 +88,7 @@ def build_services(settings: Settings) -> AppServices:
     two_factor = TwoFactorService(db=db, passwords=passwords, throttle=throttle, totp_box=totp_box)
     graph = GraphService(db)
     impact = ImpactViews(db, graph)
+    register = RiskRegister(db, impact)
     return AppServices(
         settings=settings,
         db=db,
@@ -105,7 +110,9 @@ def build_services(settings: Settings) -> AppServices:
         changes=ChangeViews(db),
         risks=RiskViews(db),
         impact=impact,
-        register=RiskRegister(db, impact),
+        register=register,
+        correlation=CorrelationViews(db, ratio=settings.correlated_failure_ratio),
+        digest=DigestViews(impact, register),
         credentials=CredentialService(db, settings),
         renderer=Renderer(),
     )

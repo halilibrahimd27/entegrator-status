@@ -5,6 +5,10 @@
 <section class="card wide">
   <h1>{{ t("overview.title") }}</h1>
   <p>{{ t("overview.body") }}</p>
+  {% for h in hints %}
+  <p class="notice" role="note">{{ t("hints.common_cause").format(upstream=h.upstream_name, count=h.hint.affected|length, total=h.hint.dependants, ratio=(h.hint.ratio * 100)|round|int) }}
+    <br><span class="hint">{{ h.affected_names|join(", ") }} · {{ h.hint.first_down|local }}</span></p>
+  {% endfor %}
   {% if rows %}
   <table>
     <thead><tr>

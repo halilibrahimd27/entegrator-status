@@ -6,7 +6,7 @@ import re
 import sys
 from typing import Literal
 
-from pydantic import AnyHttpUrl, SecretStr, ValidationError, field_validator, model_validator
+from pydantic import AnyHttpUrl, Field, SecretStr, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MIN_SECRET_BYTES = 32
@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     ingest_hmac_key: SecretStr
     totp_encryption_key: SecretStr
     credentials_master_key: SecretStr  # wraps per-organization data keys (ADR 0011)
+
+    # Share of an upstream's dependants that must go down together for the
+    # "ortak bir kaynaktan kaynaklanıyor olabilir" hint (Phase 8).
+    correlated_failure_ratio: float = Field(default=0.4, ge=0.1, le=1.0)
 
     signup_enabled: bool = True
     session_idle_minutes: int = 120

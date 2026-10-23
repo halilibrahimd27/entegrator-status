@@ -325,7 +325,7 @@ Acceptance
 
 ---
 
-## Phase 8 — Impact and risk
+## Phase 8 — Impact and risk ✅
 
 Goal: every incident, change and risk lands on the products it affects, with the reason.
 
@@ -339,10 +339,11 @@ Tasks
       end of life, sunset, advisories, unadopted majors); states `open | snoozed |
       accepted | resolved`, audit-logged.
 - [x] Planned-changes calendar from effective dates (announcements, sunset headers, EOL).
-- [ ] Correlated-failure hint: if ≥ 40 % (configurable) of the dependants of one upstream
+- [x] Correlated-failure hint: if ≥ 40 % (configurable) of the dependants of one upstream
       go `down` within the same 10-minute window, show "Ortak bir kaynaktan kaynaklanıyor
       olabilir" — a hint, never an assertion.
-- [ ] Weekly digest per org: what changed upstream, what is due.
+- [x] Weekly digest per org: what changed upstream, what is due. (Page now; e-mailed
+      weekly by Phase 9.)
 
 Acceptance
 - Two- and three-hop propagation tests; usage-aware severity (used operation removed →

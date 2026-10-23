@@ -19,7 +19,7 @@ your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phases 0–6 of the [build plan](docs/PLAN.md) are done:
+Phases 0–8 of the [build plan](docs/PLAN.md) are done:
 
 - configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
 - accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
@@ -51,8 +51,15 @@ Phases 0–6 of the [build plan](docs/PLAN.md) are done:
   latest on product pages; risks for unadopted majors, OSV advisories that affect the
   pinned version, and end of life within 180 days
   ([ADR 0010](docs/adr/0010-registries.md))
+- API contract drift: OpenAPI, JSON response shapes and WSDL/XSD normalised to
+  structural facts and classified breaking / non-breaking / cosmetic; authenticated
+  checks with the organization's own credentials (write-only vault, sent only to their
+  host, only through trusted probe nodes; [ADR 0011](docs/adr/0011-credentials.md))
+- impact: every incident, change and risk on the products it reaches (≤ 3 hops) with
+  the reason path and usage-aware severity; a risk register with per-organization
+  decisions; a planned-changes calendar; correlated-failure hints; a weekly digest
 
-Next: API contract drift and authenticated checks (Phase 7).
+Next: alerts (Phase 9): e-mail, Telegram, Slack and signed webhooks.
 
 ## Quick start
 

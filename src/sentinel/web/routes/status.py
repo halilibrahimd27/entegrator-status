@@ -48,7 +48,14 @@ def parse_local(value: str) -> datetime:
 async def overview(request: Request, ctx: InOrg) -> Response:
     svc = services(request)
     rows = await svc.status.overview(ctx.scope)
-    return svc.renderer.page(request, "org/status.html", ctx=ctx, section="status", rows=rows)
+    return svc.renderer.page(
+        request,
+        "org/status.html",
+        ctx=ctx,
+        section="status",
+        rows=rows,
+        hints=await svc.correlation.hints(ctx.scope),
+    )
 
 
 def parse_day(value: str) -> datetime | None:

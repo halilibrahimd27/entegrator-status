@@ -1,0 +1,46 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("digest.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+<section class="card wide">
+  <h1>{{ t("digest.title") }}</h1>
+  <p class="hint">{{ digest.start|local }} – {{ digest.end|local }}</p>
+  {% if digest.empty %}<p>{{ t("digest.quiet") }}</p>{% endif %}
+  {% if digest.changes %}
+  <h2>{{ t("digest.changes") }}</h2>
+  <ul class="timeline">
+    {% for i in digest.changes %}
+    <li><span class="badge{% if i.severity == 'high' %} attention{% endif %}">{{ t("impact." ~ i.severity) }}</span>
+      {{ t("impact_reasons." ~ i.reason) }}: {% if i.link %}<a href="{{ i.link }}" rel="noopener noreferrer nofollow">{{ i.title }}</a>{% else %}{{ i.title }}{% endif %}
+      <br><span class="hint">{{ i.path|join(" → ") }}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if digest.outages %}
+  <h2>{{ t("digest.outages") }}</h2>
+  <ul class="timeline">
+    {% for o in digest.outages %}
+    <li>{{ o.component }} · {{ o.started_at|local }}{% if o.resolved_at %} – {{ o.resolved_at|local }}{% else %} · {{ t("incident_status.open") }}{% endif %}
+      {% if o.cause %}<br><span class="hint">{{ t("status.cause") }}: {{ t("causes." ~ o.cause) }}</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if digest.due %}
+  <h2>{{ t("digest.due") }}</h2>
+  <ul class="timeline">
+    {% for e in digest.due %}
+    <li><strong>{{ e.risk.due_at|local }}</strong> {{ t("risks." ~ e.risk.kind) }} · {{ e.component }}
+      <br><span class="hint">{{ e.products|join(", ") }}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if digest.planned %}
+  <h2>{{ t("digest.planned") }}</h2>
+  <ul class="timeline">
+    {% for i in digest.planned %}
+    <li><strong>{{ i.when|local }}</strong> <span class="badge">{{ t("calendar.kind_" ~ i.kind) }}</span>
+      {% if i.kind == "risk" %}{{ t("risks." ~ i.title) }}{% else %}{{ i.title }}{% endif %} · {{ i.component }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endblock %}

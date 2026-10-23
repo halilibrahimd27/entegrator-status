@@ -75,3 +75,15 @@ async def calendar(request: Request, ctx: InOrg) -> Response:
         section="calendar",
         items=await svc.register.calendar(ctx.scope),
     )
+
+
+@router.get("/o/{slug}/ozet")
+async def digest(request: Request, ctx: InOrg) -> Response:
+    svc = services(request)
+    return svc.renderer.page(
+        request,
+        "org/digest.html",
+        ctx=ctx,
+        section="digest",
+        digest=await svc.digest.weekly(ctx.scope),
+    )

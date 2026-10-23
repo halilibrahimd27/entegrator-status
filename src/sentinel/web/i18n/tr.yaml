@@ -151,6 +151,17 @@ calendar:
   kind_risk: "Risk"
   kind_maintenance: "Bakım"
 
+hints:
+  common_cause: "{upstream} bileşenine bağlı {total} bileşenden {count} tanesi (%{ratio}) son 10 dakika içinde birlikte erişim sorunu yaşamaya başladı; ortak bir kaynaktan kaynaklanıyor olabilir."
+
+digest:
+  title: "Haftalık özet"
+  quiet: "Geçen hafta bağımlılıklarında dikkat gerektiren bir şey olmadı; önümüzdeki 30 günde de planlanmış bir şey görünmüyor."
+  changes: "Geçen hafta değişenler"
+  outages: "Geçen haftaki erişim sorunları"
+  due: "30 gün içinde tarihi gelen riskler"
+  planned: "30 gün içinde planlananlar"
+
 drift:
   latest: "Güncel"
   current: "Güncel sürümde"
@@ -464,6 +475,7 @@ org:
   status: "Durum"
   risks: "Riskler"
   calendar: "Takvim"
+  digest: "Haftalık özet"
   catalog: "Katalog"
   members: "Üyeler"
   tokens: "API token'ları"
