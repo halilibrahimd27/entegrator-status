@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ t("method.title") }} · {{ page.title }}</title>
+  <link rel="stylesheet" href="{{ assets }}/app.css">
+</head>
+<body class="public">
+  <a class="skip" href="#main">{{ t("site.skip_to_content") }}</a>
+  <header class="site-header">
+    <a class="brand" href="{{ page_url }}">{{ page.title }}</a>
+  </header>
+  <main id="main">
+    <article class="card prose">
+      <h1>{{ t("method.title") }}</h1>
+      {% include "pages/_method_body.html" %}
+    </article>
+  </main>
+  <footer class="site-footer">
+    <span>{{ t("public.powered") }}</span>
+  </footer>
+</body>
+</html>

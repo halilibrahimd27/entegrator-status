@@ -1,0 +1,7 @@
+  <p>{{ t("method.intro") }}</p>
+  {% for section, items in (("observe", 4), ("never", 4), ("status", 7), ("changes", 7), ("public", 3)) %}
+  <h2>{{ t("method." ~ section ~ ".title") }}</h2>
+  <ul>
+    {% for n in range(1, items + 1) %}<li>{{ t("method." ~ section ~ ".i" ~ n) }}</li>{% endfor %}
+  </ul>
+  {% endfor %}

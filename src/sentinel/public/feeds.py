@@ -8,7 +8,7 @@ from datetime import datetime
 from sentinel.public.service import PublicPage
 from sentinel.web.i18n import t
 
-BADGE_COLORS = {"operational": "#2e7d32", "upstream": "#b26a00", "incident": "#c62828"}
+BADGE_COLORS = {"operational": "#2e7d32", "upstream": "#8a5a00", "incident": "#c62828"}
 
 
 def escape(value: str) -> str:

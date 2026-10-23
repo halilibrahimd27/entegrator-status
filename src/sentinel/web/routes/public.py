@@ -14,7 +14,8 @@ from fastapi import APIRouter, Depends, Form, Path, Request
 from starlette.responses import Response
 
 from sentinel.public.feeds import atom, badge
-from sentinel.public.service import PublicError, PublicPage
+from sentinel.public.render import render_page
+from sentinel.public.service import PublicError
 from sentinel.web.services import client_ip, services
 from sentinel.web.session_auth import csrf_protect
 
@@ -38,33 +39,21 @@ def _missing(request: Request) -> Response:
     )
 
 
-def render_page(
-    request: Request, page: PublicPage, *, base: str, assets: str, subscribe: bool
-) -> str:
-    """The page as HTML; also used by the static export with relative URLs."""
-    page_url = f"{base}/s/{page.slug}"
-    return (
-        services(request)
-        .renderer.env.get_template("public/page.html")
-        .render(
-            page=page,
-            page_url=page_url,
-            feed_url=f"{page_url}/akis.atom",
-            subscribe_url=f"{page_url}/abone" if subscribe and page.subscriptions else None,
-            method_url=f"{base}/yontem",
-            assets=assets,
-        )
-    )
-
-
 @router.get("/s/{slug}")
 async def page(request: Request, slug: Slug) -> Response:
     svc = services(request)
     found = await svc.status_pages.page(slug)
     if found is None:
         return _missing(request)
+    page_url = f"{svc.settings.public_base}/s/{slug}"
     html = render_page(
-        request, found, base=svc.settings.public_base, assets="/static", subscribe=True
+        svc.renderer.env,
+        found,
+        page_url=page_url,
+        feed_url=f"{page_url}/akis.atom",
+        subscribe_url=f"{page_url}/abone" if found.subscriptions else None,
+        method_url=f"{svc.settings.public_base}/yontem",
+        assets="/static",
     )
     return cached(request, html.encode(), "text/html; charset=utf-8")
 

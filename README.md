@@ -100,6 +100,7 @@ docs/              plan, methodology, ADRs
 - [docs/PLAN.md](docs/PLAN.md): phased build plan
 - [docs/METHODOLOGY.md](docs/METHODOLOGY.md): what we observe and how
 - [docs/WEBHOOKS.md](docs/WEBHOOKS.md): receiving and verifying alert webhooks
+- [docs/STATIC_EXPORT.md](docs/STATIC_EXPORT.md): a public status page on GitHub Pages
 - [docs/adr/](docs/adr/): architecture decisions
 - [SECURITY.md](SECURITY.md): reporting vulnerabilities
 
