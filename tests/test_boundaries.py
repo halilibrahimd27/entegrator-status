@@ -70,3 +70,14 @@ def test_only_the_auth_provider_sends_token_requests() -> None:
             if isinstance(node, ast.keyword) and node.arg == "token_request":
                 users.add(str(path.relative_to(PACKAGE)))
     assert users == {"sources/auth.py"}
+
+
+def test_only_the_alert_channels_send_deliveries() -> None:
+    """Alert POSTs go to the organization's own endpoints, from one module only."""
+    users = set()
+    for path in PACKAGE.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.keyword) and node.arg == "delivery":
+                users.add(str(path.relative_to(PACKAGE)))
+    assert users == {"alerts/channels.py"}

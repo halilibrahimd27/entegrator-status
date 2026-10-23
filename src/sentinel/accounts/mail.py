@@ -20,6 +20,13 @@ class Mail:
     to: str
     subject: str
     text: str
+    # extra headers (List-Unsubscribe and friends); values with CR/LF are refused
+    headers: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        for name, value in self.headers.items():
+            if any(c in name + value for c in "\r\n"):
+                raise ValueError(f"header {name!r} contains a line break")
 
 
 class Mailer(Protocol):
@@ -49,6 +56,8 @@ class SmtpMailer:
         message["From"] = str(Address(SITE_NAME, addr_spec=s.mail_from))
         message["To"] = mail.to
         message["Subject"] = mail.subject
+        for name, value in mail.headers.items():
+            message[name] = value
         message.set_content(mail.text)
         context = ssl.create_default_context()
         smtp: smtplib.SMTP

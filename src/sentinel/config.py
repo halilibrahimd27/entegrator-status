@@ -86,6 +86,10 @@ class Settings(BaseSettings):
     totp_encryption_key: SecretStr
     credentials_master_key: SecretStr  # wraps per-organization data keys (ADR 0011)
 
+    # Optional Telegram bot for alert channels (Phase 9). Without it, Telegram is off.
+    telegram_bot_token: SecretStr | None = None
+    telegram_bot_username: str | None = None
+
     # Share of an upstream's dependants that must go down together for the
     # "ortak bir kaynaktan kaynaklanıyor olabilir" hint (Phase 8).
     correlated_failure_ratio: float = Field(default=0.4, ge=0.1, le=1.0)

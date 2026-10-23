@@ -82,8 +82,8 @@ class AlertRecipient(IdMixin, CreatedAtMixin, TenantMixin, Base):
     address: Mapped[str] = mapped_column(String(320))  # e-mail or Telegram chat id
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     confirmed_at: Mapped[datetime | None]
-    confirm_hash: Mapped[bytes | None] = mapped_column(LargeBinary(32), unique=True)
-    unsubscribe_hash: Mapped[bytes | None] = mapped_column(LargeBinary(32), unique=True)
+    confirm_hash: Mapped[bytes | None] = mapped_column(LargeBinary(32), unique=True)  # one-time
+    # unsubscribe links are an HMAC over the recipient id: nothing to store, always valid
     unsubscribed_at: Mapped[datetime | None]
 
 

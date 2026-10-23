@@ -35,7 +35,9 @@ from support import (
 SRC = Path(__file__).resolve().parents[1] / "src" / "sentinel"
 EMAIL = "guvenlik@example.invalid"
 UNSAFE = {"POST", "PUT", "PATCH", "DELETE"}
-CSRF_EXEMPT_PREFIXES = ("/api/", "/ingest/")  # token-authenticated, never cookie-authenticated
+# token-authenticated, never cookie-authenticated; /abone/: the path token is the secret
+# (subscription links from e-mail, RFC 8058 one-click unsubscribe)
+CSRF_EXEMPT_PREFIXES = ("/api/", "/ingest/", "/abone/")
 
 
 @pytest.mark.parametrize("path", ["/", "/giris", "/kayit", "/aydinlatma", "/olmayan-sayfa"])
@@ -151,7 +153,11 @@ def _copy_keys_used() -> set[str]:
         keys |= set(
             re.findall(r"""\bt\(\s*["']([a-z_]+(?:\.[a-z_]+)+)["']\s*\)""", template.read_text())
         )
-    for path in [*(SRC / "accounts").glob("*.py"), *(SRC / "web").rglob("*.py")]:
+    for path in [
+        *(SRC / "accounts").glob("*.py"),
+        *(SRC / "alerts").glob("*.py"),
+        *(SRC / "web").rglob("*.py"),
+    ]:
         for node in ast.walk(ast.parse(path.read_text())):
             if isinstance(node, ast.Call):
                 name = getattr(node.func, "id", None) or getattr(node.func, "attr", None)

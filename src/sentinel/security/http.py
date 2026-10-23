@@ -46,6 +46,8 @@ CONTRACT_MAX_BYTES = 5 * 1024 * 1024
 MAX_REDIRECTS = 3
 # Headers a fetch may add; everything else (Host, User-Agent, encodings) is ours.
 REQUEST_HEADERS = frozenset({"accept", "if-none-match", "if-modified-since"})
+# ... and an alert delivery its signature headers (ADR 0003 rule 2 exception, Phase 9)
+DELIVERY_HEADERS = frozenset({"x-sentinel-timestamp", "x-sentinel-signature", "x-sentinel-event"})
 MAX_HEADER_VALUE = 256
 REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 
@@ -75,10 +77,11 @@ class BoundCredential:
 class FetchPolicy:
     """How one fetch may behave.
 
-    ``POST`` exists only for the two exceptions of ADR 0003 rule 2, each flagged and
-    never following a redirect: a read query (``read_query``, JSON body) and an OAuth2
-    token request (``token_request``, form body). A ``credential`` is attached only to
-    hops whose host is the credential's host.
+    ``POST`` exists only for flagged exceptions, none of them following a redirect: a
+    read query (``read_query``, JSON body) and an OAuth2 token request
+    (``token_request``, form body) under ADR 0003 rule 2, and an alert delivery to an
+    organization's own webhook (``delivery``, JSON body). A ``credential`` is attached
+    only to hops whose host is the credential's host.
     """
 
     method: Literal["GET", "HEAD", "POST"] = "GET"
@@ -91,22 +94,30 @@ class FetchPolicy:
     read_query: bool = False
     form_body: bytes | None = field(default=None, repr=False)
     token_request: bool = False
+    delivery: bool = False
     credential: BoundCredential | None = None
 
     def __post_init__(self) -> None:
-        query = self.read_query and self.json_body is not None and self.form_body is None
-        token = self.token_request and self.form_body is not None and self.json_body is None
+        flags = (self.read_query, self.token_request, self.delivery)
+        json_ok = self.json_body is not None and self.form_body is None
+        form_ok = self.form_body is not None and self.json_body is None
+        allowed = (
+            (self.read_query and json_ok)
+            or (self.token_request and form_ok)
+            or (self.delivery and json_ok)
+        )
         if self.method == "POST":
-            if not (query or token) or (self.read_query and self.token_request):
-                raise ValueError("POST is only for a flagged read query or token request")
+            if sum(flags) != 1 or not allowed:
+                raise ValueError("POST is only for a flagged read query, token request or delivery")
             if self.max_redirects != 0:
-                raise ValueError("a read query or token request never follows redirects")
+                raise ValueError("a read query, token request or delivery never follows redirects")
         elif self.json_body is not None or self.form_body is not None:
-            raise ValueError("only a POST read query or token request carries a body")
-        elif self.read_query or self.token_request:
-            raise ValueError("read queries and token requests are POST")
+            raise ValueError("only a flagged POST carries a body")
+        elif any(flags):
+            raise ValueError("read queries, token requests and deliveries are POST")
+        allowed_headers = REQUEST_HEADERS | (DELIVERY_HEADERS if self.delivery else frozenset())
         for name, value in self.headers.items():
-            if name.lower() not in REQUEST_HEADERS:
+            if name.lower() not in allowed_headers:
                 raise ValueError(f"header {name!r} may not be set by a fetch")
             if len(value) > MAX_HEADER_VALUE or any(ord(c) < 32 or ord(c) == 127 for c in value):
                 raise ValueError(f"invalid value for header {name!r}")

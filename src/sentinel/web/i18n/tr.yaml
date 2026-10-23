@@ -101,6 +101,7 @@ impact:
 
 impact_reasons:
   upstream_down: "Bağımlılıkta erişim sorunu"
+  upstream_recovered: "Bağımlılık yeniden erişilebilir"
   used_operation_breaking: "Kullandığın bir işlemde kırıcı değişiklik"
   unused_operation: "Kırıcı değişiklik, ama kullandığın işlemlerde değil"
   possibly_affected: "Kırıcı değişiklik; kullandığın işlemler bilinmiyor, etkilenmiş olabilirsin"
@@ -765,6 +766,43 @@ errors:
   not_found_body: "Aradığın sayfa yok ya da erişim iznin yok."
   csrf_title: "Form süresi doldu"
   csrf_body: "Güvenlik nedeniyle formu yeniden açıp tekrar gönder."
+
+alerts:
+  path: "Yol"
+  source: "Kaynak"
+  panel: "Panelde gör"
+  unsubscribe: "Bu kanaldan uyarı almak istemiyorsan"
+  daily_subject: "Entegratör Status: günün uyarıları ({count})"
+  weekly_subject: "Entegratör Status: {org} haftalık özeti"
+  confirm_mail:
+    subject: "Entegratör Status: {org} uyarılarına aboneliği onayla"
+    body: |
+      Merhaba,
+
+      "{org}" organizasyonu bu adresi Entegratör Status'taki "{channel}" uyarı kanalına ekledi.
+      Uyarıları almak için şu bağlantıyı açıp onayla (48 saat geçerli):
+      {link}
+
+      Onaylamazsan bu adrese hiçbir uyarı gönderilmez ve adres 48 saat sonra silinir.
+  page:
+    confirm_title: "Uyarı aboneliği"
+    confirm_body: "\"{org}\" organizasyonu {address} adresini \"{channel}\" uyarı kanalına ekledi. Onaylarsan bağımlılıklarındaki olay, değişiklik ve riskler için bu adrese e-posta gelir."
+    confirm_button: "Aboneliği onayla"
+    confirm_ignore: "Bunu sen istemediysen hiçbir şey yapma; adres 48 saat sonra silinir."
+    confirmed: "Onaylandı: \"{org}\" organizasyonunun \"{channel}\" kanalındaki uyarılar artık sana gelecek. Her e-postada tek tıkla abonelikten çıkma bağlantısı var."
+    unsubscribe_title: "Abonelikten çık"
+    unsubscribe_body: "{address} adresi \"{org}\" organizasyonunun \"{channel}\" uyarı kanalından çıkarılsın mı?"
+    unsubscribe_button: "Abonelikten çık"
+    unsubscribed: "Bu adrese \"{org}\" organizasyonunun \"{channel}\" kanalından artık uyarı gönderilmeyecek."
+    invalid_title: "Bağlantı geçersiz"
+    invalid_body: "Bu bağlantı geçersiz ya da süresi dolmuş. Yeni bir onay bağlantısı için organizasyonun yöneticisine başvur."
+  telegram:
+    help: "Entegratör Status uyarı botu.\n/abonelikler: bu sohbetin abone olduğu kanallar\n/iptal: bu sohbeti tüm kanallardan çıkar\nBir kanala bağlanmak için paneldeki \"Telegram'a bağla\" bağlantısını kullan."
+    linked: "Bağlandı: \"{org}\" organizasyonunun \"{channel}\" kanalındaki uyarılar bu sohbete gelecek. Çıkmak için /iptal yaz."
+    invalid: "Bu bağlantı geçersiz ya da süresi dolmuş (1 saat). Panelden yeni bir bağlantı oluştur."
+    none: "Bu sohbet hiçbir uyarı kanalına abone değil."
+    list: "Bu sohbetin abone olduğu kanallar:"
+    stopped: "Bu sohbet {count} kanaldan çıkarıldı; artık uyarı gelmeyecek."
 
 mail:
   verify:

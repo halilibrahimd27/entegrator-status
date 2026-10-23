@@ -121,7 +121,6 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Uuid(), nullable=True),
         sa.Column("confirmed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("confirm_hash", sa.LargeBinary(length=32), nullable=True),
-        sa.Column("unsubscribe_hash", sa.LargeBinary(length=32), nullable=True),
         sa.Column("unsubscribed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
@@ -154,7 +153,6 @@ def upgrade() -> None:
             "channel_id", "address", name=op.f("uq_alert_recipients_channel_id_address")
         ),
         sa.UniqueConstraint("confirm_hash", name=op.f("uq_alert_recipients_confirm_hash")),
-        sa.UniqueConstraint("unsubscribe_hash", name=op.f("uq_alert_recipients_unsubscribe_hash")),
     )
     op.create_index(
         op.f("ix_alert_recipients_channel_id"), "alert_recipients", ["channel_id"], unique=False

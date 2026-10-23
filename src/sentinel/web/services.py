@@ -15,6 +15,7 @@ from sentinel.accounts.sessions import SessionManager
 from sentinel.accounts.throttle import Throttle
 from sentinel.accounts.totp import TotpBox
 from sentinel.accounts.two_factor import TwoFactorService
+from sentinel.alerts.subscriptions import SubscriptionService
 from sentinel.catalog.imports import ImportService
 from sentinel.catalog.proposals import ProposalService
 from sentinel.catalog.service import CatalogService
@@ -63,6 +64,7 @@ class AppServices:
     correlation: CorrelationViews
     digest: DigestViews
     credentials: CredentialService
+    subscriptions: SubscriptionService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -114,6 +116,7 @@ def build_services(settings: Settings) -> AppServices:
         correlation=CorrelationViews(db, ratio=settings.correlated_failure_ratio),
         digest=DigestViews(impact, register),
         credentials=CredentialService(db, settings),
+        subscriptions=SubscriptionService(db, settings, mailer),
         renderer=Renderer(),
     )
 

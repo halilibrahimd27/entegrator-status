@@ -300,3 +300,19 @@ class CredentialService:
             raise VaultError("no data key")
         key = self._vault.unwrap(row.wrapped, credential.org_id)
         return self._vault.open_secret(key, credential.sealed, credential.org_id, credential.id)
+
+    async def seal_payload(
+        self, s: AsyncSession, org_id: uuid.UUID, row_id: uuid.UUID, payload: dict[str, str]
+    ) -> bytes:
+        """Seal another secret of the organization (alert channel URLs, signing secrets)."""
+        key = await self._data_key(s, org_id)
+        return self._vault.seal_secret(key, payload, org_id, row_id)
+
+    async def open_payload(
+        self, s: AsyncSession, org_id: uuid.UUID, row_id: uuid.UUID, blob: bytes
+    ) -> dict[str, str]:
+        row = await s.get(OrgDataKey, org_id)
+        if row is None:
+            raise VaultError("no data key")
+        key = self._vault.unwrap(row.wrapped, org_id)
+        return self._vault.open_secret(key, blob, org_id, row_id)

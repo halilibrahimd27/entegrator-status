@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ t("alerts.page.unsubscribe_title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("alerts.page.unsubscribe_title") }}</h1>
+  {% if done %}
+  <p>{{ t("alerts.page.unsubscribed").format(org=subscription.org, channel=subscription.channel) }}</p>
+  {% else %}
+  <p>{{ t("alerts.page.unsubscribe_body").format(org=subscription.org, channel=subscription.channel, address=subscription.address) }}</p>
+  <form method="post">
+    <button type="submit">{{ t("alerts.page.unsubscribe_button") }}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
