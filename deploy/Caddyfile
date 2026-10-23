@@ -1,0 +1,19 @@
+# Caddy in front of the web service: automatic HTTPS (Let's Encrypt), HTTP/3,
+# compression. Security headers (CSP, HSTS, …) come from the application itself.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Internal only: Prometheus scrapes web:8000/metrics on the internal network.
+	@internal path /metrics /metrics/*
+	respond @internal 404
+
+	reverse_proxy web:8000 {
+		# The app gets the client address in X-Forwarded-For (it trusts only this proxy).
+		health_uri /healthz
+		health_interval 30s
+	}
+}

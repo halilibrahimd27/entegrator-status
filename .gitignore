@@ -15,3 +15,6 @@ build/
 dist/
 *.egg-info/
 .DS_Store
+
+# production backups (tools/backup.sh); never commit them
+backups/

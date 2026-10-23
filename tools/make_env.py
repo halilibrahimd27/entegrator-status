@@ -1,14 +1,17 @@
-"""Create a local ``.env`` from ``.env.example`` with fresh random secrets.
+"""Create ``.env`` with fresh random secrets.
 
-Development convenience only. An existing file is never overwritten: keys that a newer
-version needs (a new secret, say) are appended with fresh values, and nothing already
-in the file changes.
+``make env`` (development) renders ``.env.example`` with dev values. ``make env-prod``
+renders ``deploy/env.prod.example``: secrets are generated, everything else stays a
+``<PLACEHOLDER>`` for the operator to fill in. An existing file is never overwritten:
+keys that a newer version needs (a new secret, say) are appended with fresh values, and
+nothing already in the file changes.
 """
 
 from __future__ import annotations
 
 import os
 import secrets
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +23,7 @@ GENERATED = {
     "TOTP_ENCRYPTION_KEY",
     "CREDENTIALS_MASTER_KEY",
     "POSTGRES_PASSWORD",
+    "REDIS_PASSWORD",
 }
 DEV_VALUES = {
     "PUBLIC_BASE_URL": "http://localhost:8000",
@@ -34,33 +38,35 @@ DEV_VALUES = {
 }
 
 
-def render(example: str) -> str:
+def render(example: str, *, dev: bool = True) -> str:
     lines = []
     for line in example.splitlines():
         key, sep, _ = line.partition("=")
         if sep and key in GENERATED:
             line = f"{key}={secrets.token_urlsafe(48)}"
-        elif sep and key in DEV_VALUES:
+        elif sep and dev and key in DEV_VALUES:
             line = f"{key}={DEV_VALUES[key]}"
         lines.append(line)
     return "\n".join(lines) + "\n"
 
 
-def missing_lines(existing: str, example: str) -> list[str]:
+def missing_lines(existing: str, example: str, *, dev: bool = True) -> list[str]:
     """Lines of the rendered example whose key the existing file does not set."""
     present = {line.partition("=")[0].strip() for line in existing.splitlines() if "=" in line}
     return [
         line
-        for line in render(example).splitlines()
+        for line in render(example, dev=dev).splitlines()
         if "=" in line and not line.startswith("#") and line.partition("=")[0] not in present
     ]
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    dev = "--prod" not in (sys.argv[1:] if argv is None else argv)
     target = ROOT / ".env"
-    example = (ROOT / ".env.example").read_text(encoding="utf-8")
+    template = ROOT / (".env.example" if dev else "deploy/env.prod.example")
+    example = template.read_text(encoding="utf-8")
     if target.exists():
-        added = missing_lines(target.read_text(encoding="utf-8"), example)
+        added = missing_lines(target.read_text(encoding="utf-8"), example, dev=dev)
         if not added:
             print(".env is complete; nothing changed.")
             return 0
@@ -68,11 +74,13 @@ def main() -> int:
             handle.write("\n# added by make env\n" + "\n".join(added) + "\n")
         print("Added to .env: " + ", ".join(line.partition("=")[0] for line in added))
         return 0
-    content = render(example)
+    content = render(example, dev=dev)
     fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         handle.write(content)
     print("Wrote .env (mode 600) with fresh secrets.")
+    if not dev:
+        print("Now replace every <PLACEHOLDER> in .env (see docs/SELF_HOSTING.md).")
     return 0
 
 

@@ -27,6 +27,7 @@ from sentinel.web.routes import (
     ingest,
     invites,
     members,
+    metrics,
     orgs,
     pages,
     products,
@@ -89,6 +90,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         admin.router,
         api.router,
         ingest.router,
+        metrics.router,
     ):
         app.include_router(router)
 

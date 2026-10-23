@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import re
 import sys
 from typing import Literal
@@ -72,6 +73,12 @@ class Settings(BaseSettings):
     web_host: str = "127.0.0.1"
     web_port: int = 8000
     web_reload: bool = False
+    # Proxies whose X-Forwarded-For is believed (IPs or CIDRs, comma separated). Rate
+    # limits key on the client address, so behind Caddy this must name Caddy.
+    web_trusted_proxies: str = "127.0.0.1"
+
+    # Optional bearer token for /metrics (Prometheus text). Unset: /metrics is a 404.
+    metrics_token: SecretStr | None = None
 
     # Connection strings may carry passwords, so they are secrets too (not validated
     # for randomness: the password part is checked by the database itself).
@@ -116,6 +123,23 @@ class Settings(BaseSettings):
         problem = secret_problem(value.get_secret_value())
         if problem:
             raise ValueError(problem)
+        return value
+
+    @field_validator("metrics_token")
+    @classmethod
+    def _metrics_token_is_usable(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is not None and (problem := secret_problem(value.get_secret_value())):
+            raise ValueError(problem)
+        return value
+
+    @field_validator("web_trusted_proxies")
+    @classmethod
+    def _proxies_are_addresses(cls, value: str) -> str:
+        for item in (v.strip() for v in value.split(",") if v.strip()):
+            try:
+                ipaddress.ip_network(item, strict=False)
+            except ValueError:
+                raise ValueError("must be IP addresses or CIDR ranges") from None
         return value
 
     @field_validator("database_url")

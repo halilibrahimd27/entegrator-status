@@ -13,6 +13,8 @@ def main() -> None:
         port=settings.web_port,
         reload=settings.web_reload,
         server_header=False,
+        proxy_headers=True,
+        forwarded_allow_ips=settings.web_trusted_proxies,
         log_config=uvicorn_log_config(),
         log_level=settings.log_level.lower(),
     )

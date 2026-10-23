@@ -207,3 +207,24 @@ def test_make_env_adds_only_missing_keys() -> None:
     added = module.missing_lines(existing, example)
     assert [line.partition("=")[0] for line in added] == ["CREDENTIALS_MASTER_KEY"]
     assert len(added[0].partition("=")[2]) >= 48  # a fresh random value
+
+
+def test_prod_env_keeps_placeholders_and_generates_secrets() -> None:
+    path = Path(__file__).resolve().parents[1] / "tools" / "make_env.py"
+    spec = importlib.util.spec_from_file_location("make_env_prod", path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    template = (Path(__file__).resolve().parents[1] / "deploy" / "env.prod.example").read_text()
+    rendered = module.render(template, dev=False)
+    values = dict(
+        line.split("=", 1) for line in rendered.splitlines() if "=" in line and line[0] != "#"
+    )
+    assert values["ENVIRONMENT"] == "prod"
+    assert values["PUBLIC_BASE_URL"] == "https://<DOMAIN>"  # the operator fills it in
+    assert values["SMTP_HOST"] == "<SMTP_HOST>"  # no dev values in production
+    for key in ("SESSION_KEY", "CREDENTIALS_MASTER_KEY", "POSTGRES_PASSWORD", "REDIS_PASSWORD"):
+        assert len(values[key]) >= 48
+        assert "<" not in values[key]
+    assert len({values[k] for k in ("SESSION_KEY", "TOKEN_HASH_KEY", "REDIS_PASSWORD")}) == 3

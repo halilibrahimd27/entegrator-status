@@ -13,7 +13,7 @@ TEST_DATABASE_URL ?= postgresql+asyncpg://sentinel@127.0.0.1:55432/sentinel_test
 TEST_REDIS_URL ?= redis://127.0.0.1:56379/0
 export TEST_DATABASE_URL TEST_REDIS_URL
 
-.PHONY: help install lock env dev node test-services test lint security migrate catalog catalog-schema check
+.PHONY: help install lock env env-prod dev node test-services test lint security migrate catalog catalog-schema check
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -38,6 +38,9 @@ lock: ## Regenerate hashed lock files (needs uv)
 
 env: ## Create .env with fresh random secrets (never overwrites)
 	$(BIN)/python tools/make_env.py
+
+env-prod: ## Production .env from deploy/env.prod.example: secrets generated, rest to fill in
+	python3 tools/make_env.py --prod
 
 dev: ## docker compose up (web, engine, postgres, redis, mailpit; prober once `make node` ran)
 	@test -f .env || { echo "No .env — run 'make env' first."; exit 1; }

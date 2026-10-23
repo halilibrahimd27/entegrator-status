@@ -14,6 +14,7 @@ from org_support import browser, create_org, create_product, create_service
 from sentinel.accounts.mail import Mail
 from sentinel.db.base import utcnow
 from sentinel.models import (
+    AuditEvent,
     Change,
     Component,
     MaintenanceWindow,
@@ -275,3 +276,35 @@ async def test_shared_notices(
         assert (
             await post_form(admin, f"/yonetim/degisiklikler/{uuid.uuid4()}/sil", {}, csrf_from=base)
         ).status_code == 404
+
+
+async def test_admin_cli(app: FastAPI, outbox: list[Mail], services: AppServices) -> None:
+    from sentinel.admin.__main__ import admins, change
+
+    for email in ("ilk@example.invalid", "ikinci@example.invalid"):
+        async with browser(app) as user:
+            await signed_in(user, outbox, email)
+    with pytest.raises(LookupError):
+        await change(services.db, "yok@example.invalid", True)
+    assert await change(services.db, "Ilk@Example.invalid", True) == "promoted"
+    assert await change(services.db, "ilk@example.invalid", True) == "unchanged"
+    with pytest.raises(LookupError):
+        await change(services.db, "ilk@example.invalid", False)  # the last one stays
+    assert await change(services.db, "ikinci@example.invalid", True) == "promoted"
+    assert await change(services.db, "ilk@example.invalid", False) == "demoted"
+    assert await admins(services.db) == ["ikinci@example.invalid"]
+    async with services.db.system("test check") as s:
+        actions = (
+            await s.scalars(select(AuditEvent.action).where(AuditEvent.org_id.is_(None)))
+        ).all()
+    assert actions.count("platform.admin_granted") == 2
+    assert "platform.admin_revoked" in actions
+
+
+@pytest.mark.usefixtures("app")
+def test_admin_cli_entrypoint(capsys: pytest.CaptureFixture[str]) -> None:
+    from sentinel.admin.__main__ import main
+
+    assert main(["promote", "yok@example.invalid"]) == 1
+    assert "no verified account" in capsys.readouterr().err
+    assert main(["list"]) == 0

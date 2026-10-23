@@ -1,0 +1,171 @@
+# Production stack. Setup and upgrades: docs/SELF_HOSTING.md.
+#
+#   make env-prod            # once: .env with fresh secrets; then fill in the placeholders
+#   docker compose -f compose.prod.yml up -d
+#
+# Only Caddy publishes ports (80/443). PostgreSQL and Redis live on an internal network
+# with no route out; web and engine reach the internet (SMTP, alert webhooks, Telegram)
+# through their own networks. Images come from GitHub Container Registry by version.
+
+name: entegrator-status
+
+x-app-env: &app-env
+  ENVIRONMENT: prod
+  DATABASE_URL: postgresql+asyncpg://sentinel:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/sentinel
+  REDIS_URL: redis://sentinel:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379/0
+
+x-app: &app
+  image: ${ENTEGRATOR_IMAGE:-ghcr.io/halilibrahimd27/entegrator-status}:${ENTEGRATOR_VERSION:?set ENTEGRATOR_VERSION in .env}
+  env_file: .env
+  environment: *app-env
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  networks: [data]
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+    redis:
+      condition: service_healthy
+  restart: unless-stopped
+  logging: &logging
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "5"
+
+services:
+  migrate:
+    <<: *app
+    command: ["python", "-m", "sentinel.db", "upgrade"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    <<: *app
+    command: ["python", "-m", "sentinel.web"]
+    environment:
+      <<: *app-env
+      WEB_HOST: 0.0.0.0
+      WEB_TRUSTED_PROXIES: 172.30.0.10 # Caddy, below: rate limits see the real client
+    networks: [data, edge]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  engine:
+    <<: *app
+    command: ["python", "-m", "sentinel.engine"]
+    networks: [data, egress]
+
+  # A probe node on the same host (optional). Nodes elsewhere: docs/PROBE_NODE.md.
+  prober:
+    <<: *app
+    command: ["python", "-m", "sentinel.probe"]
+    profiles: ["probe"]
+    environment:
+      PROBE_INGEST_URL: http://web:8000
+      PROBE_BUFFER_PATH: /data/probe-buffer.sqlite3
+    networks: [edge, egress]
+    depends_on:
+      web:
+        condition: service_healthy
+    volumes:
+      - probe-buffer:/data
+
+  caddy:
+    image: caddy:2.11.6-alpine@sha256:d44355d3c2149dc580ce2cac735955d1c08d3d00882c30489c241aa51a5c10d9
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      edge:
+        ipv4_address: 172.30.0.10
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *logging
+
+  postgres:
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    environment:
+      POSTGRES_DB: sentinel
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups # tools/backup.sh writes here
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    user: redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    # The ACL comes from the environment through a file on tmpfs, so the password is
+    # never on a command line. `default` is off; the app's user cannot run dangerous
+    # commands (FLUSHALL, CONFIG, KEYS, DEBUG, …).
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        umask 077 &&
+        printf 'user default off\nuser sentinel on >%s ~* &* +@all -@dangerous\n' "$$REDIS_PASSWORD" > /tmp/users.acl &&
+        exec redis-server --save '' --appendonly no --aclfile /tmp/users.acl
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli --user sentinel ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    logging: *logging
+
+networks:
+  data:
+    internal: true # no route to the internet
+  edge:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  egress: {}
+
+volumes:
+  pgdata:
+  caddy-data:
+  caddy-config:
+  probe-buffer:
