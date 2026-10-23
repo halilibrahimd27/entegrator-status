@@ -54,6 +54,27 @@
   {% endif %}
 </section>
 
+<section class="card wide" id="etki">
+  <h2>{{ t("impact.title") }}</h2>
+  <p class="hint">{{ t("impact.body") }}</p>
+  {% if impacts %}
+  <ul class="timeline">
+  {% for i in impacts %}
+    <li>
+      <span class="badge{% if i.severity == 'high' %} attention{% endif %}">{{ t("impact." ~ i.severity) }}</span>
+      <span class="badge">{{ t("impact.kind_" ~ i.kind) }}</span>
+      {{ t("impact_reasons." ~ i.reason) }}
+      {% if i.kind == "change" %}: {% if i.link %}<a href="{{ i.link }}" rel="noopener noreferrer nofollow">{{ i.title }}</a>{% else %}{{ i.title }}{% endif %}{% endif %}
+      {% if i.kind == "risk" %}: {{ t("risks." ~ i.title) }}{% if i.when %} · {{ i.when|local }}{% endif %}{% endif %}
+      <br><span class="hint">{{ t("impact.path") }}: {{ i.path|join(" → ") }}</span>
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}
+  <p>{{ t("impact.empty") }}</p>
+  {% endif %}
+</section>
+
 <section class="card wide" id="olaylar">
   <h2>{{ t("incidents.title") }}</h2>
   {% if incidents %}

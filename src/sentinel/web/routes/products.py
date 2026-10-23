@@ -105,6 +105,7 @@ async def product_page(
         incidents=await svc.notices.product_incidents(ctx.scope, product_id),
         incident_statuses=[s.value for s in MANUAL_STATUSES],
         drift=await svc.risks.drift(ctx.scope, [d for d, _, _ in dependencies]),
+        impacts=await svc.impact.for_product(ctx.scope, product_id),
         results=await svc.catalog.find_components(ctx.scope, query),
         query=query,
         svg=svg,

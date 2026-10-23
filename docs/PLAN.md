@@ -330,10 +330,11 @@ Acceptance
 Goal: every incident, change and risk lands on the products it affects, with the reason.
 
 Tasks
-- [ ] Propagation along dependency edges up to depth 3 with a reason path, e.g.
+- [x] Propagation along dependency edges up to depth 3 with a reason path, e.g.
       "Fatura modülü → Entegratör X e-Fatura API → GİB merkezi e-Fatura: UBL-TR kod
       listesi güncellemesi (14.09.2026)".
-- [ ] Severity model: change class × usage match × depth attenuation.
+- [x] Severity model: change class × usage match × depth attenuation. (Computed from the
+      current graph on read, so new dependencies see risks already open.)
 - [ ] Risk register per org: open risks ordered by due date (certificate/domain expiry,
       end of life, sunset, advisories, unadopted majors); states `open | snoozed |
       accepted | resolved`, audit-logged.

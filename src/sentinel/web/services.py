@@ -25,6 +25,7 @@ from sentinel.engine.notices import NoticeService
 from sentinel.engine.views import StatusViews
 from sentinel.graph.service import GraphService
 from sentinel.probe.nodes import NodeService
+from sentinel.risk.impact import ImpactViews
 from sentinel.risk.views import RiskViews
 from sentinel.tenancy.api_tokens import ApiTokenService
 from sentinel.tenancy.credentials import CredentialService
@@ -54,6 +55,7 @@ class AppServices:
     status: StatusViews
     changes: ChangeViews
     risks: RiskViews
+    impact: ImpactViews
     credentials: CredentialService
     renderer: Renderer
 
@@ -99,6 +101,7 @@ def build_services(settings: Settings) -> AppServices:
         status=StatusViews(db, graph),
         changes=ChangeViews(db),
         risks=RiskViews(db),
+        impact=ImpactViews(db, graph),
         credentials=CredentialService(db, settings),
         renderer=Renderer(),
     )
