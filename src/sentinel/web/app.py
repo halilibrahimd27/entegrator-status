@@ -19,6 +19,7 @@ from sentinel.web.limits import BodySizeLimit
 from sentinel.web.routes import (
     account,
     admin,
+    alerts,
     api,
     auth,
     catalog,
@@ -79,6 +80,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         status.router,
         risks.router,
         credentials.router,
+        alerts.router,
         subscriptions.router,
         admin.router,
         api.router,

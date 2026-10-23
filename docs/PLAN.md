@@ -352,25 +352,31 @@ Acceptance
 
 ---
 
-## Phase 9 — Alerts
+## Phase 9 — Alerts ✅
 
 Goal: the right people get told once, on the channel they chose.
 
 Tasks
-- [ ] Channels per org: e-mail (double opt-in for external recipients, `List-Unsubscribe`),
-      Telegram (deep-link `/start <token>`, `/abonelikler`, `/iptal`), Slack-compatible
-      webhooks, signed webhooks (`X-Sentinel-Signature`: HMAC-SHA256 over timestamp + body,
-      retries, auto-disable, SSRF guard) — port and fix `legacy/api-sentinel/alerts`.
-- [ ] Alert rules: by product, service, kind (incident, change, risk), minimum severity;
+- [x] Channels per org: e-mail (double opt-in for external recipients, `List-Unsubscribe`
+      one-click), Telegram (deep-link `/start <token>`, `/abonelikler`, `/iptal`; polling,
+      no inbound URL needed), Slack-compatible webhooks, signed webhooks
+      (`X-Sentinel-Signature`: HMAC-SHA256 over timestamp + body, retries, auto-disable,
+      SSRF guard) — rewritten from api-sentinel; `legacy/` removed.
+- [x] Alert rules: by product, service, kind (incident, change, risk), minimum severity;
       `breaking` changes only by default.
-- [ ] Fan-out through Redis; dedup + cooldown per recipient/event; quiet hours; daily digest.
-- [ ] KVKK retention jobs (unconfirmed 48 h, unsubscribed 30 days).
+- [x] Fan-out from the database instead of Redis: events unique per product, subject and
+      phase; deliveries unique per event, channel and recipient; the worker locks due rows
+      with `SKIP LOCKED`. Quiet hours (high severity may bypass), daily batch at 09:00,
+      weekly digest e-mail on Mondays, test message from the panel.
+- [x] KVKK retention jobs (unconfirmed 48 h, unsubscribed 30 days, alert history 180 days).
+- [x] Receiver guide with a verification snippet: [WEBHOOKS.md](WEBHOOKS.md).
 
 Acceptance
 - One event → exactly one message per matching recipient per channel; unconfirmed
   recipients get nothing; unsubscribe works without login and is single-use-safe; webhook
   signature verifiable with the reference snippet in the docs; private-IP webhook rejected;
-  rules cannot route one org's events to another org.
+  rules cannot route one org's events to another org. (All covered by tests; the
+  snippet in WEBHOOKS.md is executed by the suite.)
 
 ---
 
@@ -421,8 +427,8 @@ Tasks
 - [ ] README (EN + TR): what it is, screenshots, architecture diagram, methodology link,
       self-hosting guide, and a **"How it was built"** section: designed and reviewed by
       the maintainer, implemented with Claude Code.
-- [ ] Going public: history and placeholder audit, `legacy/` removed, then the
-      repository is made public.
+- [ ] Going public: history and placeholder audit (`legacy/` already removed in Phase 9),
+      then the repository is made public.
 
 Acceptance
 - Fresh VM: follow README → stack up with HTTPS in < 30 minutes.

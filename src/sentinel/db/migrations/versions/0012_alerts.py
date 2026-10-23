@@ -69,7 +69,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_alert_channels_org_id"), "alert_channels", ["org_id"], unique=False)
     op.create_table(
         "alert_events",
-        sa.Column("product_id", sa.Uuid(), nullable=False),
+        sa.Column("product_id", sa.Uuid(), nullable=True),
         sa.Column("subject_type", sa.String(length=16), nullable=False),
         sa.Column("subject_id", sa.Uuid(), nullable=False),
         sa.Column("phase", sa.String(length=16), nullable=False),

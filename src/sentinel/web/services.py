@@ -15,6 +15,7 @@ from sentinel.accounts.sessions import SessionManager
 from sentinel.accounts.throttle import Throttle
 from sentinel.accounts.totp import TotpBox
 from sentinel.accounts.two_factor import TwoFactorService
+from sentinel.alerts.service import AlertService
 from sentinel.alerts.subscriptions import SubscriptionService
 from sentinel.catalog.imports import ImportService
 from sentinel.catalog.proposals import ProposalService
@@ -65,6 +66,7 @@ class AppServices:
     digest: DigestViews
     credentials: CredentialService
     subscriptions: SubscriptionService
+    alerts: AlertService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -91,6 +93,9 @@ def build_services(settings: Settings) -> AppServices:
     graph = GraphService(db)
     impact = ImpactViews(db, graph)
     register = RiskRegister(db, impact)
+    credentials = CredentialService(db, settings)
+    subscriptions = SubscriptionService(db, settings, mailer)
+    telegram = settings.telegram_bot_token is not None and bool(settings.telegram_bot_username)
     return AppServices(
         settings=settings,
         db=db,
@@ -115,8 +120,9 @@ def build_services(settings: Settings) -> AppServices:
         register=register,
         correlation=CorrelationViews(db, ratio=settings.correlated_failure_ratio),
         digest=DigestViews(impact, register),
-        credentials=CredentialService(db, settings),
-        subscriptions=SubscriptionService(db, settings, mailer),
+        credentials=credentials,
+        subscriptions=subscriptions,
+        alerts=AlertService(db, credentials, subscriptions, telegram=telegram),
         renderer=Renderer(),
     )
 

@@ -1,6 +1,6 @@
 # ADR 0002 — Carry-over from api-sentinel
 
-- Status: accepted
+- Status: accepted; completed 2026-10-23 (Phase 9 ported the last files and removed `legacy/`)
 - Date: 2026-10-19
 - Supersedes: the "clean-room" rule in the first draft of `CLAUDE.md`
 

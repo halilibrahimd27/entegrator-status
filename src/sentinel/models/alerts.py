@@ -107,7 +107,10 @@ class AlertRule(IdMixin, CreatedAtMixin, TenantMixin, Base):
 
 
 class AlertEvent(IdMixin, CreatedAtMixin, TenantMixin, Base):
-    """Something upstream reached one product. Unique per product, subject and phase."""
+    """Something upstream reached one product. Unique per product, subject and phase.
+
+    A test message from the panel is an event without a product (``subject_type`` test).
+    """
 
     __tablename__ = "alert_events"
     __table_args__ = (
@@ -115,8 +118,10 @@ class AlertEvent(IdMixin, CreatedAtMixin, TenantMixin, Base):
         Index("ix_alert_events_org_created", "org_id", "created_at"),
     )
 
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
-    subject_type: Mapped[str] = mapped_column(String(16))  # incident | change | risk
+    product_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE")
+    )
+    subject_type: Mapped[str] = mapped_column(String(16))  # incident | change | risk | test
     subject_id: Mapped[uuid.UUID]
     phase: Mapped[str] = mapped_column(String(16))  # opened | resolved | new
     severity: Mapped[str] = mapped_column(String(8))

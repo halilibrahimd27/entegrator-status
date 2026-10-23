@@ -33,11 +33,9 @@ before the previous one meets its acceptance criteria.
 ## Ground rules (non-negotiable)
 
 ### Carry-over from api-sentinel
-- The maintainer owns `api-sentinel`; selected files live in `legacy/api-sentinel/`
-  (inventory and known problems in its README). They are reference material: never
-  imported, packaged, linted or tested.
-- Port a legacy piece only in the phase that needs it, rewritten into `src/sentinel/`
-  under this file's rules, and delete the legacy file in the same change (ADR 0002).
+- The maintainer owns `api-sentinel`. The pieces worth keeping were rewritten into
+  `src/sentinel/` under this file's rules, phase by phase; the last ones (alert channels)
+  landed in Phase 9 and the `legacy/` directory is gone (ADR 0002).
 - Never copy code from any employer repository.
 
 ### Tenancy and isolation

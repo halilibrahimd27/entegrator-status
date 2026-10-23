@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import re
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -514,3 +516,33 @@ def test_digest_text_has_every_section() -> None:
         "due": 1,
         "planned": 2,
     }
+
+
+def reference_verify() -> Any:
+    """The Python block of docs/WEBHOOKS.md, run as written."""
+    doc = (Path(__file__).parent.parent / "docs" / "WEBHOOKS.md").read_text()
+    match = re.search(r"```python\n(.*?)```", doc, re.DOTALL)
+    assert match is not None
+    namespace: dict[str, Any] = {}
+    exec(compile(match.group(1), "WEBHOOKS.md", "exec"), namespace)  # noqa: S102 - our own doc
+    return namespace["verify"]
+
+
+async def test_the_documented_snippet_verifies_real_requests(services: AppServices) -> None:
+    verify = reference_verify()
+    setup = Setup(services)
+    org, product = await setup.org()
+    secret = {"url": "https://hooks.example/in", "secret": "doc-check-secret"}
+    channel = await setup.channel(org, secret=secret)
+    await setup.delivery(org, product, channel)
+    await setup.worker().run()
+    (request,) = setup.hooks.requests
+    timestamp = request.headers[TIMESTAMP_HEADER]
+    signature = request.headers[SIGNATURE_HEADER]
+    assert verify("doc-check-secret", request.content, timestamp, signature)
+    assert not verify("wrong-secret", request.content, timestamp, signature)
+    assert not verify("doc-check-secret", request.content + b" ", timestamp, signature)
+    assert not verify("doc-check-secret", request.content, "not-a-number", signature)
+    late = int(timestamp) + 301
+    assert not verify("doc-check-secret", request.content, timestamp, signature, now=late)
+    assert verify("doc-check-secret", request.content, timestamp, signature, now=late - 2)

@@ -19,7 +19,7 @@ your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phases 0–8 of the [build plan](docs/PLAN.md) are done:
+Phases 0–9 of the [build plan](docs/PLAN.md) are done:
 
 - configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
 - accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
@@ -58,8 +58,12 @@ Phases 0–8 of the [build plan](docs/PLAN.md) are done:
 - impact: every incident, change and risk on the products it reaches (≤ 3 hops) with
   the reason path and usage-aware severity; a risk register with per-organization
   decisions; a planned-changes calendar; correlated-failure hints; a weekly digest
+- alerts: rules by product, service, kind and severity; e-mail (double opt-in, one-click
+  unsubscribe), Telegram, Slack-compatible and signed webhooks
+  ([docs/WEBHOOKS.md](docs/WEBHOOKS.md)); one message per event, channel and recipient;
+  retries, auto-disable, quiet hours, a daily batch and the weekly digest by e-mail
 
-Next: alerts (Phase 9): e-mail, Telegram, Slack and signed webhooks.
+Next: the panel dashboard and public status pages (Phase 10).
 
 ## Quick start
 
@@ -88,7 +92,6 @@ open http://127.0.0.1:8000      # sign up; mails land in http://127.0.0.1:8025
 src/sentinel/      application package (config, security, web, probe, engine, …)
 tests/             pytest suite
 docs/              plan, methodology, ADRs
-legacy/            reference code from api-sentinel, ported phase by phase (ADR 0002)
 ```
 
 ## Docs
@@ -96,6 +99,7 @@ legacy/            reference code from api-sentinel, ported phase by phase (ADR 
 - [CLAUDE.md](CLAUDE.md): ground rules (tenancy, credentials, probing ethics, KVKK, security, stack)
 - [docs/PLAN.md](docs/PLAN.md): phased build plan
 - [docs/METHODOLOGY.md](docs/METHODOLOGY.md): what we observe and how
+- [docs/WEBHOOKS.md](docs/WEBHOOKS.md): receiving and verifying alert webhooks
 - [docs/adr/](docs/adr/): architecture decisions
 - [SECURITY.md](SECURITY.md): reporting vulnerabilities
 

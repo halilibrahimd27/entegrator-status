@@ -1,6 +1,6 @@
 """Messages and the four channel senders: e-mail, Slack-compatible, signed webhook, Telegram.
 
-Ported from ``legacy/api-sentinel/alerts`` with its problems fixed: every POST goes
+Rewritten from api-sentinel's alert channels (ADR 0002) with their problems fixed: every POST goes
 through the SSRF guard with no redirects; the webhook signature covers the exact bytes
 sent, with a timestamp (``sha256=HMAC(secret, "<timestamp>." + body)``); e-mail carries
 ``List-Unsubscribe`` (one click, RFC 8058); errors are short codes and never contain a
@@ -89,7 +89,7 @@ def render(event: AlertEvent, panel_url: str) -> Message:
         "path": event.path,
         "link": event.link,
         "occurred_at": event.occurred_at.isoformat(),
-        "product_id": str(event.product_id),
+        "product_id": str(event.product_id) if event.product_id else None,
     }
     return Message(subject, "\n".join(lines), payload)
 

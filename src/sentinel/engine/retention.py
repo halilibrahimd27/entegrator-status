@@ -13,6 +13,8 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sentinel.db.base import utcnow
 from sentinel.db.session import Database
 from sentinel.models import (
+    AlertEvent,
+    AlertRecipient,
     AuditEvent,
     IngestBatch,
     Invitation,
@@ -35,6 +37,9 @@ INGEST_BATCHES = timedelta(days=8)  # replay protection must outlive the 7-day i
 ROUNDS = timedelta(days=120)
 HOURLY = timedelta(days=400)
 SNAPSHOTS = timedelta(days=30)  # the latest snapshot of each source is always kept
+UNCONFIRMED_RECIPIENTS = timedelta(hours=48)  # never confirmed: the address is dropped
+UNSUBSCRIBED_RECIPIENTS = timedelta(days=30)
+ALERT_HISTORY = timedelta(days=180)  # events, and with them the delivery log
 
 
 @dataclass(frozen=True)
@@ -50,6 +55,8 @@ class RetentionReport:
     rounds: int = 0
     hourly: int = 0
     snapshots: int = 0
+    alert_recipients: int = 0
+    alert_events: int = 0
 
 
 async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) -> RetentionReport:
@@ -116,6 +123,18 @@ async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) ->
                 Snapshot.id.not_in(latest),
             )
         )
+        recipients = await count(
+            delete(AlertRecipient).where(
+                or_(
+                    and_(
+                        AlertRecipient.confirmed_at.is_(None),
+                        AlertRecipient.created_at < now - UNCONFIRMED_RECIPIENTS,
+                    ),
+                    AlertRecipient.unsubscribed_at < now - UNSUBSCRIBED_RECIPIENTS,
+                )
+            )
+        )
+        events = await count(delete(AlertEvent).where(AlertEvent.created_at < now - ALERT_HISTORY))
     return RetentionReport(
         unverified,
         orgs,
@@ -128,4 +147,6 @@ async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) ->
         rounds,
         hourly,
         snapshots,
+        recipients,
+        events,
     )

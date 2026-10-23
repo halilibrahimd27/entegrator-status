@@ -26,6 +26,9 @@ from org_support import (
 from sentinel.accounts.mail import Mail
 from sentinel.db.base import utcnow
 from sentinel.models import (
+    AlertChannel,
+    AlertRecipient,
+    AlertRule,
     ApiToken,
     Change,
     Component,
@@ -70,7 +73,10 @@ FORM = {
 }
 UPLOAD = {"file": ("requirements.txt", b"httpx==0.28.1\n")}
 Model = (
-    type[Membership]
+    type[AlertChannel]
+    | type[AlertRecipient]
+    | type[AlertRule]
+    | type[Membership]
     | type[Invitation]
     | type[ApiToken]
     | type[Product]
@@ -97,6 +103,9 @@ ID_PARAMS: dict[str, Model] = {
     "window_id": MaintenanceWindow,
     "change_id": Change,
     "credential_id": Credential,
+    "channel_id": AlertChannel,
+    "recipient_id": AlertRecipient,
+    "rule_id": AlertRule,
     "risk_id": Risk,
 }
 
@@ -203,6 +212,35 @@ async def build_tenant(
         csrf_from=f"{base}/kimlik-bilgileri",
     )
     assert vault.status_code == 303, vault.text
+    channel = await post_form(
+        owner,
+        f"{base}/uyarilar/kanal",
+        {"name": "Posta", "kind": "email"},
+        csrf_from=f"{base}/uyarilar",
+    )
+    assert channel.status_code == 303, channel.text
+    async with services.db.system("test harness lookup") as s:
+        channel_id = await s.scalar(
+            select(AlertChannel.id)
+            .join(Organization, Organization.id == AlertChannel.org_id)
+            .where(Organization.slug == slug)
+        )
+    subscribed = await post_form(
+        owner, f"{base}/uyarilar/kanal/{channel_id}/ben", {}, csrf_from=f"{base}/uyarilar"
+    )
+    assert subscribed.status_code == 303, subscribed.text
+    rule = await post_form(
+        owner,
+        f"{base}/uyarilar/kural",
+        {
+            "name": "Hepsi",
+            "channel_id": str(channel_id),
+            "kinds": "incident",
+            "min_severity": "low",
+        },
+        csrf_from=f"{base}/uyarilar",
+    )
+    assert rule.status_code == 303, rule.text
     async with services.db.system("test harness setup") as s:
         component = await s.get(Component, component_id)
         assert component is not None

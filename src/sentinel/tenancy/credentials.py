@@ -75,7 +75,7 @@ class CredentialInfo:
 _LOCAL_SUFFIXES = (".localhost", ".local", ".internal", ".lan", ".home.arpa")
 
 
-def _host(raw: str) -> str:
+def public_host(raw: str) -> str:
     """A public host name: dotted, not local-only (resolution is guarded again later)."""
     host = raw.strip().lower().rstrip(".")
     if "." not in host or host == "localhost" or host.endswith(_LOCAL_SUFFIXES):
@@ -168,7 +168,7 @@ class CredentialService:
             credential_kind = CredentialKind(kind)
         except ValueError:
             raise CredentialError("credentials.invalid_kind") from None
-        bound = _host(host)
+        bound = public_host(host)
         if credential_kind is CredentialKind.API_KEY_HEADER:
             header = (header_name or "").strip()
             if not _HEADER.match(header) or header.lower() in FORBIDDEN_HEADERS:

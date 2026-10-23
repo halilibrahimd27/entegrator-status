@@ -26,10 +26,12 @@ class Action(StrEnum):
     GRAPH_EDIT = "graph.edit"
     STATUS_MANAGE = "status.manage"  # manual incidents, maintenance windows
     CREDENTIALS_MANAGE = "credentials.manage"  # write-only secrets (ADR 0011)
+    ALERTS_VIEW = "alerts.view"  # see channels and deliveries, subscribe oneself
+    ALERTS_MANAGE = "alerts.manage"  # channels (their URLs are secrets), recipients, rules
 
 
 _VIEW = {Action.ORG_VIEW, Action.MEMBERS_VIEW, Action.GRAPH_VIEW}
-_MEMBER = _VIEW | {Action.GRAPH_EDIT, Action.STATUS_MANAGE}
+_MEMBER = _VIEW | {Action.GRAPH_EDIT, Action.STATUS_MANAGE, Action.ALERTS_VIEW}
 _ADMIN = _MEMBER | {
     Action.ORG_UPDATE,
     Action.MEMBERS_INVITE,
@@ -38,6 +40,7 @@ _ADMIN = _MEMBER | {
     Action.TOKENS_MANAGE,
     Action.AUDIT_VIEW,
     Action.CREDENTIALS_MANAGE,
+    Action.ALERTS_MANAGE,
 }
 _OWNER = _ADMIN | {Action.ORG_DELETE}
 

@@ -14,4 +14,3 @@
 - [ ] No secrets, no secret defaults; new settings added to `.env.example` as placeholders
 - [ ] User-facing copy is in `sentinel/web/i18n/tr.yaml`, not in templates
 - [ ] Docs updated (README, METHODOLOGY, ADR for any stack or rule change)
-- [ ] If a `legacy/` file was ported, it is deleted in this PR

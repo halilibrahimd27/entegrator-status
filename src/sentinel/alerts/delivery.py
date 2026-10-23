@@ -204,7 +204,8 @@ class DeliveryWorker:
         org = await s.get(Organization, channel.org_id)
         home = f"{self._base}/o/{org.slug if org else ''}"
         if len(events) == 1:
-            message = render(events[0], f"{home}/urunler/{events[0].product_id}")
+            product = events[0].product_id
+            message = render(events[0], f"{home}/urunler/{product}" if product else home)
         else:
             message = render_batch(events, f"{home}/riskler")
         try:

@@ -1,0 +1,246 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("alerts.ui.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% set base = "/o/" ~ ctx.org.slug ~ "/uyarilar" %}
+{% set manage = can(role, "alerts.manage") %}
+<section class="card wide">
+  <h1>{{ t("alerts.ui.title") }}</h1>
+  <p>{{ t("alerts.ui.body") }}</p>
+  {{ ui.notice_box(notice) }}
+  {% if shown_once %}
+  <div class="notice" role="status">
+    <p>{{ t("alerts.ui.once_" ~ shown_kind) }}</p>
+    <p><code>{{ shown_once }}</code></p>
+  </div>
+  {% endif %}
+</section>
+
+<section class="card wide">
+  <h2>{{ t("alerts.ui.channels") }}</h2>
+  {% if not alerts.channels %}<p>{{ t("alerts.ui.no_channels") }}</p>{% endif %}
+  {% for info in alerts.channels %}
+  {% set c = info.channel %}
+  <article class="card">
+    <h3>{{ c.name }} <span class="badge">{{ t("alerts.kinds." ~ c.kind) }}</span>
+      {% if not c.enabled %}<span class="badge attention">{{ t("alerts.ui.disabled") }}{% if c.disabled_reason %}: {{ t("alerts.ui.reason_" ~ c.disabled_reason) }}{% endif %}</span>{% endif %}</h3>
+    <p class="hint">
+      {% if c.target_host %}{{ t("alerts.ui.host") }}: <code>{{ c.target_host }}</code> · {% endif %}
+      {% if c.quiet_start %}{{ t("alerts.ui.quiet") }}: {{ c.quiet_start }}–{{ c.quiet_end }}{% if c.quiet_bypass_high %} ({{ t("alerts.ui.bypass_high") }}){% endif %} · {% endif %}
+      {% if c.daily %}{{ t("alerts.ui.daily") }} · {% endif %}
+      {% if c.weekly_digest %}{{ t("alerts.ui.weekly") }}{% endif %}
+    </p>
+    {% if c.kind in ("email", "telegram") %}
+    {% if info.recipients %}
+    <ul class="links">
+      {% for r in info.recipients %}
+      <li>{{ r.address }}
+        {% if r.unsubscribed %}<span class="badge">{{ t("alerts.ui.unsubscribed") }}</span>
+        {% elif not r.confirmed %}<span class="badge attention">{{ t("alerts.ui.unconfirmed") }}</span>{% endif %}
+        {% if manage and not r.confirmed and c.kind == "email" %}
+        <form method="post" action="{{ base }}/alici/{{ r.id }}/yeniden" class="inline">{{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("alerts.ui.resend") }}</button></form>
+        {% endif %}
+        {% if manage or r.mine %}
+        <form method="post" action="{{ base }}/alici/{{ r.id }}/sil" class="inline">{{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("alerts.ui.remove") }}</button></form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="hint">{{ t("alerts.ui.no_recipients") }}</p>
+    {% endif %}
+    {% if c.kind == "email" %}
+    <form method="post" action="{{ base }}/kanal/{{ c.id }}/ben" class="inline">{{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("alerts.ui.subscribe_me") }}</button></form>
+    {% if manage %}
+    <form method="post" action="{{ base }}/kanal/{{ c.id }}/alici" novalidate>
+      {{ ui.csrf_field() }}
+      {{ ui.field("email", "alerts.ui.add_email", type="email", maxlength=320, hint_key="alerts.ui.add_email_hint", value="", autocomplete="off") }}
+      <button type="submit">{{ t("alerts.ui.invite") }}</button>
+    </form>
+    {% endif %}
+    {% elif alerts.telegram %}
+    <form method="post" action="{{ base }}/kanal/{{ c.id }}/telegram" class="inline">{{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("alerts.ui.telegram_link") }}</button></form>
+    {% endif %}
+    {% endif %}
+    {% if manage %}
+    <details>
+      <summary>{{ t("alerts.ui.settings") }}</summary>
+      <form method="post" action="{{ base }}/kanal/{{ c.id }}" novalidate>
+        {{ ui.csrf_field() }}
+        <div class="grid-2">
+          {{ ui.field("quiet_start", "alerts.ui.quiet_start", value=c.quiet_start or "", required=false, maxlength=5, hint_key="alerts.ui.quiet_hint") }}
+          {{ ui.field("quiet_end", "alerts.ui.quiet_end", value=c.quiet_end or "", required=false, maxlength=5) }}
+        </div>
+        {% for flag, on in (("quiet_bypass_high", c.quiet_bypass_high), ("daily", c.daily), ("weekly_digest", c.weekly_digest), ("enabled", c.enabled)) %}
+        <div class="field checkbox">
+          <input id="f-{{ c.id }}-{{ flag }}" name="{{ flag }}" type="checkbox" value="true"{% if on %} checked{% endif %}>
+          <label for="f-{{ c.id }}-{{ flag }}">{{ t("alerts.ui.flag_" ~ flag) }}</label>
+        </div>
+        {% endfor %}
+        <button type="submit">{{ t("alerts.ui.save") }}</button>
+      </form>
+      {% if c.kind in ("slack", "webhook") %}
+      <form method="post" action="{{ base }}/kanal/{{ c.id }}/adres" novalidate autocomplete="off">
+        {{ ui.csrf_field() }}
+        {{ ui.field("url", "alerts.ui.new_url", type="url", maxlength=2000, hint_key="alerts.ui.url_hint", autocomplete="off") }}
+        <button type="submit">{{ t("alerts.ui.replace_url") }}</button>
+      </form>
+      {% endif %}
+      {% if c.kind == "webhook" %}
+      <form method="post" action="{{ base }}/kanal/{{ c.id }}/imza" class="inline">{{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("alerts.ui.rotate") }}</button></form>
+      {% endif %}
+      <form method="post" action="{{ base }}/kanal/{{ c.id }}/sil" class="inline">{{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("alerts.ui.delete") }}</button></form>
+    </details>
+    <form method="post" action="{{ base }}/kanal/{{ c.id }}/test" class="inline">{{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("alerts.ui.test") }}</button></form>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+
+<section class="card wide">
+  <h2>{{ t("alerts.ui.rules") }}</h2>
+  <p class="hint">{{ t("alerts.ui.rules_hint") }}</p>
+  {% if alerts.rules %}
+  {% set names = {} %}
+  {% for info in alerts.channels %}{% set _ = names.update({info.channel.id: info.channel.name}) %}{% endfor %}
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("alerts.ui.rule_name") }}</th>
+      <th scope="col">{{ t("alerts.ui.channel") }}</th>
+      <th scope="col">{{ t("alerts.ui.what") }}</th>
+      <th scope="col">{{ t("alerts.ui.min_severity") }}</th>
+      <th scope="col">{{ t("alerts.ui.scope") }}</th>
+      {% if manage %}<th scope="col"></th>{% endif %}
+    </tr></thead>
+    <tbody>
+    {% for r in alerts.rules %}
+      <tr>
+        <td>{{ r.name }}{% if not r.enabled %} <span class="badge">{{ t("alerts.ui.paused") }}</span>{% endif %}</td>
+        <td>{{ names.get(r.channel_id, "—") }}</td>
+        <td>{% for k in r.kinds %}{{ t("impact.kind_" ~ k) }}{% if not loop.last %}, {% endif %}{% endfor %}{% if r.include_non_breaking %} · {{ t("alerts.ui.with_non_breaking") }}{% endif %}</td>
+        <td>{{ t("impact." ~ r.min_severity) }}</td>
+        <td>{% if r.product_id %}{{ alerts.products.get(r.product_id, "—") }}{% else %}{{ t("alerts.ui.all_products") }}{% endif %}
+          {% if r.service_id %} · {{ alerts.services.get(r.service_id, "—") }}{% endif %}</td>
+        {% if manage %}
+        <td>
+          <form method="post" action="{{ base }}/kural/{{ r.id }}" class="inline">{{ ui.csrf_field() }}
+            {% if not r.enabled %}<input type="hidden" name="enabled" value="true">{% endif %}
+            <button type="submit" class="secondary">{% if r.enabled %}{{ t("alerts.ui.pause") }}{% else %}{{ t("alerts.ui.resume") }}{% endif %}</button></form>
+          <form method="post" action="{{ base }}/kural/{{ r.id }}/sil" class="inline">{{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("alerts.ui.delete") }}</button></form>
+        </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("alerts.ui.no_rules") }}</p>
+  {% endif %}
+  {% if manage and alerts.channels %}
+  <details>
+    <summary>{{ t("alerts.ui.add_rule") }}</summary>
+    <form method="post" action="{{ base }}/kural" novalidate>
+      {{ ui.csrf_field() }}
+      <div class="grid-2">
+        {{ ui.field("name", "alerts.ui.rule_name", maxlength=80) }}
+        <div class="field">
+          <label for="f-rule-channel">{{ t("alerts.ui.channel") }}</label>
+          <select id="f-rule-channel" name="channel_id">
+            {% for info in alerts.channels %}<option value="{{ info.channel.id }}">{{ info.channel.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-rule-severity">{{ t("alerts.ui.min_severity") }}</label>
+          <select id="f-rule-severity" name="min_severity">
+            {% for level in levels %}<option value="{{ level }}"{% if level == "medium" %} selected{% endif %}>{{ t("impact." ~ level) }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-rule-product">{{ t("alerts.ui.product") }}</label>
+          <select id="f-rule-product" name="product_id">
+            <option value="">{{ t("alerts.ui.all_products") }}</option>
+            {% for id, name in alerts.products.items() %}<option value="{{ id }}">{{ name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-rule-service">{{ t("alerts.ui.service") }}</label>
+          <select id="f-rule-service" name="service_id">
+            <option value="">{{ t("alerts.ui.all_services") }}</option>
+            {% for id, name in alerts.services.items() %}<option value="{{ id }}">{{ name }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <fieldset>
+        <legend>{{ t("alerts.ui.what") }}</legend>
+        {% for k in subject_kinds %}
+        <div class="field checkbox">
+          <input id="f-rule-kind-{{ k }}" name="kinds" type="checkbox" value="{{ k }}" checked>
+          <label for="f-rule-kind-{{ k }}">{{ t("impact.kind_" ~ k) }}</label>
+        </div>
+        {% endfor %}
+        <div class="field checkbox">
+          <input id="f-rule-nb" name="include_non_breaking" type="checkbox" value="true">
+          <label for="f-rule-nb">{{ t("alerts.ui.flag_include_non_breaking") }}</label>
+        </div>
+      </fieldset>
+      <button type="submit">{{ t("alerts.ui.add_rule") }}</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+
+{% if manage %}
+<section class="card wide">
+  <h2>{{ t("alerts.ui.add_channel") }}</h2>
+  <p class="hint">{{ t("alerts.ui.add_channel_hint") }}</p>
+  <form method="post" action="{{ base }}/kanal" novalidate autocomplete="off">
+    {{ ui.csrf_field() }}
+    <div class="grid-2">
+      {{ ui.field("name", "alerts.ui.channel_name", maxlength=80) }}
+      <div class="field">
+        <label for="f-kind">{{ t("alerts.ui.kind") }}</label>
+        <select id="f-kind" name="kind">
+          {% for k in kinds %}{% if k != "telegram" or alerts.telegram %}<option value="{{ k }}">{{ t("alerts.kinds." ~ k) }}</option>{% endif %}{% endfor %}
+        </select>
+      </div>
+      {{ ui.field("url", "alerts.ui.url", type="url", required=false, maxlength=2000, hint_key="alerts.ui.url_hint", autocomplete="off") }}
+      {{ ui.field("quiet_start", "alerts.ui.quiet_start", required=false, maxlength=5, hint_key="alerts.ui.quiet_hint") }}
+      {{ ui.field("quiet_end", "alerts.ui.quiet_end", required=false, maxlength=5) }}
+    </div>
+    {% for flag, on in (("quiet_bypass_high", true), ("daily", false), ("weekly_digest", false)) %}
+    <div class="field checkbox">
+      <input id="f-new-{{ flag }}" name="{{ flag }}" type="checkbox" value="true"{% if on %} checked{% endif %}>
+      <label for="f-new-{{ flag }}">{{ t("alerts.ui.flag_" ~ flag) }}</label>
+    </div>
+    {% endfor %}
+    <button type="submit">{{ t("alerts.ui.add_channel") }}</button>
+  </form>
+</section>
+{% endif %}
+
+<section class="card wide">
+  <h2>{{ t("alerts.ui.log") }}</h2>
+  {% if alerts.log %}
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("alerts.ui.when") }}</th>
+      <th scope="col">{{ t("alerts.ui.channel") }}</th>
+      <th scope="col">{{ t("alerts.ui.subject") }}</th>
+      <th scope="col">{{ t("alerts.ui.result") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for d in alerts.log %}
+      <tr>
+        <td>{{ d.created_at|local }}</td>
+        <td>{{ d.channel }}</td>
+        <td><span class="badge">{{ t("impact." ~ d.severity) }}</span> {{ d.title }}</td>
+        <td>{{ t("alerts.status." ~ d.status) }}{% if d.sent_at %} · {{ d.sent_at|local }}{% endif %}
+          {% if d.last_error %}<br><span class="hint">{{ t("alerts.ui.attempts").format(n=d.attempts) }} · <code>{{ d.last_error }}</code></span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("alerts.ui.no_log") }}</p>
+  {% endif %}
+</section>
+{% endblock %}
