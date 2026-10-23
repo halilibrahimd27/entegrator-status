@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 
 from sentinel.models import Organization
+from sentinel.risk.impact import Impact
 from sentinel.tenancy.scope import TenantScope
 from sentinel.web.services import services
 
@@ -63,6 +66,101 @@ async def status(request: Request, scope: ApiScope) -> dict[str, Any]:
                 "products": row.products,
             }
             for row in rows
+        ]
+    }
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value else None
+
+
+def _impact(i: Impact) -> dict[str, Any]:
+    return {
+        "type": i.kind,
+        "id": str(i.subject_id),
+        "component_id": str(i.component_id),
+        "depth": i.depth,
+        "path": list(i.path),
+        "severity": i.severity,
+        "reason": i.reason,
+        "title": i.title,
+        "when": _iso(i.when),
+        "link": i.link,
+    }
+
+
+@router.get("/products")
+async def products(request: Request, scope: ApiScope) -> dict[str, Any]:
+    """Every product with its derived state (see ``sentinel.risk.dashboard``)."""
+    board = await services(request).dashboard.build(scope)
+    return {
+        "products": [
+            {
+                "product_id": str(p.id),
+                "name": p.name,
+                "state": p.state,
+                "reason": _impact(p.reason) if p.reason else None,
+                "high": p.high,
+                "medium": p.medium,
+            }
+            for p in board.products
+        ]
+    }
+
+
+@router.get("/impacts")
+async def impacts(
+    request: Request,
+    scope: ApiScope,
+    product: Annotated[uuid.UUID | None, Query()] = None,
+) -> dict[str, Any]:
+    """Incidents, changes and risks that reach the products, worst first, per product."""
+    by_product = await services(request).impact.for_org(scope)
+    return {
+        "products": {
+            str(pid): [_impact(i) for i in found]
+            for pid, found in by_product.items()
+            if product is None or pid == product
+        }
+    }
+
+
+@router.get("/risks")
+async def risks(request: Request, scope: ApiScope) -> dict[str, Any]:
+    """The risk register with the organization's decisions."""
+    entries = await services(request).register.entries(scope)
+    return {
+        "risks": [
+            {
+                "risk_id": str(e.risk.id),
+                "kind": e.risk.kind,
+                "severity": e.severity,
+                "state": e.state,
+                "until": _iso(e.until),
+                "due_at": _iso(e.risk.due_at),
+                "component": e.component,
+                "products": e.products,
+                "link": e.risk.link,
+            }
+            for e in entries
+        ]
+    }
+
+
+@router.get("/calendar")
+async def calendar(request: Request, scope: ApiScope) -> dict[str, Any]:
+    """Planned changes: effective dates, risk dates and maintenance windows."""
+    items = await services(request).register.calendar(scope)
+    return {
+        "items": [
+            {
+                "when": i.when.isoformat(),
+                "type": i.kind,
+                "title": i.title,
+                "component": i.component,
+                "link": i.link,
+            }
+            for i in items
         ]
     }
 

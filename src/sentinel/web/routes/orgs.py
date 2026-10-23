@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Query, Request
 from starlette.responses import RedirectResponse, Response
 
 from sentinel import audit
 from sentinel.accounts.service import AccountError
+from sentinel.risk.impact import LEVELS
 from sentinel.tenancy.orgs import OrgError
 from sentinel.web.org_context import InOrg
 from sentinel.web.routes.invites import pending_invitation
@@ -44,8 +46,30 @@ async def org_create(request: Request, viewer: SignedIn, name: Name) -> Response
 
 
 @router.get("/o/{slug}")
-async def org_home(request: Request, ctx: InOrg) -> Response:
-    return services(request).renderer.page(request, "org/home.html", ctx=ctx, section="home")
+async def org_home(
+    request: Request,
+    ctx: InOrg,
+    urun: Annotated[str, Query(max_length=36)] = "",
+    onem: Annotated[str, Query(max_length=8)] = "low",
+) -> Response:
+    """The dashboard; ``urun`` narrows it to one product, ``onem`` to a minimum severity."""
+    svc = services(request)
+    try:
+        product_id = uuid.UUID(urun) if urun else None
+    except ValueError:
+        product_id = None
+    severity = onem if onem in LEVELS else "low"
+    board = await svc.dashboard.build(ctx.scope, product_id=product_id, min_severity=severity)
+    return svc.renderer.page(
+        request,
+        "org/home.html",
+        ctx=ctx,
+        section="home",
+        board=board,
+        chosen=product_id,
+        severity=severity,
+        levels=LEVELS,
+    )
 
 
 @router.get("/o/{slug}/ayarlar")

@@ -1,8 +1,114 @@
 {% extends "org/_layout.html" %}
-{% block title %}{{ ctx.org.name }}{% endblock %}
+{% block title %}{{ t("dashboard.title") }} · {{ ctx.org.name }}{% endblock %}
 {% block org_content %}
+{% set base = "/o/" ~ ctx.org.slug %}
 <section class="card wide">
-  <h1>{{ t("org.home") }}</h1>
-  <p>{{ t("org.home_body") }}</p>
+  <h1>{{ t("dashboard.title") }}</h1>
+  <p>{{ t("dashboard.body") }}</p>
+  <form method="get" action="{{ base }}" class="filters">
+    <div class="grid-2">
+      <div class="field">
+        <label for="f-urun">{{ t("dashboard.product") }}</label>
+        <select id="f-urun" name="urun">
+          <option value="">{{ t("dashboard.all_products") }}</option>
+          {% for id, name in board.choices %}<option value="{{ id }}"{% if id == chosen %} selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-onem">{{ t("dashboard.min_severity") }}</label>
+        <select id="f-onem" name="onem">
+          {% for level in levels %}<option value="{{ level }}"{% if level == severity %} selected{% endif %}>{{ t("impact." ~ level) }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="secondary">{{ t("dashboard.filter") }}</button>
+  </form>
+  {% for h in board.hints %}
+  <p class="notice" role="note">{{ t("hints.common_cause").format(upstream=h.upstream_name, count=h.hint.affected|length, total=h.hint.dependants, ratio=(h.hint.ratio * 100)|round|int) }}</p>
+  {% endfor %}
+  {% if not board.choices %}
+  <p>{{ t("dashboard.no_products") }} <a href="{{ base }}/urunler">{{ t("dashboard.add_product") }}</a></p>
+  {% elif board.calm %}
+  <p class="notice" role="status">{{ t("dashboard.calm") }}</p>
+  {% endif %}
 </section>
+
+{% if board.products %}
+<section class="card wide">
+  <h2>{{ t("dashboard.products") }}</h2>
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("dashboard.product") }}</th>
+      <th scope="col">{{ t("status.column") }}</th>
+      <th scope="col">{{ t("dashboard.why") }}</th>
+      <th scope="col">{{ t("dashboard.counts") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for p in board.products %}
+      <tr>
+        <td><a href="{{ base }}/urunler/{{ p.id }}">{{ p.name }}</a></td>
+        <td><span class="state state-{{ p.state }}">{{ t("dashboard.state_" ~ p.state) }}</span></td>
+        <td>{% if p.reason %}{{ t("impact_reasons." ~ p.reason.reason) }}<br><span class="hint">{{ p.reason.path|join(" → ") }}</span>{% elif p.state == "own_incident" %}{{ t("dashboard.own_incident") }}{% else %}—{% endif %}</td>
+        <td>{% if p.high %}<span class="badge attention">{{ t("dashboard.high_count").format(n=p.high) }}</span> {% endif %}{% if p.medium %}<span class="badge">{{ t("dashboard.medium_count").format(n=p.medium) }}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% if board.incidents %}
+<section class="card wide">
+  <h2>{{ t("dashboard.incidents") }}</h2>
+  <ul class="timeline">
+    {% for i in board.incidents %}
+    <li><span class="badge{% if i.severity == 'high' %} attention{% endif %}">{{ t("impact." ~ i.severity) }}</span>
+      <strong>{{ i.path[-1] }}</strong> · {{ t("status.since") }}: {{ i.when|local }}
+      {% if i.title %}<br><span class="hint">{{ t("status.cause") }}: {{ t("causes." ~ i.title) }}</span>{% endif %}
+      <br><span class="hint">{{ i.path|join(" → ") }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if board.changes %}
+<section class="card wide">
+  <h2>{{ t("dashboard.changes") }}</h2>
+  <ul class="timeline">
+    {% for i in board.changes %}
+    <li><span class="badge{% if i.severity == 'high' %} attention{% endif %}">{{ t("impact." ~ i.severity) }}</span>
+      {{ t("impact_reasons." ~ i.reason) }}: {% if i.link %}<a href="{{ i.link }}" rel="noopener noreferrer nofollow">{{ i.title }}</a>{% else %}{{ i.title }}{% endif %}
+      · {{ i.when|local }}
+      <br><span class="hint">{{ i.path|join(" → ") }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if board.due %}
+<section class="card wide">
+  <h2>{{ t("digest.due") }}</h2>
+  <ul class="timeline">
+    {% for e in board.due %}
+    <li><span class="badge{% if e.severity == 'high' %} attention{% endif %}">{{ t("impact." ~ e.severity) }}</span>
+      <strong>{{ e.risk.due_at|local }}</strong> {{ t("risks." ~ e.risk.kind) }} · {{ e.component }}
+      <br><span class="hint">{{ e.products|join(", ") }}</span></li>
+    {% endfor %}
+  </ul>
+  <p><a href="{{ base }}/riskler">{{ t("dashboard.all_risks") }}</a></p>
+</section>
+{% endif %}
+
+{% if board.planned %}
+<section class="card wide">
+  <h2>{{ t("digest.planned") }}</h2>
+  <ul class="timeline">
+    {% for i in board.planned %}
+    <li><strong>{{ i.when|local }}</strong> <span class="badge">{{ t("calendar.kind_" ~ i.kind) }}</span>
+      {% if i.kind == "risk" %}{{ t("risks." ~ i.title) }}{% else %}{{ i.title }}{% endif %} · {{ i.component }}</li>
+    {% endfor %}
+  </ul>
+  <p><a href="{{ base }}/takvim">{{ t("dashboard.all_planned") }}</a></p>
+</section>
+{% endif %}
 {% endblock %}

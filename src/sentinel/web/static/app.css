@@ -137,3 +137,7 @@ textarea { width: 100%; font: inherit; padding: .6rem .7rem; color: var(--text);
 .field select { width: 100%; }
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0 1rem; }
 .detail { color: var(--muted); font-size: .9rem; }
+.state-ok { color: var(--ok); }
+.state-at_risk { color: var(--warn); }
+.state-affected, .state-own_incident { color: var(--bad); }
+form.filters { margin: 1rem 0; }

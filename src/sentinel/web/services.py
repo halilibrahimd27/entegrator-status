@@ -28,6 +28,7 @@ from sentinel.engine.views import StatusViews
 from sentinel.graph.service import GraphService
 from sentinel.probe.nodes import NodeService
 from sentinel.risk.correlation import CorrelationViews
+from sentinel.risk.dashboard import DashboardViews
 from sentinel.risk.digest import DigestViews
 from sentinel.risk.impact import ImpactViews
 from sentinel.risk.register import RiskRegister
@@ -64,6 +65,7 @@ class AppServices:
     register: RiskRegister
     correlation: CorrelationViews
     digest: DigestViews
+    dashboard: DashboardViews
     credentials: CredentialService
     subscriptions: SubscriptionService
     alerts: AlertService
@@ -96,6 +98,7 @@ def build_services(settings: Settings) -> AppServices:
     credentials = CredentialService(db, settings)
     subscriptions = SubscriptionService(db, settings, mailer)
     telegram = settings.telegram_bot_token is not None and bool(settings.telegram_bot_username)
+    correlation = CorrelationViews(db, ratio=settings.correlated_failure_ratio)
     return AppServices(
         settings=settings,
         db=db,
@@ -118,8 +121,9 @@ def build_services(settings: Settings) -> AppServices:
         risks=RiskViews(db),
         impact=impact,
         register=register,
-        correlation=CorrelationViews(db, ratio=settings.correlated_failure_ratio),
+        correlation=correlation,
         digest=DigestViews(impact, register),
+        dashboard=DashboardViews(impact, register, correlation),
         credentials=credentials,
         subscriptions=subscriptions,
         alerts=AlertService(db, credentials, subscriptions, telegram=telegram),
