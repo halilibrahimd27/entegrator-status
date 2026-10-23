@@ -21,9 +21,6 @@ this directory is empty, delete it.
 | `alerts/base.py` | 9 | Channel interface (`send`, `validate_config`) | Untyped `details: dict[str, Any]` bag; replace with a typed event model. |
 | `alerts/webhook.py` | 9 | Retry with exponential backoff, HMAC-SHA256 header name `X-Sentinel-Signature` | No SSRF guard. Signs `json.dumps(sort_keys=True)` but sends `json=payload` (different bytes), so receivers cannot verify. No timestamp in the signature (replayable). Logs the full webhook URL. No auto-disable after repeated failures. |
 | `alerts/email_alert.py` | 9 | SMTP / STARTTLS / SMTP_SSL selection, HTML body | Blocking `smtplib` inside `async def`. No `List-Unsubscribe`, no plain-text part, no double opt-in. |
-| `contracts/differ.py` | 7 | Change taxonomy and summary building for JSON schema diffs | Works on JSON shapes; WSDL/XSD needs a structural normaliser first. |
-| `contracts/severity.py` | 7 | Change type → severity table | Map `CRITICAL / WARNING / INFO` onto `breaking / non_breaking / cosmetic`. |
-| `contracts/tests/` | 7 | Table-driven test style | Fixtures are JSON; Phase 7 also needs synthetic OpenAPI and WSDL fixtures. |
 
 ## Not carried over (and why)
 

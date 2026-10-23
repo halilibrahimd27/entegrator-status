@@ -277,7 +277,7 @@ Acceptance
 
 ---
 
-## Phase 7 — API contract drift and authenticated checks
+## Phase 7 — API contract drift and authenticated checks ✅
 
 Goal: detect when an API a product uses changes shape, and say how much it matters.
 
@@ -291,22 +291,31 @@ Tasks
       dropped when a redirect leaves the configured host. API keys in query strings are
       refused. (Authenticated jobs reach only nodes registered with `--credentials`,
       sealed for that node.)
-- [ ] `api_contract` adapters, each with a normaliser to a structural model:
+- [x] `api_contract` adapters, each with a normaliser to a structural model:
   - OpenAPI 3.x spec URL (paths, operations, parameters, request/response schemas).
   - JSON response shape inferred from sample responses (port `legacy/api-sentinel/contracts`).
   - WSDL/XSD: services, ports/addresses, bindings with SOAP version, operations,
     messages, element and complex types with cardinality (hardened parser, imports same
     host, depth ≤ 3).
-- [ ] Classifier: `breaking` (operation/path removed or renamed, required field or
+- [x] Classifier: `breaking` (operation/path removed or renamed, required field or
       parameter added/removed, type changed, cardinality narrowed, enum value removed,
       SOAP version or endpoint address changed), `non_breaking` (optional field added, new
       operation, enum value added), `cosmetic` (documentation only). Usage-aware: severity
       per product from `usage.operations`.
-- [ ] Snapshots store the normalised model + hash + readable diff; never response bodies
+- [x] Snapshots store the normalised model + hash + readable diff; never response bodies
       with personal data or secrets.
-- [ ] Synthetic fixtures: SOAP 1.1 → 1.2, removed operation, added optional element,
+- [x] Synthetic fixtures: SOAP 1.1 → 1.2, removed operation, added optional element,
       doc-only change, OpenAPI removed path / new required parameter / enum removal, XXE,
       billion laughs, oversized document, cross-host import.
+
+Notes
+- Contracts are flat "facts" (`sentinel.contracts`): operations, parameters, fields with
+  type / required / nullable / enum / cardinality, servers and ports, security schemes,
+  and a hash of documentation (cosmetic). Never examples, descriptions or bodies.
+- A contract that is too large is refused, never truncated (a cut contract would read
+  as removed operations). Path template names are normalised (`{id}` = `{userId}`).
+- Usage-aware severity per product (matching `usage.operations` against the
+  operations each change lists) lands with impact propagation in Phase 8.
 
 Acceptance
 - Every fixture classified correctly; XXE, billion laughs, oversized and cross-host

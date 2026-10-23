@@ -28,8 +28,8 @@ from sentinel.probe.signing import node_signing_key
 from sentinel.security.vault import seal_for_node
 from sentinel.sources.config import probe_config
 from sentinel.sources.snapshots import (
-    MAX_ITEMS,
-    MAX_SNAPSHOT_BYTES,
+    MAX_CONTRACT_BYTES,
+    MAX_CONTRACT_ITEMS,
     canonical,
     safe_validator,
     snapshot_hash,
@@ -78,13 +78,13 @@ class SnapshotIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     hash: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
-    items: list[dict[str, Any]] = Field(max_length=MAX_ITEMS)
+    items: list[dict[str, Any]] = Field(max_length=MAX_CONTRACT_ITEMS)
     validators: dict[str, str] = {}
 
     @model_validator(mode="after")
     def _consistent(self) -> SnapshotIn:
-        if len(canonical(self.items)) > MAX_SNAPSHOT_BYTES:
-            raise ValueError(f"snapshot larger than {MAX_SNAPSHOT_BYTES} bytes")
+        if len(canonical(self.items)) > MAX_CONTRACT_BYTES:
+            raise ValueError(f"snapshot larger than {MAX_CONTRACT_BYTES} bytes")
         if snapshot_hash(self.items) != self.hash:
             raise ValueError("snapshot hash does not match its items")
         if set(self.validators) - {"etag", "last_modified"} or any(

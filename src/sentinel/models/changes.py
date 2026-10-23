@@ -27,6 +27,7 @@ class ChangeKind(StrEnum):
     VENDOR_INCIDENT = "vendor_incident"  # declared on the vendor's status page
     VENDOR_MAINTENANCE = "vendor_maintenance"
     RELEASE = "release"  # a new version of a package, repository or image
+    CONTRACT = "contract"  # the API's shape changed (sentinel.contracts)
 
 
 class ChangeCategory(StrEnum):
@@ -41,6 +42,10 @@ class ChangeCategory(StrEnum):
     MINOR = "minor"
     PATCH = "patch"
     PRERELEASE = "prerelease"
+    # contracts (sentinel.contracts.diff)
+    BREAKING = "breaking"
+    NON_BREAKING = "non_breaking"
+    COSMETIC = "cosmetic"
 
 
 ANNOUNCEMENT_CATEGORIES = (

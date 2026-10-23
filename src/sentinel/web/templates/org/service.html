@@ -114,6 +114,21 @@
       {% if change.origin == "manual" %}<span class="badge">{{ t("changes.manual") }}</span>{% endif %}
       {% if change.detail.get("breaking_notes") %}<span class="badge attention">{{ t("changes.breaking_notes") }}</span>{% endif %}
       {% if change.detail.get("deprecated") %}<span class="badge attention">{{ t("changes.deprecated_release") }}</span>{% endif %}
+      {% if change.kind == "contract" %}
+        {% set counts = change.detail.get("counts", {}) %}
+        <span class="hint">{{ t("contracts.summary").format(breaking=counts.get("breaking", 0), non_breaking=counts.get("non_breaking", 0), cosmetic=counts.get("cosmetic", 0)) }}</span>
+        <details>
+          <summary>{{ t("contracts.details") }}</summary>
+          {% if change.detail.get("operations") %}<p class="hint">{{ t("contracts.operations") }}: {{ change.detail["operations"]|join(", ") }}</p>{% endif %}
+          <ul>
+          {% for d in change.detail.get("changes", []) %}
+            <li><span class="badge{% if d.severity == 'breaking' %} attention{% endif %}">{{ t("categories." ~ d.severity) }}</span>
+              {{ t("contract_reasons." ~ d.reason) }} <code>{{ d.fact }}</code>{% if d.get("attribute") %}: <code>{{ d.get("before") }}</code> → <code>{{ d.get("after") }}</code>{% endif %}</li>
+          {% endfor %}
+          </ul>
+          {% if change.detail.get("truncated") %}<p class="hint">{{ t("contracts.truncated") }}</p>{% endif %}
+        </details>
+      {% endif %}
       {% if change.link %}<a href="{{ change.link }}" rel="noopener noreferrer nofollow">{{ change.title }}</a>{% else %}{{ change.title }}{% endif %}
       <br><span class="hint">{{ t("changes.detected") }}: {{ change.detected_at|local }}
         {%- if change.published_at %} · {{ t("changes.published") }}: {{ change.published_at|local }}{% endif %}

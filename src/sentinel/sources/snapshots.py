@@ -14,7 +14,14 @@ from typing import Any
 
 MAX_ITEMS = 100
 MAX_SNAPSHOT_BYTES = 512 * 1024
+# contracts are larger and are never truncated: a cut contract reads as removed operations
+MAX_CONTRACT_ITEMS = 20_000
+MAX_CONTRACT_BYTES = 2 * 1024 * 1024
 MAX_VALIDATOR = 256
+
+
+class SnapshotTooLargeError(Exception):
+    pass
 
 
 def canonical(items: list[dict[str, Any]]) -> bytes:
@@ -46,11 +53,20 @@ class SnapshotData:
 
 
 def make_snapshot(
-    items: list[dict[str, Any]], *, etag: str | None = None, last_modified: str | None = None
+    items: list[dict[str, Any]],
+    *,
+    etag: str | None = None,
+    last_modified: str | None = None,
+    strict: bool = False,
 ) -> SnapshotData:
-    items = items[:MAX_ITEMS]
-    while items and len(canonical(items)) > MAX_SNAPSHOT_BYTES:
-        items = items[: len(items) // 2]
+    """Lists of news are trimmed to fit; ``strict`` snapshots (contracts) must fit whole."""
+    if strict:
+        if len(items) > MAX_CONTRACT_ITEMS or len(canonical(items)) > MAX_CONTRACT_BYTES:
+            raise SnapshotTooLargeError("contract too large to track")
+    else:
+        items = items[:MAX_ITEMS]
+        while items and len(canonical(items)) > MAX_SNAPSHOT_BYTES:
+            items = items[: len(items) // 2]
     validators = {
         name: value
         for name, raw in (("etag", etag), ("last_modified", last_modified))

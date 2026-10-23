@@ -1,6 +1,7 @@
 """Source adapters. Each kind registers one adapter; the prober looks them up by kind."""
 
 from sentinel.sources.adapters.advisory import AdvisoryAdapter
+from sentinel.sources.adapters.api_contract import ApiContractAdapter
 from sentinel.sources.adapters.base import (
     REGISTRY,
     Adapter,
@@ -30,6 +31,7 @@ for _adapter in (
     ReleaseAdapter(),
     AdvisoryAdapter(),
     EolAdapter(),
+    ApiContractAdapter(),
 ):
     REGISTRY[_adapter.kind] = _adapter
 

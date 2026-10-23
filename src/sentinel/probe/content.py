@@ -33,6 +33,7 @@ CONTENT_KINDS = frozenset(
         SourceKind.RELEASE,
         SourceKind.ADVISORY,
         SourceKind.EOL,
+        SourceKind.API_CONTRACT,
     }
 )
 NODE_FRESH = timedelta(minutes=10)

@@ -7,7 +7,13 @@ to parse or the outcome to report.
 
 from __future__ import annotations
 
-from sentinel.security.http import PAGE_MAX_BYTES, FetchPolicy, FetchResult, Timeouts
+from sentinel.security.http import (
+    PAGE_MAX_BYTES,
+    BoundCredential,
+    FetchPolicy,
+    FetchResult,
+    Timeouts,
+)
 from sentinel.sources.adapters.base import AdapterEnv, ProbeJob, ProbeOutcome, retry_after_seconds
 from sentinel.sources.snapshots import make_snapshot
 
@@ -36,6 +42,7 @@ async def fetch_content(
     *,
     max_bytes: int = PAGE_MAX_BYTES,
     conditional: bool = True,
+    credential: BoundCredential | None = None,
 ) -> FetchResult | ProbeOutcome:
     if refusal := await robots_refusal(job, env, url):
         return refusal
@@ -45,6 +52,7 @@ async def fetch_content(
         max_bytes=max_bytes,
         timeouts=Timeouts(connect_s=min(5.0, timeout), read_s=timeout, total_s=timeout * 2),
         headers=conditional_headers(job, accept) if conditional else {"Accept": accept},
+        credential=credential,
     )
     result = await env.http.fetch(url, policy)
     latency = int(result.elapsed_s * 1000)
