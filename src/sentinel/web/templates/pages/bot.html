@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ t("bot.title") }}{% endblock %}
+{% block content %}
+<article class="card prose">
+  <h1>{{ t("bot.title") }}</h1>
+  <p>{{ t("bot.intro") }}</p>
+  <h2>{{ t("bot.identity") }}</h2>
+  <p><code>{{ user_agent }}</code></p>
+  <h2>{{ t("bot.rules_title") }}</h2>
+  <ul>
+    {% for n in range(1, 8) %}<li>{{ t("bot.rule" ~ n) }}</li>{% endfor %}
+  </ul>
+  <h2>{{ t("bot.optout_title") }}</h2>
+  <p>{{ t("bot.optout") }}</p>
+  <pre><code>User-agent: {{ agent }}
+Disallow: /</code></pre>
+  <p>{{ t("bot.contact").format(contact=contact) }} <a href="/duzeltme">{{ t("corrections.link") }}</a></p>
+  <p class="hint">{{ t("bot.self_hosted") }}</p>
+</article>
+{% endblock %}

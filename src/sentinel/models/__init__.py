@@ -33,6 +33,7 @@ from sentinel.models.changes import (
     SourceWatch,
     VendorStatus,
 )
+from sentinel.models.corrections import CorrectionRequest, CorrectionStatus
 from sentinel.models.credentials import Credential, CredentialKind, OrgDataKey
 from sentinel.models.orgs import ApiToken, Invitation, Membership, Organization
 from sentinel.models.pages import StatusPage
@@ -69,6 +70,8 @@ __all__ = [
     "Component",
     "ComponentDaily",
     "ComponentState",
+    "CorrectionRequest",
+    "CorrectionStatus",
     "Credential",
     "CredentialKind",
     "DeliveryStatus",

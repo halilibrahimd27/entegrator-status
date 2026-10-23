@@ -16,6 +16,7 @@ from sentinel.models import (
     AlertEvent,
     AlertRecipient,
     AuditEvent,
+    CorrectionRequest,
     IngestBatch,
     Invitation,
     Observation,
@@ -40,6 +41,7 @@ SNAPSHOTS = timedelta(days=30)  # the latest snapshot of each source is always k
 UNCONFIRMED_RECIPIENTS = timedelta(hours=48)  # never confirmed: the address is dropped
 UNSUBSCRIBED_RECIPIENTS = timedelta(days=30)
 ALERT_HISTORY = timedelta(days=180)  # events, and with them the delivery log
+DECIDED_CORRECTIONS = timedelta(days=365)
 
 
 @dataclass(frozen=True)
@@ -57,6 +59,7 @@ class RetentionReport:
     snapshots: int = 0
     alert_recipients: int = 0
     alert_events: int = 0
+    corrections: int = 0
 
 
 async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) -> RetentionReport:
@@ -135,6 +138,11 @@ async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) ->
             )
         )
         events = await count(delete(AlertEvent).where(AlertEvent.created_at < now - ALERT_HISTORY))
+        corrections = await count(
+            delete(CorrectionRequest).where(
+                CorrectionRequest.decided_at < now - DECIDED_CORRECTIONS
+            )
+        )
     return RetentionReport(
         unverified,
         orgs,
@@ -149,4 +157,5 @@ async def run_retention(db: Database, clock: Callable[[], datetime] = utcnow) ->
         snapshots,
         recipients,
         events,
+        corrections,
     )

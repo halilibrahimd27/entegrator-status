@@ -222,6 +222,20 @@ class StatusPageService:
 
     # -- the public view -----------------------------------------------------------------
 
+    async def published(self) -> list[str]:
+        """Slugs of every enabled page (for the sitemap)."""
+        async with self._db.system("public status pages: list for the sitemap") as s:
+            return list(
+                (
+                    await s.scalars(
+                        select(Organization.slug)
+                        .join(StatusPage, StatusPage.org_id == Organization.id)
+                        .where(StatusPage.enabled.is_(True), Organization.deleted_at.is_(None))
+                        .order_by(Organization.slug)
+                    )
+                ).all()
+            )
+
     async def _enabled(self, slug: str) -> tuple[Organization, StatusPage] | None:
         async with self._db.system("public status page: look up by slug") as s:
             org = await s.scalar(select(Organization).where(Organization.slug == slug))

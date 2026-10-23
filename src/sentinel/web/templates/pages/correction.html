@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ t("corrections.title") }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ t("corrections.title") }}</h1>
+  {% if done %}
+  <p class="notice" role="status">{{ t("corrections.done") }}</p>
+  {% else %}
+  <p>{{ t("corrections.intro") }}</p>
+  {{ ui.error_box(error) }}
+  <form method="post" action="/duzeltme" novalidate>
+    {{ ui.csrf_field() }}
+    {{ ui.field("subject", "corrections.subject", value=subject|default(""), maxlength=300, hint_key="corrections.subject_hint") }}
+    <div class="field">
+      <label for="f-body">{{ t("corrections.body") }}</label>
+      <textarea id="f-body" name="body" rows="6" maxlength="4000" required>{{ body|default("") }}</textarea>
+    </div>
+    {{ ui.field("contact", "corrections.contact", type="email", value=contact|default(""), required=false, maxlength=320, hint_key="corrections.contact_hint", autocomplete="email") }}
+    <div class="hp" aria-hidden="true">
+      <label for="f-website">{{ t("public.honeypot") }}</label>
+      <input id="f-website" name="website" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <button type="submit">{{ t("corrections.send") }}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

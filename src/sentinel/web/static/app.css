@@ -145,3 +145,4 @@ form.filters { margin: 1rem 0; }
 .state-incident { color: var(--bad); }
 .public-product, .public-incident { margin: 1rem 0; }
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.prewrap { white-space: pre-wrap; }

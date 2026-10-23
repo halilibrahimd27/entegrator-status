@@ -1,7 +1,7 @@
 # Methodology
 
-> Stub. Completed phase by phase; the public `/yontem` page (Phase 10) is rendered from
-> the final version of this document.
+> The public `/yontem` page is the Turkish version of this document (copy in
+> `src/sentinel/web/i18n/tr.yaml`, section `method`); change both together.
 
 ## What we observe
 
@@ -77,6 +77,15 @@ Only what an organisation adds to its dependency graph, plus the curated shared 
   minutes, the upstream is shown with a hint that the cause may be shared. It is a
   hint, not a finding.
 
+## Public status pages
+
+- An organization's public page (`/s/{org}`) shows only the products it picks: its own
+  incidents, and whether a component a product uses **directly** has an open incident by
+  our measurements — marked as an independent measurement, linked to `/yontem`. Deeper
+  hops, changes and risks are never public.
+- Subscribers get the organization's own incident updates for those products by e-mail
+  (double opt-in, one-click unsubscribe), nothing else.
+
 ## Probe locations
 
 _To be filled in Phase 11 (two nodes in different networks, preferably both in Turkey)._
@@ -88,5 +97,7 @@ limits, the User-Agent and an opt-out contact.
 
 ## Corrections
 
-Providers can request a correction through the public form. Every decision is
-audit-logged.
+Anyone can request a correction through the public form (`/duzeltme`): no account, an
+optional e-mail address for the answer, rate limited, no third-party captcha. Platform
+admins decide in `/yonetim/duzeltmeler`; every decision is audit-logged and sent back
+to the address, if one was given. Decided requests are deleted after a year.

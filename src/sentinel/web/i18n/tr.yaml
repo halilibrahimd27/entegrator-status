@@ -227,6 +227,119 @@ public:
   honeypot: "Bu alanı boş bırak"
   back: "Durum sayfasına dön"
 
+method:
+  title: "Yöntem"
+  intro: "Neyi, nasıl ölçtüğümüz ve neyi yapmadığımız. Kurumlar yalnızca kendi bağımlılık graflarına ekledikleri servisleri izler; ortak katalog elle derlenir."
+  observe:
+    title: "Neyi gözlüyoruz"
+    i1: "Erişilebilirlik ve gecikme: en az iki ayrı ölçüm noktasından, kurumların eklediği adreslere düzenli istekler."
+    i2: "Sağlayıcının kendi durum sayfası: bizim ölçümümüzün yanında ayrıca gösterilir, hiçbir zaman onunla birleştirilmez."
+    i3: "Değişiklikler: duyurular ve değişiklik kayıtları, yeni sürümler, güvenlik bildirimleri, destek bitiş tarihleri ve API sözleşmelerindeki (OpenAPI, JSON, WSDL/XSD) yapısal farklar."
+    i4: "Tarihli riskler: süresi dolan sertifikalar ve alan adları, Sunset / Deprecation başlıkları, destek bitişleri, kullanılan sürümdeki bilinen güvenlik açıkları."
+  never:
+    title: "Neyi yapmıyoruz"
+    i1: "Kurumların adını vermediği hiçbir şeyi ölçmeyiz; tarama, fuzzing ya da kaba kuvvet denemesi yapmayız."
+    i2: "Kimsenin sistemine yazmayız: istekler okuma amaçlıdır (GET / HEAD). Tek istisnalar OAuth2 token isteği ve açıkça işaretlenmiş okuma sorgularıdır."
+    i3: "Yanıt içeriklerini saklamayız; yalnızca normalleştirilmiş yapı (sözleşme, sürüm listesi, duyuru başlığı, tarih ve bağlantı) tutulur."
+    i4: "Bir kurumun kimlik bilgilerini yalnızca tanımlandığı adrese göndeririz."
+  status:
+    title: "Durum kuralları"
+    i1: "Bir tur, bir kontrol aralığıdır. Her sağlıklı ölçüm noktası bir turda bir kez, 1,5 aralık içindeki son sonucuyla sayılır."
+    i2: "\"Erişim sorunu\" için en az iki sağlıklı ölçüm noktasının art arda üç turda hata görmesi gerekir; başlangıç ilk hatalı tura tarihlenir. Sorunu tek nokta görüyorsa durum \"doğrulanmadı\" olur."
+    i3: "Düzelme art arda üç başarılı turla kaydedilir ve ilkine tarihlenir."
+    i4: "\"Yavaşlama\": p95 gecikme kaynağın eşiğini en az 15 dakika aşarsa."
+    i5: "Kendi kontrol hedeflerine ulaşamayan ölçüm noktaları o turda sayılmaz; robots.txt ya da hız sınırı nedeniyle kendimizin vazgeçtiği istekler sağlayıcının aleyhine yorumlanmaz."
+    i6: "Erişilebilirlik oranı uzlaşılmış zaman çizelgesinden hesaplanır; önceden bildirilmiş bakım ve verisiz süreler hesaba katılmaz."
+    i7: "Günler UTC'ye göre ayrılır; saatler Türkiye saatiyle gösterilir."
+  changes:
+    title: "Değişiklik ve etki kuralları"
+    i1: "Bir kaynağın ilk görüntüsü başlangıç kabul edilir: izlemeye başladığımızda zaten yayında olan şeyler yenilik diye bildirilmez."
+    i2: "Duyurular başlıklarındaki Türkçe ve İngilizce anahtar kelimelerle sınıflandırılır (bakım, kullanımdan kaldırma, güvenlik, paket güncellemesi, olay, diğer); başlıktaki tarih geçerlilik tarihi olur."
+    i3: "İçerik kaynakları her döngüde robots.txt'ye bakar; izin yoksa durur ve bunu açıkça yazar."
+    i4: "Yeni bir sürüm, kendinden önceki en yakın kararlı sürüme göre büyük / ara / yama / ön sürüm diye sınıflandırılır; 0.y.z sürümlerinde ara sürüm büyük sayılır."
+    i5: "API sözleşmeleri yalnızca yapı olarak karşılaştırılır: kırıcı, uyumlu ya da yalnızca belge değişikliği."
+    i6: "Etki, bağımlılıklar boyunca üç adıma kadar izlenir. Önem; olayın türü, ürünün değişen işlemi kullanıp kullanmadığı (yalnızca doğrudan bağımlılıklarda bilinir) ve her ek adımda bir kademe düşüşle belirlenir. Kullanım bilgisi yoksa \"etkilenmiş olabilir\" denir, asla \"etkilendi\" denmez."
+    i7: "Bir servise bağlı bileşenlerin en az %40'ı on dakika içinde birlikte erişilemez olursa ortak bir neden olabileceği belirtilir. Bu bir ipucudur, tespit değildir."
+  public:
+    title: "Herkese açık sayfalarda"
+    i1: "Üçüncü taraf ölçümleri her zaman \"Bağımsız ölçümdür, resmî değildir\" notuyla gösterilir; sağlayıcı logosu kullanılmaz."
+    i2: "Kurumların herkese açık durum sayfalarında yalnızca kurumun kendi açtığı olaylar ve ürünlerinin doğrudan kullandığı servislerin durumu görünür; değişiklik ve riskler görünmez."
+    i3: "Ölçüm noktalarının yerini her kurulumun işletmecisi belirler."
+  corrections: "Bir ölçümün ya da sayfanın yanlış olduğunu düşünüyorsan bize yaz; her karar kayıt altına alınır."
+
+bot:
+  title: "Botumuz hakkında"
+  intro: "Entegratör Status, kurumların kendi ürünlerinin bağımlı olduğu servisleri izler. İsteklerini aşağıdaki kimlikle ve aşağıdaki kurallarla gönderir."
+  identity: "Kimliği (User-Agent)"
+  rules_title: "Kurallar"
+  rule1: "Yalnızca okuma: GET ve HEAD. Tek istisnalar OAuth2 token isteği ve açıkça işaretlenmiş okuma sorgularıdır."
+  rule2: "Aynı adrese bir ölçüm noktasından en sık 60 saniyede bir (varsayılan 120 saniye); içerik, sürüm ve sözleşme kaynaklarına en sık saatte bir (varsayılan 6 saat)."
+  rule3: "Aynı sunucuya bir ölçüm noktasından aynı anda tek istek ve tüm kurumlar için ortak bir istek bütçesi; aynı kaynağı izleyen kurumlar için istek bir kez atılır."
+  rule4: "429 ve 503 yanıtlarında ve Retry-After başlığında geri çekilir."
+  rule5: "İçerik izleyicileri her döngüde robots.txt'ye bakar ve Crawl-delay'e uyar; izin yoksa durur."
+  rule6: "Belgelenmiş bir API varsa onu kullanır ve koşullu istek gönderir (ETag / If-Modified-Since); API varken HTML kazımaz."
+  rule7: "Tarama yapmaz, form doldurmaz, oturum açmayı denemez; yalnızca kurumların adını verdiği adresleri ve kendi yetkili oldukları kimlik bilgilerini kullanır."
+  optout_title: "İzlenmek istemiyorsan"
+  optout: "İçerik izleyicilerimizi robots.txt ile durdurabilirsin:"
+  contact: "Erişilebilirlik ölçümlerinin de durmasını istiyorsan ya da bir sorun görürsen {contact} adresine yaz ya da formu kullan:"
+  self_hosted: "Entegratör Status açık kaynaktır ve her kurulumu kendi işletmecisi çalıştırır; yukarıdaki iletişim adresi bu kurulumun işletmecisine aittir."
+
+corrections:
+  link: "Düzeltme iste"
+  title: "Düzeltme iste"
+  intro: "Bir ölçümün, sınıflandırmanın ya da sayfanın yanlış olduğunu düşünüyorsan anlat. Sağlayıcıysan ve izlenmek istemiyorsan da bu formu kullanabilirsin."
+  subject: "Hangi sayfa, servis ya da ölçüm?"
+  subject_hint: "Örn. sayfanın adresi ya da servisin adı."
+  body: "Ne yanlış, doğrusu ne?"
+  contact: "E-posta (isteğe bağlı)"
+  contact_hint: "Yalnızca kararı sana bildirmek için kullanılır; yazmazsan cevap gönderemeyiz."
+  send: "Gönder"
+  done: "Teşekkürler, talebin bize ulaştı. Adres bıraktıysan kararı e-postayla bildireceğiz."
+  invalid_subject: "Konu 1-300 karakter olmalı."
+  invalid_body: "Açıklama 10-4000 karakter olmalı."
+  invalid_contact: "Geçerli bir e-posta adresi gir ya da alanı boş bırak."
+  invalid_decision: "Geçersiz karar."
+  invalid_note: "Not en fazla 2000 karakter olabilir."
+  throttled: "Çok fazla talep gönderildi; biraz sonra yeniden dene."
+  queue_title: "Düzeltme talepleri"
+  queue_empty: "Talep yok."
+  status_open: "Bekliyor"
+  status_accepted: "Kabul edildi"
+  status_rejected: "Reddedildi"
+  has_contact: "cevap için adres bıraktı"
+  note: "Cevap (gönderene iletilir)"
+  accept: "Kabul et"
+  reject: "Reddet"
+  operator_mail:
+    subject: "Düzeltme talebi: {subject}"
+    body: |
+      Yeni bir düzeltme talebi geldi.
+
+      Konu: {subject}
+
+      {body}
+
+      Talep: {id}
+      Yönetim panelindeki "Düzeltme talepleri" sayfasından karar verebilirsin.
+  answer_mail:
+    subject: "Entegratör Status: düzeltme talebin sonuçlandı"
+    accepted: |
+      Merhaba,
+
+      "{subject}" konulu düzeltme talebin kabul edildi.
+
+      Not: {note}
+
+      Teşekkürler.
+    rejected: |
+      Merhaba,
+
+      "{subject}" konulu düzeltme talebini inceledik ve kabul etmedik.
+
+      Not: {note}
+
+      Teşekkürler.
+
 hints:
   common_cause: "{upstream} bileşenine bağlı {total} bileşenden {count} tanesi (%{ratio}) son 10 dakika içinde birlikte erişim sorunu yaşamaya başladı; ortak bir kaynaktan kaynaklanıyor olabilir."
 

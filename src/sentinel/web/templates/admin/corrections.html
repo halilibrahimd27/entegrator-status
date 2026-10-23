@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ t("corrections.queue_title") }}{% endblock %}
+{% block content %}
+<section class="card wide">
+  <h1>{{ t("corrections.queue_title") }}</h1>
+  {{ ui.error_box(error) }}
+  {% if not requests %}<p>{{ t("corrections.queue_empty") }}</p>{% endif %}
+  {% for r in requests %}
+  <article class="card">
+    <h2>{{ r.subject }} <span class="badge{% if r.status == 'open' %} attention{% endif %}">{{ t("corrections.status_" ~ r.status) }}</span></h2>
+    <p class="hint">{{ r.created_at|local }}{% if r.contact %} · {{ t("corrections.has_contact") }}{% endif %}</p>
+    <p class="prewrap">{{ r.body }}</p>
+    {% if r.status == "open" %}
+    <form method="post" action="/yonetim/duzeltmeler/{{ r.id }}/karar" novalidate>
+      {{ ui.csrf_field() }}
+      <div class="field">
+        <label for="n-{{ r.id }}">{{ t("corrections.note") }}</label>
+        <textarea id="n-{{ r.id }}" name="note" rows="2" maxlength="2000"></textarea>
+      </div>
+      <button type="submit" name="decision" value="accepted">{{ t("corrections.accept") }}</button>
+      <button type="submit" name="decision" value="rejected" class="secondary">{{ t("corrections.reject") }}</button>
+    </form>
+    {% else %}
+    <p class="hint">{{ r.decided_at|local }}{% if r.note %} · {{ r.note }}{% endif %}</p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

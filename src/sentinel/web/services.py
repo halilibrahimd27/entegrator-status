@@ -27,6 +27,7 @@ from sentinel.engine.notices import NoticeService
 from sentinel.engine.views import StatusViews
 from sentinel.graph.service import GraphService
 from sentinel.probe.nodes import NodeService
+from sentinel.public.corrections import CorrectionService
 from sentinel.public.service import StatusPageService
 from sentinel.risk.correlation import CorrelationViews
 from sentinel.risk.dashboard import DashboardViews
@@ -71,6 +72,7 @@ class AppServices:
     subscriptions: SubscriptionService
     alerts: AlertService
     status_pages: StatusPageService
+    corrections: CorrectionService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -133,6 +135,7 @@ def build_services(settings: Settings) -> AppServices:
         subscriptions=subscriptions,
         alerts=AlertService(db, credentials, subscriptions, telegram=telegram),
         status_pages=StatusPageService(db, catalog, status, notices, subscriptions, throttle),
+        corrections=CorrectionService(db, mailer, throttle, operator=settings.contact_email),
         renderer=Renderer(),
     )
 

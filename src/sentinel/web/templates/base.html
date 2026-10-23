@@ -15,7 +15,7 @@
       {% if viewer %}
         <a href="/orglar">{{ t("nav.orgs") }}</a>
         <a href="/hesap">{{ t("nav.account") }}</a>
-        {% if viewer.user.is_platform_admin %}<a href="/yonetim/katalog">{{ t("nav.admin") }}</a>{% endif %}
+        {% if viewer.user.is_platform_admin %}<a href="/yonetim/katalog">{{ t("nav.admin") }}</a> <a href="/yonetim/duzeltmeler">{{ t("corrections.queue_title") }}</a>{% endif %}
         <form method="post" action="/cikis" class="inline">
           {{ ui.csrf_field() }}
           <button type="submit" class="link">{{ t("nav.logout") }}</button>
@@ -30,6 +30,9 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="site-footer">
+    <a href="/yontem">{{ t("method.title") }}</a>
+    <a href="/hakkinda/bot">{{ t("bot.title") }}</a>
+    <a href="/duzeltme">{{ t("corrections.link") }}</a>
     <a href="/aydinlatma">{{ t("site.privacy_link") }}</a>
   </footer>
 </body>
