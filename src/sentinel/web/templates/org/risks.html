@@ -1,0 +1,56 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("register.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+{% set base = "/o/" ~ ctx.org.slug ~ "/riskler" %}
+{% set manage = can(role, "status.manage") %}
+<section class="card wide">
+  <h1>{{ t("register.title") }}</h1>
+  <p>{{ t("register.body") }}</p>
+  {% if entries %}
+  <ul class="timeline">
+  {% for e in entries %}
+    {% set r = e.risk %}
+    <li>
+      <span class="badge{% if e.severity == 'high' and e.state == 'open' %} attention{% endif %}">{{ t("impact." ~ e.severity) }}</span>
+      <span class="badge">{{ t("register.state_" ~ e.state) }}</span>
+      <strong>{{ t("risks." ~ r.kind) }}</strong> · {{ e.component }}
+      <br><span class="hint">
+        {% if r.due_at %}{{ t("risks.due") }}: {{ r.due_at|local }}{% else %}{{ t("risks.no_date") }}{% endif %}
+        · {{ t("register.products") }}: {{ e.products|join(", ") }}
+        {% if e.state == "snoozed" and e.until %} · {{ t("register.until") }}: {{ e.until|local }}{% endif %}
+        {% if e.note %} · {{ e.note }}{% endif %}
+        {% if r.link %} · <a href="{{ r.link }}" rel="noopener noreferrer nofollow">{{ t("risks.more") }}</a>{% endif %}
+      </span>
+      {% if manage %}
+      <details>
+        <summary>{{ t("register.decide") }}</summary>
+        <form method="post" action="{{ base }}/{{ r.id }}/karar" novalidate>
+          {{ ui.csrf_field() }}
+          <div class="grid-2">
+            <div class="field">
+              <label for="d-{{ r.id }}">{{ t("register.decision") }}</label>
+              <select id="d-{{ r.id }}" name="decision">
+                {% for d in ("snoozed", "accepted", "resolved", "open") %}<option value="{{ d }}">{{ t("register.do_" ~ d) }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label for="u-{{ r.id }}">{{ t("register.until") }}</label>
+              <input id="u-{{ r.id }}" name="until" type="date">
+            </div>
+          </div>
+          <div class="field">
+            <label for="n-{{ r.id }}">{{ t("register.note") }}</label>
+            <input id="n-{{ r.id }}" name="note" type="text" maxlength="500">
+          </div>
+          <button type="submit">{{ t("register.submit") }}</button>
+        </form>
+      </details>
+      {% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}
+  <p>{{ t("register.empty") }}</p>
+  {% endif %}
+</section>
+{% endblock %}

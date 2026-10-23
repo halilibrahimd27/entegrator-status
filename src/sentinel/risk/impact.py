@@ -139,6 +139,10 @@ class ImpactViews:
         self._graph = graph
         self._clock = clock
 
+    @property
+    def graph(self) -> GraphService:
+        return self._graph
+
     async def for_product(self, scope: TenantScope, product_id: uuid.UUID) -> list[Impact]:
         scope.require(Action.GRAPH_VIEW)
         graph = await self._graph.downstream(scope, product_id)

@@ -37,6 +37,7 @@ from sentinel.models import (
     Membership,
     Organization,
     Product,
+    Risk,
     Service,
     Source,
 )
@@ -63,6 +64,7 @@ FORM = {
     "body": "Açıklama",
     "status": "investigating",
     "category": "maintenance",
+    "decision": "open",
     "starts_at": local_input(timedelta(days=1)),
     "ends_at": local_input(timedelta(days=1, hours=2)),
 }
@@ -80,6 +82,7 @@ Model = (
     | type[MaintenanceWindow]
     | type[Change]
     | type[Credential]
+    | type[Risk]
 )
 ID_PARAMS: dict[str, Model] = {
     "membership_id": Membership,
@@ -94,6 +97,7 @@ ID_PARAMS: dict[str, Model] = {
     "window_id": MaintenanceWindow,
     "change_id": Change,
     "credential_id": Credential,
+    "risk_id": Risk,
 }
 
 
@@ -199,6 +203,18 @@ async def build_tenant(
         csrf_from=f"{base}/kimlik-bilgileri",
     )
     assert vault.status_code == 303, vault.text
+    async with services.db.system("test harness setup") as s:
+        component = await s.get(Component, component_id)
+        assert component is not None
+        s.add(
+            Risk(
+                org_id=component.org_id,
+                component_id=component.id,
+                kind="deprecation",
+                first_seen_at=utcnow(),
+                last_seen_at=utcnow(),
+            )
+        )
     return slug
 
 

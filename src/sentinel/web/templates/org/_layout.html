@@ -9,6 +9,8 @@
       <a href="{{ base }}"{% if section == "home" %} aria-current="page"{% endif %}>{{ t("org.home") }}</a>
       <a href="{{ base }}/urunler"{% if section == "products" %} aria-current="page"{% endif %}>{{ t("org.products") }}</a>
       <a href="{{ base }}/durum"{% if section == "status" %} aria-current="page"{% endif %}>{{ t("org.status") }}</a>
+      <a href="{{ base }}/riskler"{% if section == "risks" %} aria-current="page"{% endif %}>{{ t("org.risks") }}</a>
+      <a href="{{ base }}/takvim"{% if section == "calendar" %} aria-current="page"{% endif %}>{{ t("org.calendar") }}</a>
       <a href="{{ base }}/katalog"{% if section == "catalog" %} aria-current="page"{% endif %}>{{ t("org.catalog") }}</a>
       <a href="{{ base }}/uyeler"{% if section == "members" %} aria-current="page"{% endif %}>{{ t("org.members") }}</a>
       {% if can(role, "tokens.manage") %}

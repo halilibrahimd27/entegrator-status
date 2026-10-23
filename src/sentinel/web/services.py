@@ -26,6 +26,7 @@ from sentinel.engine.views import StatusViews
 from sentinel.graph.service import GraphService
 from sentinel.probe.nodes import NodeService
 from sentinel.risk.impact import ImpactViews
+from sentinel.risk.register import RiskRegister
 from sentinel.risk.views import RiskViews
 from sentinel.tenancy.api_tokens import ApiTokenService
 from sentinel.tenancy.credentials import CredentialService
@@ -56,6 +57,7 @@ class AppServices:
     changes: ChangeViews
     risks: RiskViews
     impact: ImpactViews
+    register: RiskRegister
     credentials: CredentialService
     renderer: Renderer
 
@@ -81,6 +83,7 @@ def build_services(settings: Settings) -> AppServices:
     totp_box = TotpBox(settings.totp_encryption_key.get_secret_value())
     two_factor = TwoFactorService(db=db, passwords=passwords, throttle=throttle, totp_box=totp_box)
     graph = GraphService(db)
+    impact = ImpactViews(db, graph)
     return AppServices(
         settings=settings,
         db=db,
@@ -101,7 +104,8 @@ def build_services(settings: Settings) -> AppServices:
         status=StatusViews(db, graph),
         changes=ChangeViews(db),
         risks=RiskViews(db),
-        impact=ImpactViews(db, graph),
+        impact=impact,
+        register=RiskRegister(db, impact),
         credentials=CredentialService(db, settings),
         renderer=Renderer(),
     )

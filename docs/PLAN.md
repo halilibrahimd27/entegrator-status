@@ -335,10 +335,10 @@ Tasks
       listesi güncellemesi (14.09.2026)".
 - [x] Severity model: change class × usage match × depth attenuation. (Computed from the
       current graph on read, so new dependencies see risks already open.)
-- [ ] Risk register per org: open risks ordered by due date (certificate/domain expiry,
+- [x] Risk register per org: open risks ordered by due date (certificate/domain expiry,
       end of life, sunset, advisories, unadopted majors); states `open | snoozed |
       accepted | resolved`, audit-logged.
-- [ ] Planned-changes calendar from effective dates (announcements, sunset headers, EOL).
+- [x] Planned-changes calendar from effective dates (announcements, sunset headers, EOL).
 - [ ] Correlated-failure hint: if ≥ 40 % (configurable) of the dependants of one upstream
       go `down` within the same 10-minute window, show "Ortak bir kaynaktan kaynaklanıyor
       olabilir" — a hint, never an assertion.

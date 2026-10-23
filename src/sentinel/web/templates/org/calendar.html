@@ -1,0 +1,22 @@
+{% extends "org/_layout.html" %}
+{% block title %}{{ t("calendar.title") }} · {{ ctx.org.name }}{% endblock %}
+{% block org_content %}
+<section class="card wide">
+  <h1>{{ t("calendar.title") }}</h1>
+  <p>{{ t("calendar.body") }}</p>
+  {% if items %}
+  <ul class="timeline">
+  {% for i in items %}
+    <li>
+      <strong>{{ i.when|local }}</strong>
+      <span class="badge">{{ t("calendar.kind_" ~ i.kind) }}</span>
+      {% if i.kind == "risk" %}{{ t("risks." ~ i.title) }}{% elif i.link %}<a href="{{ i.link }}" rel="noopener noreferrer nofollow">{{ i.title }}</a>{% else %}{{ i.title }}{% endif %}
+      <br><span class="hint">{{ i.component }}</span>
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}
+  <p>{{ t("calendar.empty") }}</p>
+  {% endif %}
+</section>
+{% endblock %}

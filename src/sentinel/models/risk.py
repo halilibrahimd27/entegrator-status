@@ -7,11 +7,18 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, String
+from sqlalchemy import CheckConstraint, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from sentinel.db.base import Base, CreatedAtMixin, IdMixin, SharedOrTenantMixin
+from sentinel.db.base import (
+    Base,
+    CreatedAtMixin,
+    IdMixin,
+    SharedOrTenantMixin,
+    TenantMixin,
+    utcnow,
+)
 
 
 class RiskKind(StrEnum):
@@ -53,3 +60,30 @@ class Risk(IdMixin, CreatedAtMixin, SharedOrTenantMixin, Base):
     first_seen_at: Mapped[datetime]
     last_seen_at: Mapped[datetime]
     resolved_at: Mapped[datetime | None]
+
+
+class RiskDecision(StrEnum):
+    SNOOZED = "snoozed"  # hidden until a date
+    ACCEPTED = "accepted"  # the organization lives with it, with a note
+    RESOLVED = "resolved"  # handled on the organization's side
+
+
+class RiskState(IdMixin, TenantMixin, Base):
+    """One organization's decision about a risk. No row means "open"."""
+
+    __tablename__ = "risk_states"
+    __table_args__ = (
+        UniqueConstraint("org_id", "risk_id"),
+        CheckConstraint(
+            f"state IN ({', '.join(repr(d.value) for d in RiskDecision)})", name="state"
+        ),
+    )
+
+    risk_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("risks.id", ondelete="CASCADE"))
+    state: Mapped[str] = mapped_column(String(16))
+    until: Mapped[datetime | None]  # snoozed until
+    note: Mapped[str | None] = mapped_column(String(500))
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow, onupdate=utcnow)
