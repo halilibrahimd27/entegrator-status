@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=../pack.schema.json
 # Demo and test data only: every address is *.example.invalid and nothing is probed.
+# Kept outside catalog/packs/ so `python -m sentinel.catalog import` never loads it.
 id: examples
 name: Örnek paket
 description: Testler ve demo için örnek servisler. Gerçek değildir.

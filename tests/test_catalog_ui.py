@@ -22,7 +22,7 @@ from sentinel.web.services import AppServices
 from support import csrf, post_form, signed_in
 
 ALICE = "alice@example.invalid"
-EXAMPLES = Path(__file__).resolve().parents[1] / "catalog" / "packs" / "examples.yaml"
+EXAMPLES = Path(__file__).resolve().parents[1] / "catalog" / "examples" / "examples.yaml"
 
 
 async def with_examples(services: AppServices) -> None:

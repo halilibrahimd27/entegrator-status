@@ -70,6 +70,8 @@ tag_rules:
 
 ```bash
 python -m sentinel.catalog validate                # all packs in catalog/packs
+# catalog/examples/ holds a fictional pack for tests and demos; it is never imported
+# unless named explicitly
 python -m sentinel.catalog import                  # dry run: prints the exact changes
 python -m sentinel.catalog import --apply          # writes, audit-logged
 ```

@@ -36,7 +36,12 @@ from sentinel.tenancy.roles import Role
 from sentinel.tenancy.scope import TenantScope
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKS = sorted((ROOT / "catalog" / "packs").glob("*.yaml"))
+# the real packs, plus the fictional example pack (kept out of catalog/packs so a
+# production `catalog import` never loads it)
+PACKS = [
+    *sorted((ROOT / "catalog" / "packs").glob("*.yaml")),
+    ROOT / "catalog" / "examples" / "examples.yaml",
+]
 
 
 def pack(**overrides: Any) -> dict[str, Any]:

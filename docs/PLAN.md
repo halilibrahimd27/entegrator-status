@@ -423,32 +423,40 @@ Acceptance
 Goal: anyone can run their own instance safely; the project site lives on GitHub Pages.
 
 Tasks
-- [ ] Platform admin: shared catalog CRUD (SSRF-validated), promotion queue, per-org
-      quotas, incidents and public notes, correction requests, audit log viewer.
-- [ ] `compose.prod.yml` + Caddy (automatic HTTPS, security headers, cache for public
-      pages), Redis with ACL, `/metrics` only on the internal network.
-- [ ] Release workflow: versioned images on GitHub Container Registry (digest-pinned
-      base, SBOM), changelog, upgrade notes (migrations run by the `migrate` service).
-- [ ] Backups: nightly `pg_dump` script and a tested restore drill;
-      `CREDENTIALS_MASTER_KEY` backup and rotation drill (`rewrap`).
-- [ ] Probe node runbook (`docs/PROBE_NODE.md`): minimal container, outbound-only,
-      token provisioning, `--credentials` only for nodes you trust, clock sync (HMAC window).
-- [ ] Static export of an organization's public status page to a GitHub Pages
-      repository it owns (no public server needed).
-- [ ] Project site on GitHub Pages from `docs/`: what it is, screenshots, self-hosting
-      guide, methodology, bot page, KVKK text templates for operators.
-- [ ] README (EN + TR): what it is, screenshots, architecture diagram, methodology link,
-      self-hosting guide, and a **"How it was built"** section: designed and reviewed by
-      the maintainer, implemented with Claude Code.
-- [ ] Going public: history and placeholder audit (`legacy/` already removed in Phase 9),
-      then the repository is made public.
+- [x] Platform admin: organizations with per-org source quotas (ADR 0003), the platform
+      audit log, maintenance and announcements on shared services, correction requests,
+      the catalog review queue; `python -m sentinel.admin promote` for the first admin.
+      A catalog editor was left out on purpose: shared entries change only through
+      reviewed YAML packs and accepted proposals (one source of truth).
+- [x] `compose.prod.yml` + Caddy (automatic HTTPS, HTTP/3), Redis with an ACL user,
+      PostgreSQL and Redis on a network with no route out, `/metrics` internal only and
+      off without a token, real client addresses behind the proxy.
+- [x] Release workflow: amd64 + arm64 images on GitHub Container Registry with SBOM and
+      provenance, release notes from [CHANGELOG.md](../CHANGELOG.md); upgrade notes in
+      [SELF_HOSTING.md](SELF_HOSTING.md#upgrading).
+- [x] Backups and a restore drill (`tools/backup.sh`, `tools/restore-drill.sh`,
+      `python -m sentinel.db.drill`); master key check and rotation
+      (`python -m sentinel.tenancy.keys check|rewrap`) — [BACKUP.md](BACKUP.md).
+- [x] Probe node runbook ([PROBE_NODE.md](PROBE_NODE.md)), `python -m sentinel.probe
+      disable|list`.
+- [x] Static export of an organization's public status page (Phase 10).
+- [x] Project site on GitHub Pages from `docs/` (workflow ready, runs once the
+      repository is public), KVKK templates for operators ([KVKK.md](KVKK.md)).
+- [x] README (EN + TR) with screenshots, an architecture diagram and "How it was built".
+- [ ] Going public: history and placeholder audit done (no secrets in 50 commits,
+      no real addresses or credentials in the tree, `legacy/` gone); waiting for the
+      maintainer's go-ahead, then v0.1.0 is tagged.
 
 Acceptance
-- Fresh VM: follow README → stack up with HTTPS in < 30 minutes.
-- Restore drill restores yesterday's backup into a clean database and the site renders;
-  credentials decrypt after restore.
+- Fresh VM: follow README → stack up with HTTPS in < 30 minutes. (The production stack
+  was brought up and checked locally: HTTPS through Caddy, redirect, `/metrics` hidden,
+  Redis refusing unauthenticated clients, no internet from the database network.)
+- Restore drill restores a backup into a clean database and the site renders;
+  credentials decrypt after restore. (Verified on the compose stack and in tests.)
 - Security review pass: no secret defaults, no host-published DB/Redis ports, CSP strict,
   all forms CSRF-protected, all outbound fetches through the guard, tenant harness green.
+- Lighthouse 13.5.0 (demo data): accessibility 100 on every page checked, best practices
+  100, SEO 100 on public pages.
 
 ---
 

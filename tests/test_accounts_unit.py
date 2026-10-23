@@ -76,7 +76,11 @@ def test_digests_are_separated_by_purpose_and_key() -> None:
 
 
 @pytest.mark.parametrize(
-    ("raw", "expected"), [(" Ayse@Example.Invalid ", "ayse@example.invalid"), ("a@b.co", "a@b.co")]
+    ("raw", "expected"),
+    [
+        (" Ayse@Example.Invalid ", "ayse@example.invalid"),
+        ("kisi@ornek.example.invalid", "kisi@ornek.example.invalid"),
+    ],
 )
 def test_email_normalisation(raw: str, expected: str) -> None:
     assert normalize_email(raw) == expected
