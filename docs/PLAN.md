@@ -388,25 +388,30 @@ Acceptance
 
 ---
 
-## Phase 11 — Production
+## Phase 11 — Release (self-hosted, [ADR 0012](adr/0012-distribution.md))
 
-Goal: run it for real, safely, with two probe nodes.
+Goal: anyone can run their own instance safely; the project site lives on GitHub Pages.
 
 Tasks
 - [ ] Platform admin: shared catalog CRUD (SSRF-validated), promotion queue, per-org
       quotas, incidents and public notes, correction requests, audit log viewer.
 - [ ] `compose.prod.yml` + Caddy (automatic HTTPS, security headers, cache for public
       pages), Redis with ACL, `/metrics` only on the internal network.
-- [ ] Backups: nightly `pg_dump` off-site, documented and tested restore drill;
-      `CREDENTIALS_MASTER_KEY` backup and rotation drill.
-- [ ] Remote probe node runbook (`docs/PROBE_NODE.md`): minimal container, outbound-only,
-      token provisioning, clock sync requirement (HMAC window).
-- [ ] `docs/LAUNCH.md`: two healthy nodes in different networks (prefer both in Turkey —
-      some Turkish public services restrict foreign IPs; verify), catalog reviewed,
-      methodology published, contact e-mail live, KVKK texts and terms live.
+- [ ] Release workflow: versioned images on GitHub Container Registry (digest-pinned
+      base, SBOM), changelog, upgrade notes (migrations run by the `migrate` service).
+- [ ] Backups: nightly `pg_dump` script and a tested restore drill;
+      `CREDENTIALS_MASTER_KEY` backup and rotation drill (`rewrap`).
+- [ ] Probe node runbook (`docs/PROBE_NODE.md`): minimal container, outbound-only,
+      token provisioning, `--credentials` only for nodes you trust, clock sync (HMAC window).
+- [ ] Static export of an organization's public status page to a GitHub Pages
+      repository it owns (no public server needed).
+- [ ] Project site on GitHub Pages from `docs/`: what it is, screenshots, self-hosting
+      guide, methodology, bot page, KVKK text templates for operators.
 - [ ] README (EN + TR): what it is, screenshots, architecture diagram, methodology link,
       self-hosting guide, and a **"How it was built"** section: designed and reviewed by
       the maintainer, implemented with Claude Code.
+- [ ] Going public: history and placeholder audit, `legacy/` removed, then the
+      repository is made public.
 
 Acceptance
 - Fresh VM: follow README → stack up with HTTPS in < 30 minutes.

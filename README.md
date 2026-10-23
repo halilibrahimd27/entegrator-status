@@ -94,6 +94,13 @@ legacy/            reference code from api-sentinel, ported phase by phase (ADR 
 
 ---
 
+## License
+
+[Apache-2.0](LICENSE). Entegratör Status is self-hosted software: whoever runs an
+instance operates it ([ADR 0012](docs/adr/0012-distribution.md)).
+
+---
+
 ## Türkçe
 
 Ürününün bağımlı olduğu her şey için durum ve değişiklik takibi.
