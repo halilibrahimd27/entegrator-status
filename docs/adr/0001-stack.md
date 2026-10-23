@@ -30,7 +30,10 @@ Supply chain:
 - Dependencies are locked with hashes (`uv pip compile --generate-hashes`) and installed
   with `pip --require-hashes --no-deps`. `make lock` never picks a release younger than
   14 days (`--exclude-newer`), so a freshly published malicious release cannot land on
-  the next lock.
+  the next lock. A security fix may skip the cool-down **for the named package only**:
+  `requirements/security-exceptions.txt` pins the **oldest** release that contains the
+  fix, with the advisory id, and the line is removed once the cool-down has caught up
+  (amended 2026-10-23).
 - Base images are pinned by digest; GitHub Actions by commit SHA.
 - The image runs the source tree via `PYTHONPATH` instead of installing a wheel, so the
   build needs no unhashed build backend.

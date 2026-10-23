@@ -6,6 +6,8 @@ VENV ?= .venv
 BIN := $(VENV)/bin
 # Lock files never pick a release younger than this (supply-chain cool-down).
 LOCK_COOLDOWN_DAYS ?= 14
+# Security fixes that may skip the cool-down, pinned to the oldest fixed release (ADR 0001).
+LOCK_EXCEPTIONS := requirements/security-exceptions.txt
 # Throwaway services from compose.test.yml (CI provides its own service containers).
 TEST_DATABASE_URL ?= postgresql+asyncpg://sentinel@127.0.0.1:55432/sentinel_test
 TEST_REDIS_URL ?= redis://127.0.0.1:56379/0
@@ -23,10 +25,15 @@ install: ## Create the venv, install hashed dev dependencies and the git hook
 
 lock: ## Regenerate hashed lock files (needs uv)
 	@cutoff=$$($(PYTHON) -c "import datetime as d; print(d.date.today() - d.timedelta(days=$(LOCK_COOLDOWN_DAYS)))"); \
+	tomorrow=$$($(PYTHON) -c "import datetime as d; print(d.date.today() + d.timedelta(days=1))"); \
+	excepted=""; for p in $$(sed -n 's/^\([A-Za-z0-9_.-]*\)==.*/\1/p' $(LOCK_EXCEPTIONS)); do \
+		excepted="$$excepted --exclude-newer-package $$p=$$tomorrow --upgrade-package $$p"; \
+	done; \
 	for extra in runtime dev; do \
 		flag=$$([ $$extra = dev ] && echo "--extra dev"); \
 		uv pip compile pyproject.toml $$flag --universal --python-version 3.12 \
-			--generate-hashes --exclude-newer "$$cutoff" --quiet -o requirements/$$extra.txt; \
+			--generate-hashes --exclude-newer "$$cutoff" $$excepted \
+			--constraint $(LOCK_EXCEPTIONS) --quiet -o requirements/$$extra.txt; \
 	done
 
 env: ## Create .env with fresh random secrets (never overwrites)
@@ -47,7 +54,7 @@ test-services: ## Start the throwaway test Postgres/Redis (skipped in CI)
 
 test: test-services ## pytest (no network) + coverage gates
 	$(BIN)/pytest --cov --cov-report=term-missing
-	@for pkg in security tenancy accounts sources graph catalog probe engine risk; do \
+	@for pkg in security tenancy accounts sources graph catalog probe engine risk contracts; do \
 		echo "coverage gate: sentinel.$$pkg"; \
 		$(BIN)/coverage report --include="src/sentinel/$$pkg/*" --fail-under=85 > /dev/null || exit 1; \
 	done

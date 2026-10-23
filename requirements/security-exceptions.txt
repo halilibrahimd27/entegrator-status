@@ -1,0 +1,6 @@
+# Security fixes that may skip the 14-day lock cool-down (ADR 0001).
+# One pin per line: the oldest release that contains the fix, with its advisory.
+# Remove a line once the cool-down has caught up with it.
+certifi==2026.10.19  # PYSEC-2026-4320
+opentelemetry-api==1.45.1  # CVE-2026-114603
+virtualenv==21.14.9  # CVE-2026-113725, CVE-2026-113722
