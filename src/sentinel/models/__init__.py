@@ -1,6 +1,16 @@
 """ORM models. Importing this package registers every table on ``Base.metadata``."""
 
 from sentinel.models.accounts import OneTimeToken, TokenPurpose, User, UserSession
+from sentinel.models.alerts import (
+    AlertChannel,
+    AlertDelivery,
+    AlertEvent,
+    AlertRecipient,
+    AlertRule,
+    ChannelKind,
+    DeliveryStatus,
+    JobCursor,
+)
 from sentinel.models.audit import AuditEvent
 from sentinel.models.catalog import (
     CatalogProposal,
@@ -41,6 +51,11 @@ from sentinel.models.status import (
 )
 
 __all__ = [
+    "AlertChannel",
+    "AlertDelivery",
+    "AlertEvent",
+    "AlertRecipient",
+    "AlertRule",
     "ApiToken",
     "Attention",
     "AuditEvent",
@@ -49,11 +64,13 @@ __all__ = [
     "Change",
     "ChangeCategory",
     "ChangeKind",
+    "ChannelKind",
     "Component",
     "ComponentDaily",
     "ComponentState",
     "Credential",
     "CredentialKind",
+    "DeliveryStatus",
     "Dependency",
     "Incident",
     "IncidentKind",
@@ -61,6 +78,7 @@ __all__ = [
     "IncidentUpdate",
     "IngestBatch",
     "Invitation",
+    "JobCursor",
     "MaintenanceWindow",
     "Membership",
     "Observation",
