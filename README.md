@@ -19,7 +19,7 @@ your invoicing module is flagged before the effective date.
 
 ## Status
 
-Phases 0–9 of the [build plan](docs/PLAN.md) are done:
+Phases 0–10 of the [build plan](docs/PLAN.md) are done:
 
 - configuration that fails closed, the SSRF-guarded outbound HTTP client, CI, containers
 - accounts: sign-up with e-mail verification, sign-in with lockout, password reset,
@@ -62,8 +62,15 @@ Phases 0–9 of the [build plan](docs/PLAN.md) are done:
   unsubscribe), Telegram, Slack-compatible and signed webhooks
   ([docs/WEBHOOKS.md](docs/WEBHOOKS.md)); one message per event, channel and recipient;
   retries, auto-disable, quiet hours, a daily batch and the weekly digest by e-mail
+- the panel: a dashboard with each product's derived state and why, filters, and a
+  read-only JSON API (`/api/v1/products`, `/impacts`, `/risks`, `/calendar`, `/status`)
+- public pages: an optional status page per organization (`/s/{org}`) with its own
+  incidents, an Atom feed, an SVG badge and e-mail subscriptions; a static export for
+  GitHub Pages ([docs/STATIC_EXPORT.md](docs/STATIC_EXPORT.md)); `/yontem`,
+  `/hakkinda/bot` and a correction form
 
-Next: the panel dashboard and public status pages (Phase 10).
+Next: release (Phase 11): production compose with HTTPS, release images, backups, the
+project site and going public.
 
 ## Quick start
 

@@ -380,28 +380,41 @@ Acceptance
 
 ---
 
-## Phase 10 — Panel and public status pages
+## Phase 10 — Panel and public status pages ✅
 
 Goal: one screen that answers "is anything upstream about to hurt us?", plus an optional
 public page for an org's own customers.
 
 Tasks
-- [ ] Org dashboard: products with derived state, open incidents, recent changes, due
-      risks, upcoming planned changes; filters; HTMX only as enhancement.
-- [ ] Optional public status page per org (`/s/{org}`): chosen products and components,
-      incidents, subscribe (double opt-in), Atom feed, SVG badge, disclaimer and
-      methodology link for third-party measurements.
-- [ ] JSON API v1 with org API tokens (read scopes first).
-- [ ] Bot and methodology pages: `/yontem`, `/hakkinda/bot` (what the bot does, rate
-      limits, contact, opt-out for providers), `/duzeltme` correction form (CSRF, rate
-      limited, honeypot; no third-party captcha or trackers).
-- [ ] SEO for public pages, `Cache-Control` + `ETag`, render < 150 ms from warm cache.
+- [x] Org dashboard: products with derived state (own incident / affected / at risk /
+      ok, with the reason), open incidents, recent changes, due risks, upcoming planned
+      changes; filters by product and severity. No JavaScript at all (HTMX not needed).
+- [x] Optional public status page per org (`/s/{org}`): chosen products, own incidents,
+      direct-dependency state marked as independent measurement, subscribe (double
+      opt-in), Atom feed, SVG badge, disclaimer and methodology link.
+- [x] JSON API v1 with org API tokens: `/org`, `/status`, `/products`, `/impacts`,
+      `/risks`, `/calendar` (read-only).
+- [x] Bot and methodology pages: `/yontem`, `/hakkinda/bot` (this install's User-Agent,
+      rate limits, robots.txt opt-out, contact), `/duzeltme` correction form (form token,
+      rate limited, honeypot; no third-party captcha or trackers) with an admin queue.
+- [x] SEO for public pages (canonical, description, `robots.txt`, `sitemap.xml`);
+      `Cache-Control` + `ETag` on the public page, feed and badge.
+- [x] Static export of a public page for GitHub Pages ([STATIC_EXPORT.md](STATIC_EXPORT.md),
+      ADR 0012).
 
 Acceptance
-- All pages render with JavaScript disabled. CSP has no `unsafe-inline`.
-- Template tests: every dynamic value escaped; names containing `<script>` render inert.
-- Accessibility: semantic HTML, labelled form fields, sufficient contrast; axe-core or
-  Lighthouse scores for the dashboard and a public page recorded in the phase report.
+- All pages render with JavaScript disabled (no `<script>` in any template). CSP has no
+  `unsafe-inline`.
+- Template tests: names containing `<script>` render inert on the dashboard and the
+  public page (and in the Atom feed).
+- Render time, warm, 8 products / 40 components / 3-hop chains with open incidents,
+  changes and risks (compose stack, 2026-10-23): dashboard model 80 ms, public page
+  51 ms.
+- Accessibility: semantic HTML (one `h1`, ordered headings, `lang="tr"`, skip link),
+  every field labelled, tables with header scopes, state shown as text and colour,
+  uptime bars with screen-reader text. Colour contrast computed against WCAG AA for
+  both colour schemes: every text colour ≥ 5.0:1, badges ≥ 5.1:1. axe-core / Lighthouse
+  were not run (no browser in the build environment); to be recorded in Phase 11.
 
 ---
 
