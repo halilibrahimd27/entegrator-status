@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ shared.service.name }} · {{ t("platform.title") }}{% endblock %}
+{% block content %}
+{% set base = "/yonetim/servisler/" ~ shared.service.id %}
+<section class="card wide">
+  <h1>{{ shared.service.name }}</h1>
+  <p class="hint">{{ t("platform.shared_notice_hint") }}</p>
+  <h2>{{ t("platform.windows") }}</h2>
+  {% if shared.windows %}
+  <ul class="timeline">
+    {% for w in shared.windows %}
+    <li><strong>{{ w.title }}</strong> · {{ w.starts_at|local }} – {{ w.ends_at|local }}
+      <form method="post" action="/yonetim/bakimlar/{{ w.id }}/bitir" class="inline">
+        {{ ui.csrf_field() }}<input type="hidden" name="service_id" value="{{ shared.service.id }}">
+        <button type="submit" class="secondary">{{ t("platform.end_window") }}</button>
+      </form></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>{{ t("platform.no_windows") }}</p>
+  {% endif %}
+  {% if shared.components %}
+  <details>
+    <summary>{{ t("platform.add_window") }}</summary>
+    <form method="post" action="{{ base }}/bakim" novalidate>
+      {{ ui.csrf_field() }}
+      <div class="field">
+        <label for="w-component">{{ t("products.component") }}</label>
+        <select id="w-component" name="component_id">
+          {% for c in shared.components %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      {{ ui.field("title", "changes.field_title", maxlength=200) }}
+      <div class="grid-2">
+        {{ ui.field("starts_at", "platform.starts_at", type="datetime-local") }}
+        {{ ui.field("ends_at", "platform.ends_at", type="datetime-local") }}
+      </div>
+      <button type="submit">{{ t("platform.add_window") }}</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+
+<section class="card wide">
+  <h2>{{ t("platform.announcements") }}</h2>
+  {% if shared.announcements %}
+  <ul class="timeline">
+    {% for c in shared.announcements %}
+    <li><span class="badge">{{ t("categories." ~ c.category) }}</span> {{ c.title }} · {{ c.detected_at|local }}
+      <form method="post" action="/yonetim/degisiklikler/{{ c.id }}/sil" class="inline">
+        {{ ui.csrf_field() }}<button type="submit" class="secondary">{{ t("platform.delete") }}</button>
+      </form></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>{{ t("platform.no_announcements") }}</p>
+  {% endif %}
+  {% if shared.components %}
+  <details>
+    <summary>{{ t("changes.add_title") }}</summary>
+    <form method="post" action="{{ base }}/duyuru" novalidate>
+      {{ ui.csrf_field() }}
+      {{ ui.field("title", "changes.field_title", maxlength=300) }}
+      <div class="grid-2">
+        <div class="field">
+          <label for="a-category">{{ t("changes.field_category") }}</label>
+          <select id="a-category" name="category">
+            {% for c in categories %}<option value="{{ c.value }}">{{ t("categories." ~ c.value) }}</option>{% endfor %}
+          </select>
+        </div>
+        {{ ui.field("link", "changes.field_link", type="url", required=false, maxlength=2000) }}
+        {{ ui.field("effective_on", "changes.effective", type="date", required=false) }}
+      </div>
+      <fieldset>
+        <legend>{{ t("products.component") }}</legend>
+        {% for c in shared.components %}
+        <div class="field checkbox">
+          <input id="a-c-{{ c.id }}" name="component_ids" type="checkbox" value="{{ c.id }}">
+          <label for="a-c-{{ c.id }}">{{ c.name }}</label>
+        </div>
+        {% endfor %}
+      </fieldset>
+      <button type="submit">{{ t("changes.add_title") }}</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endblock %}

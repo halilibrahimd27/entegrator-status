@@ -23,6 +23,7 @@ class Organization(IdMixin, CreatedAtMixin, Base):
     name: Mapped[str] = mapped_column(String(120))
     deleted_at: Mapped[datetime | None]  # soft delete; purged after ``purge_after``
     purge_after: Mapped[datetime | None]
+    max_sources: Mapped[int | None]  # set by a platform admin; None: ORG_MAX_SOURCES
 
 
 class Membership(IdMixin, CreatedAtMixin, TenantMixin, Base):

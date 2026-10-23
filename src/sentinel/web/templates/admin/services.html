@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ t("platform.shared_services") }}{% endblock %}
+{% block content %}
+<section class="card wide">
+  <h1>{{ t("platform.shared_services") }}</h1>
+  <p class="hint">{{ t("platform.shared_hint") }}</p>
+  <form method="get" action="/yonetim/servisler">
+    {{ ui.field("q", "platform.search", value=query, required=false, maxlength=80) }}
+    <button type="submit" class="secondary">{{ t("platform.search_button") }}</button>
+  </form>
+  {% if found %}
+  <ul class="links">
+    {% for s in found %}<li><a href="/yonetim/servisler/{{ s.id }}">{{ s.name }}</a> <span class="hint"><code>{{ s.slug }}</code></span></li>{% endfor %}
+  </ul>
+  {% else %}
+  <p>{{ t("platform.no_services") }}</p>
+  {% endif %}
+</section>
+{% endblock %}

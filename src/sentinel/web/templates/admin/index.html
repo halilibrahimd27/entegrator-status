@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ t("platform.title") }}{% endblock %}
+{% block content %}
+<section class="card wide">
+  <h1>{{ t("platform.title") }}</h1>
+  <ul class="links">
+    <li><a href="/yonetim/orglar">{{ t("platform.orgs") }}</a></li>
+    <li><a href="/yonetim/servisler">{{ t("platform.shared_services") }}</a></li>
+    <li><a href="/yonetim/katalog">{{ t("admin.catalog_title") }}</a></li>
+    <li><a href="/yonetim/duzeltmeler">{{ t("corrections.queue_title") }}</a></li>
+    <li><a href="/yonetim/denetim">{{ t("platform.audit") }}</a></li>
+  </ul>
+  <p class="hint">{{ t("platform.catalog_hint") }}</p>
+</section>
+{% endblock %}

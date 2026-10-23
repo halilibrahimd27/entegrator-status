@@ -1,6 +1,7 @@
 {% extends "org/_layout.html" %}
 {% block title %}{{ product.name }} · {{ ctx.org.name }}{% endblock %}
 {% block org_content %}
+{% if quota_skipped %}<p class="notice" role="status">{{ t("imports.quota_skipped").format(n=quota_skipped) }}</p>{% endif %}
 {% set base = "/o/" ~ ctx.org.slug %}
 {% set editable = can(role, "graph.edit") %}
 {% set manage = can(role, "status.manage") %}

@@ -24,6 +24,7 @@ from sentinel.catalog.parsers import (
     Purl,
     parse_upload,
 )
+from sentinel.catalog.service import CatalogService
 from sentinel.db.session import Database
 from sentinel.models import Component, Dependency, Product, Service, ServiceKind, Source
 from sentinel.sources.config import validate_source
@@ -58,6 +59,7 @@ class ImportResult:
     linked: int
     created_services: int
     updated: int
+    skipped_sources: int = 0  # release / advisory sources left out: the source quota is full
 
 
 def _slug_for(purl: Purl) -> str:
@@ -66,9 +68,10 @@ def _slug_for(purl: Purl) -> str:
 
 
 class ImportService:
-    def __init__(self, db: Database, redis: Redis) -> None:
+    def __init__(self, db: Database, redis: Redis, catalog: CatalogService | None = None) -> None:
         self._db = db
         self._redis = redis
+        self._catalog = catalog or CatalogService(db)  # for the organization's source quota
 
     def _key(self, scope: TenantScope, token: str) -> str:
         return f"import:{scope.org_id}:{token}"
@@ -124,12 +127,16 @@ class ImportService:
         if payload["product_id"] != str(product_id):
             raise ImportFormatError("imports.expired")
         items = [PreviewItem(**i) for i in payload["items"]]
-        linked = created = updated = 0
+        linked = created = updated = skipped = 0
         async with self._db.tenant(scope) as s:
             if await s.get(Product, product_id) is None:
                 raise ImportFormatError("not_found")
+            room = await self._catalog.source_room(s, scope.org_id)
             for item in items:
-                component, was_created = await self._package_component(s, scope, item)
+                component, was_created, room, left_out = await self._package_component(
+                    s, scope, item, room
+                )
+                skipped += left_out
                 created += was_created
                 usage = {"version": item.version} if item.version else {}
                 edge = await s.scalar(
@@ -159,15 +166,26 @@ class ImportService:
                 actor_user_id=scope.user_id,
                 target_type="product",
                 target_id=product_id,
-                details={"linked": linked, "created_services": created, "updated": updated},
+                details={
+                    "linked": linked,
+                    "created_services": created,
+                    "updated": updated,
+                    "skipped_sources": skipped,
+                },
                 ip=ip,
             )
-        return ImportResult(linked=linked, created_services=created, updated=updated)
+        return ImportResult(
+            linked=linked, created_services=created, updated=updated, skipped_sources=skipped
+        )
 
     async def _package_component(
-        self, s: AsyncSession, scope: TenantScope, item: PreviewItem
-    ) -> tuple[Component, bool]:
-        """The component of the matching shared or own package service (created if new)."""
+        self, s: AsyncSession, scope: TenantScope, item: PreviewItem, room: int
+    ) -> tuple[Component, bool, int, int]:
+        """The component of the matching shared or own package service (created if new).
+
+        Returns it with whether the service was created, the source quota left and how
+        many sources the quota left out.
+        """
         service = await s.scalar(
             select(Service)
             .where(
@@ -206,12 +224,15 @@ class ImportService:
             s.add(component)
             await s.flush()
             if service.org_id is not None:
-                self._package_sources(s, component, item)
-        return component, created
+                added, left_out = self._package_sources(s, component, item, room)
+                return component, created, room - added, left_out
+        return component, created, room, 0
 
     @staticmethod
-    def _package_sources(s: AsyncSession, component: Component, item: PreviewItem) -> None:
-        """Release and advisory sources for the package (run from Phase 6 on)."""
+    def _package_sources(
+        s: AsyncSession, component: Component, item: PreviewItem, room: int
+    ) -> tuple[int, int]:
+        """Release and advisory sources for the package, within the quota: (added, left out)."""
         definitions = []
         if item.type in RELEASE_ECOSYSTEM:
             definitions.append(
@@ -221,7 +242,7 @@ class ImportService:
             definitions.append(
                 ("advisory", {"ecosystem": ADVISORY_ECOSYSTEM[item.type], "name": item.name})
             )
-        for kind, config in definitions:
+        for kind, config in definitions[:room]:
             valid = validate_source(kind, config)
             s.add(
                 Source(
@@ -235,6 +256,8 @@ class ImportService:
                     provenance="import",
                 )
             )
+        added = min(room, len(definitions))
+        return added, len(definitions) - added
 
     @staticmethod
     async def _free_slug(s: AsyncSession, base: str) -> str:

@@ -75,6 +75,7 @@ async def product_page(
     status: int = 200,
     error: str | None = None,
     detail: str = "",
+    quota_skipped: int = 0,
 ) -> Response:
     svc = services(request)
     try:
@@ -110,6 +111,7 @@ async def product_page(
         query=query,
         svg=svg,
         max_upload_mb=MAX_UPLOAD_BYTES // (1024 * 1024),
+        quota_skipped=quota_skipped,
     )
 
 
@@ -119,8 +121,9 @@ async def product(
     ctx: InOrg,
     product_id: uuid.UUID,
     q: Annotated[str, Query(max_length=80)] = "",
+    atlanan: Annotated[int, Query(ge=0, le=100_000)] = 0,
 ) -> Response:
-    return await product_page(request, ctx, product_id, query=q)
+    return await product_page(request, ctx, product_id, query=q, quota_skipped=atlanan)
 
 
 @router.post("/o/{slug}/urunler/{product_id}/ayarlar")
@@ -210,7 +213,10 @@ async def import_confirm(
     request: Request, ctx: InOrg, product_id: uuid.UUID, token: Annotated[str, Form(max_length=64)]
 ) -> Response:
     try:
-        await services(request).imports.confirm(ctx.scope, product_id, token, client_ip(request))
+        result = await services(request).imports.confirm(
+            ctx.scope, product_id, token, client_ip(request)
+        )
     except ImportFormatError as exc:
         return await product_page(request, ctx, product_id, status=status_of(exc), error=exc.key)
-    return RedirectResponse(f"{_products_url(ctx)}/{product_id}", status_code=303)
+    query = f"?atlanan={result.skipped_sources}" if result.skipped_sources else ""
+    return RedirectResponse(f"{_products_url(ctx)}/{product_id}{query}", status_code=303)

@@ -19,7 +19,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sentinel import audit
 from sentinel.db.session import Database
 from sentinel.graph.service import GraphService
-from sentinel.models import Component, Dependency, Product, Service, ServiceKind, Source
+from sentinel.models import (
+    Component,
+    Dependency,
+    Organization,
+    Product,
+    Service,
+    ServiceKind,
+    Source,
+)
 from sentinel.sources.config import SourceConfigError, validate_source
 from sentinel.tenancy.roles import Action
 from sentinel.tenancy.scope import TenantScope
@@ -88,8 +96,9 @@ async def _free_slug(s: AsyncSession, model: type[Product] | type[Service], base
 
 
 class CatalogService:
-    def __init__(self, db: Database) -> None:
+    def __init__(self, db: Database, *, max_sources: int = 300) -> None:
         self._db = db
+        self._max_sources = max_sources  # ORG_MAX_SOURCES; an org may have its own limit
 
     # --- products -------------------------------------------------------------
 
@@ -373,6 +382,14 @@ class CatalogService:
             )
             return component
 
+    async def source_room(self, s: AsyncSession, org_id: uuid.UUID) -> int:
+        """How many more private sources the organization may add (its quota minus use)."""
+        limit = await s.scalar(select(Organization.max_sources).where(Organization.id == org_id))
+        used = await s.scalar(
+            select(func.count()).select_from(Source).where(Source.org_id == org_id)
+        )
+        return max(0, (limit or self._max_sources) - (used or 0))
+
     async def add_source(
         self,
         scope: TenantScope,
@@ -402,6 +419,8 @@ class CatalogService:
             )
             if duplicate is not None:
                 raise CatalogError("catalog.duplicate_source")
+            if await self.source_room(s, scope.org_id) < 1:
+                raise CatalogError("catalog.source_quota")
             source = Source(
                 org_id=scope.org_id,
                 component_id=component_id,

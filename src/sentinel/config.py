@@ -94,6 +94,10 @@ class Settings(BaseSettings):
     # "ortak bir kaynaktan kaynaklanıyor olabilir" hint (Phase 8).
     correlated_failure_ratio: float = Field(default=0.4, ge=0.1, le=1.0)
 
+    # Probing ethics (ADR 0003): how many private sources one organization may have,
+    # unless a platform admin sets another limit for it.
+    org_max_sources: int = Field(default=300, ge=1, le=100_000)
+
     signup_enabled: bool = True
     session_idle_minutes: int = 120
     session_max_hours: int = 24 * 7

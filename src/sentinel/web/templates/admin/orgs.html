@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ t("platform.orgs") }}{% endblock %}
+{% block content %}
+<section class="card wide">
+  <h1>{{ t("platform.orgs") }}</h1>
+  <p class="hint">{{ t("platform.quota_hint").format(n=default_quota) }}</p>
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("platform.org") }}</th>
+      <th scope="col">{{ t("platform.members") }}</th>
+      <th scope="col">{{ t("platform.products") }}</th>
+      <th scope="col">{{ t("platform.sources") }}</th>
+      <th scope="col">{{ t("platform.quota") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for o in orgs %}
+      <tr>
+        <td>{{ o.name }}<br><span class="hint"><code>{{ o.slug }}</code> · {{ o.created_at|local }}{% if o.deleted_at %} · {{ t("platform.closed") }}{% endif %}</span></td>
+        <td>{{ o.members }}</td>
+        <td>{{ o.products }}</td>
+        <td>{% if o.sources >= o.limit %}<span class="badge attention">{{ o.sources }} / {{ o.limit }}</span>{% else %}{{ o.sources }} / {{ o.limit }}{% endif %}</td>
+        <td>
+          <form method="post" action="/yonetim/orglar/{{ o.id }}/kota" class="inline" novalidate>
+            {{ ui.csrf_field() }}
+            <label class="sr-only" for="q-{{ o.id }}">{{ t("platform.quota") }}</label>
+            <input id="q-{{ o.id }}" name="max_sources" inputmode="numeric" maxlength="6" size="6" value="{{ o.max_sources or '' }}" placeholder="{{ default_quota }}">
+            <button type="submit" class="secondary">{{ t("platform.save") }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

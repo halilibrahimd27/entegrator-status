@@ -15,6 +15,7 @@ from sentinel.accounts.sessions import SessionManager
 from sentinel.accounts.throttle import Throttle
 from sentinel.accounts.totp import TotpBox
 from sentinel.accounts.two_factor import TwoFactorService
+from sentinel.admin.service import PlatformService
 from sentinel.alerts.service import AlertService
 from sentinel.alerts.subscriptions import SubscriptionService
 from sentinel.catalog.imports import ImportService
@@ -73,6 +74,7 @@ class AppServices:
     alerts: AlertService
     status_pages: StatusPageService
     corrections: CorrectionService
+    platform: PlatformService
     renderer: Renderer
 
     async def aclose(self) -> None:
@@ -103,7 +105,7 @@ def build_services(settings: Settings) -> AppServices:
     subscriptions = SubscriptionService(db, settings, mailer)
     telegram = settings.telegram_bot_token is not None and bool(settings.telegram_bot_username)
     correlation = CorrelationViews(db, ratio=settings.correlated_failure_ratio)
-    catalog = CatalogService(db)
+    catalog = CatalogService(db, max_sources=settings.org_max_sources)
     notices = NoticeService(db)
     status = StatusViews(db, graph)
     return AppServices(
@@ -119,7 +121,7 @@ def build_services(settings: Settings) -> AppServices:
         api_tokens=ApiTokenService(db, settings),
         catalog=catalog,
         graph=graph,
-        imports=ImportService(db, redis),
+        imports=ImportService(db, redis, catalog),
         proposals=ProposalService(db),
         nodes=NodeService(db, settings),
         notices=notices,
@@ -136,6 +138,7 @@ def build_services(settings: Settings) -> AppServices:
         alerts=AlertService(db, credentials, subscriptions, telegram=telegram),
         status_pages=StatusPageService(db, catalog, status, notices, subscriptions, throttle),
         corrections=CorrectionService(db, mailer, throttle, operator=settings.contact_email),
+        platform=PlatformService(db, default_max_sources=settings.org_max_sources),
         renderer=Renderer(),
     )
 

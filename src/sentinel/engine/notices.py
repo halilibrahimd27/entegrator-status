@@ -76,6 +76,37 @@ def _manual_status(raw: str) -> IncidentStatus:
     return status
 
 
+def check_window(title: str, starts_at: datetime, ends_at: datetime, now: datetime) -> str:
+    """The cleaned title of a valid maintenance window (declared before it starts)."""
+    title = _text(title, MAX_TITLE, "status.invalid_title")
+    if ends_at <= starts_at:
+        raise NoticeError("status.window_order")
+    if ends_at - starts_at > MAX_WINDOW:
+        raise NoticeError("status.window_too_long")
+    if starts_at < now - WINDOW_SLACK:
+        raise NoticeError("status.window_in_past")
+    return title
+
+
+def check_announcement(
+    title: str, category: str, link: str, component_ids: list[uuid.UUID]
+) -> tuple[str, ChangeCategory, str | None]:
+    """(title, category, link) of a valid manual announcement."""
+    title = _text(title, MAX_TITLE + 100, "status.invalid_title")
+    try:
+        kind = ChangeCategory(category)
+    except ValueError:
+        raise NoticeError("changes.invalid_category") from None
+    if kind not in ANNOUNCEMENT_CATEGORIES:
+        raise NoticeError("changes.invalid_category")  # release classes come from versions
+    url = link.strip() or None
+    if url is not None and safe_link(url, url) != url:
+        raise NoticeError("changes.invalid_link")  # absolute http(s) only
+    if not component_ids:
+        raise NoticeError("changes.no_components")
+    return title, kind, url
+
+
 class NoticeService:
     def __init__(self, db: Database, clock: Callable[[], datetime] = utcnow) -> None:
         self._db = db
@@ -208,13 +239,7 @@ class NoticeService:
         ip: str = "",
     ) -> MaintenanceWindow:
         scope.require(Action.STATUS_MANAGE)
-        title = _text(title, MAX_TITLE, "status.invalid_title")
-        if ends_at <= starts_at:
-            raise NoticeError("status.window_order")
-        if ends_at - starts_at > MAX_WINDOW:
-            raise NoticeError("status.window_too_long")
-        if starts_at < self._clock() - WINDOW_SLACK:
-            raise NoticeError("status.window_in_past")
+        title = check_window(title, starts_at, ends_at, self._clock())
         async with self._db.tenant(scope) as s:
             component = await s.get(Component, component_id)
             if component is None:
@@ -315,18 +340,7 @@ class NoticeService:
         ip: str = "",
     ) -> list[Change]:
         scope.require(Action.STATUS_MANAGE)
-        title = _text(title, MAX_TITLE + 100, "status.invalid_title")
-        try:
-            kind = ChangeCategory(category)
-        except ValueError:
-            raise NoticeError("changes.invalid_category") from None
-        if kind not in ANNOUNCEMENT_CATEGORIES:
-            raise NoticeError("changes.invalid_category")  # release classes come from versions
-        url = link.strip() or None
-        if url is not None and safe_link(url, url) != url:
-            raise NoticeError("changes.invalid_link")  # absolute http(s) only
-        if not component_ids:
-            raise NoticeError("changes.no_components")
+        title, kind, url = check_announcement(title, category, link, component_ids)
         now = self._clock()
         async with self._db.tenant(scope) as s:
             components = (

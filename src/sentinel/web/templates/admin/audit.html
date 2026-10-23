@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ t("platform.audit") }}{% endblock %}
+{% block content %}
+<section class="card wide">
+  <h1>{{ t("platform.audit") }}</h1>
+  <p class="hint">{{ t("platform.audit_hint") }}</p>
+  {% if entries %}
+  <table>
+    <thead><tr>
+      <th scope="col">{{ t("platform.when") }}</th>
+      <th scope="col">{{ t("platform.action") }}</th>
+      <th scope="col">{{ t("platform.actor") }}</th>
+      <th scope="col">{{ t("platform.target") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for e in entries %}
+      <tr>
+        <td>{{ e.occurred_at|local }}</td>
+        <td><code>{{ e.action }}</code></td>
+        <td>{{ e.actor or "—" }}</td>
+        <td>{% if e.target_type %}{{ e.target_type }} <code>{{ e.target_id }}</code>{% endif %}
+          {% if e.details %}<br><span class="hint">{% for k, v in e.details|dictsort %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{{ t("platform.audit_empty") }}</p>
+  {% endif %}
+</section>
+{% endblock %}

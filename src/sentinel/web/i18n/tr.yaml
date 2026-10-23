@@ -340,6 +340,42 @@ corrections:
 
       Teşekkürler.
 
+platform:
+  title: "Platform yönetimi"
+  orgs: "Organizasyonlar"
+  shared_services: "Ortak servisler: bakım ve duyuru"
+  audit: "Platform denetim kaydı"
+  catalog_hint: "Ortak katalog kayıtları yalnızca incelenmiş YAML paketleri ve kabul edilen öneriler üzerinden değişir (docs/CATALOG.md); burada katalog düzenleyicisi bilerek yok."
+  quota_hint: "Kaynak kotası: bir organizasyonun ekleyebileceği özel kaynak sayısı. Boş bırakırsan varsayılan ({n}) geçerli."
+  org: "Organizasyon"
+  members: "Üye"
+  products: "Ürün"
+  sources: "Kaynak / kota"
+  quota: "Kota"
+  closed: "kapatıldı"
+  save: "Kaydet"
+  invalid_quota: "Kota 1 ile 100000 arasında bir sayı olmalı (ya da boş)."
+  audit_hint: "Organizasyonlara ait olmayan olaylar: kotalar, düzeltme kararları, katalog incelemeleri, ortak bakım ve duyurular, platform yöneticisi oturumları."
+  audit_empty: "Kayıt yok."
+  when: "Zaman"
+  action: "İşlem"
+  actor: "Yapan"
+  target: "Hedef"
+  shared_hint: "Ortak katalogdaki bir servisin bakımını ya da duyurusunu buradan girersen ona bağlı tüm organizasyonlar görür."
+  search: "Servis ara"
+  search_button: "Ara"
+  no_services: "Servis bulunamadı."
+  shared_notice_hint: "Buradaki bakım pencereleri ve duyurular bu servise bağlı tüm organizasyonlara uygulanır. Bakım, başlamadan önce bildirilmelidir."
+  windows: "Planlı bakımlar"
+  no_windows: "Planlanmış bakım yok."
+  add_window: "Bakım ekle"
+  end_window: "Bitir / iptal et"
+  starts_at: "Başlangıç (Türkiye saati)"
+  ends_at: "Bitiş (Türkiye saati)"
+  announcements: "Elle girilen duyurular"
+  no_announcements: "Elle girilmiş duyuru yok."
+  delete: "Sil"
+
 hints:
   common_cause: "{upstream} bileşenine bağlı {total} bileşenden {count} tanesi (%{ratio}) son 10 dakika içinde birlikte erişim sorunu yaşamaya başladı; ortak bir kaynaktan kaynaklanıyor olabilir."
 
@@ -823,6 +859,7 @@ products:
   graph_desc: "{count} bileşen; soldan sağa: ürün, doğrudan bağımlılıklar, onların bağımlılıkları."
 
 imports:
+  quota_skipped: "Kaynak kotan doldu: {n} sürüm / güvenlik kaynağı eklenmedi. Kullanmadığın kaynakları silebilir ya da platform yöneticisinden kotanı artırmasını isteyebilirsin."
   preview_title: "İçe aktarma önizlemesi"
   preview_body: "Aşağıdaki paketler ürüne bağlanacak. Ortak katalogda olanlar oradan, diğerleri organizasyona özel servis olarak eklenir."
   package: "Paket"
@@ -848,6 +885,7 @@ graph:
   shared_edge: "Ortak katalogdaki bağlantılar değiştirilemez."
 
 catalog:
+  source_quota: "Kaynak kotan doldu. Kullanmadığın kaynakları sil ya da platform yöneticisinden kotanı artırmasını iste."
   title: "Katalog"
   body: "Ortak katalog her organizasyonun kullandığı servisleri içerir; kendi servislerin yalnızca senin organizasyonuna görünür."
   search: "Ara"
