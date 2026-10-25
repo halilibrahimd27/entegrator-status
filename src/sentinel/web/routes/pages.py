@@ -27,7 +27,8 @@ async def home(
 
 @router.get("/aydinlatma")
 async def privacy(request: Request) -> Response:
-    return services(request).renderer.page(request, "pages/privacy.html")
+    svc = services(request)
+    return svc.renderer.page(request, "pages/privacy.html", contact=svc.settings.contact_email)
 
 
 @router.get("/yontem")

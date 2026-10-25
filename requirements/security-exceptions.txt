@@ -3,4 +3,5 @@
 # Remove a line once the cool-down has caught up with it.
 certifi==2026.10.19  # PYSEC-2026-4320
 opentelemetry-api==1.45.1  # CVE-2026-114603
-virtualenv==21.14.9  # CVE-2026-113725, CVE-2026-113722
+virtualenv==21.14.10  # CVE-2026-113725, CVE-2026-113722, CVE-2026-113713
+filelock==4.2.1  # CVE-2026-112940, CVE-2026-112913, CVE-2026-112907

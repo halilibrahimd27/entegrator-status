@@ -88,7 +88,9 @@ Only what an organisation adds to its dependency graph, plus the curated shared 
 
 ## Probe locations
 
-_To be filled in Phase 11 (two nodes in different networks, preferably both in Turkey)._
+Each instance's operator chooses them. The rules need at least two healthy nodes in
+different networks before anything is called down; nodes in Turkey suit services that
+serve Turkey. Setting one up: [PROBE_NODE.md](PROBE_NODE.md).
 
 ## How our bot behaves
 

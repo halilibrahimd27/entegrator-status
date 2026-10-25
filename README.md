@@ -1,10 +1,17 @@
 # Entegratör Status
 
-Status and change tracking for everything your product depends on — and for what
-*those* depend on.
+[![ci](https://github.com/halilibrahimd27/entegrator-status/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/halilibrahimd27/entegrator-status/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/halilibrahimd27/entegrator-status)](https://github.com/halilibrahimd27/entegrator-status/releases)
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
+Status and change tracking for everything your product depends on — and for what
+*those* depend on. Open source, self-hosted, no telemetry.
+
+**Project site:** [halilibrahimd27.github.io/entegrator-status](https://halilibrahimd27.github.io/entegrator-status/) ·
+**Latest release:** [v0.1.0](https://github.com/halilibrahimd27/entegrator-status/releases/tag/v0.1.0)
+(`ghcr.io/halilibrahimd27/entegrator-status:0.1.0`, amd64 + arm64) ·
 [Türkçe](#türkçe) · [Self-hosting](docs/SELF_HOSTING.md) · [Methodology](docs/METHODOLOGY.md) ·
-[Changelog](CHANGELOG.md) · License: [Apache-2.0](LICENSE)
+[Changelog](CHANGELOG.md)
 
 ![The organization dashboard: each product's state and the reason behind it](docs/img/dashboard.png)
 
@@ -91,11 +98,19 @@ docker compose run --rm --no-deps -v ./tools:/app/tools:ro web python tools/demo
 
 The last line loads a fictional demo organization and prints a password to sign in with.
 
-**Run your own instance** on one server with HTTPS: [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)
-(`compose.prod.yml` with Caddy, images from GitHub Container Registry, backups and a
-restore drill in [docs/BACKUP.md](docs/BACKUP.md), probe nodes in
-[docs/PROBE_NODE.md](docs/PROBE_NODE.md)). Whoever runs an instance operates it; there is
-no hosted service and no telemetry.
+**Run your own instance** on one server with HTTPS — the short version:
+
+```bash
+git clone https://github.com/halilibrahimd27/entegrator-status.git && cd entegrator-status
+git checkout v0.1.0
+make env-prod                                  # .env with fresh secrets; fill in the placeholders
+docker compose -f compose.prod.yml up -d       # pulls ghcr.io/halilibrahimd27/entegrator-status:0.1.0
+```
+
+The full guide — first admin, catalog, probe nodes, upgrades, monitoring — is
+[docs/SELF_HOSTING.md](docs/SELF_HOSTING.md); backups and the restore drill are in
+[docs/BACKUP.md](docs/BACKUP.md), probe nodes in [docs/PROBE_NODE.md](docs/PROBE_NODE.md).
+Whoever runs an instance operates it; there is no hosted service and no telemetry.
 
 ## Development
 
@@ -138,7 +153,9 @@ non-obvious decision is an ADR. Bugs found along the way became tests first.
 ## Türkçe
 
 Ürününün bağımlı olduğu her şeyin — ve onların bağımlı olduklarının — durum ve
-değişiklik takibi.
+değişiklik takibi. Açık kaynak, kendi sunucunda çalışır, telemetri yok. Proje sitesi:
+[halilibrahimd27.github.io/entegrator-status](https://halilibrahimd27.github.io/entegrator-status/);
+son sürüm: [v0.1.0](https://github.com/halilibrahimd27/entegrator-status/releases/tag/v0.1.0).
 
 Bağımlılıklarını tanımla (üçüncü parti API'ler, SaaS sağlayıcıları, e-Fatura
 entegratörleri, bulut servisleri, paketler, container imajları, sertifikalar, alan
@@ -171,7 +188,9 @@ JSON API; kurumlar arası yalıtım ve KVKK'ya uygun saklama süreleri.
 `docker compose run --rm --no-deps -v ./tools:/app/tools:ro web python tools/demo.py`
 (kurgusal bir demo kurum yükler ve giriş parolasını yazar).
 
-**Kendi kurulumun için:** [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) — tek sunucu,
+**Kendi kurulumun için:** `git checkout v0.1.0 && make env-prod`, `.env`'deki yer
+tutucuları doldur, `docker compose -f compose.prod.yml up -d`. Ayrıntılar
+[docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)'de — tek sunucu,
 Caddy ile otomatik HTTPS, yedekleme ve geri yükleme tatbikatı, ölçüm noktaları. Kurulumu
 çalıştıran taraf onu işletir ve KVKK kapsamında veri sorumlusudur; barındırılan bir servis
 ya da telemetri yoktur.

@@ -655,12 +655,12 @@ totp:
 
 privacy:
   title: "Aydınlatma metni"
-  draft_notice: "Taslak: bu metin yayından önce hukuki olarak gözden geçirilecektir."
-  controller: "Veri sorumlusu: Entegratör Status işletmecisi (iletişim bilgisi yayından önce eklenecek)."
-  data: "İşlenen veriler: ad, e-posta adresi, parolanın tek yönlü özeti, oturum kayıtları, güvenlik kayıtları (IP adresinin kısaltılmış hali)."
+  draft_notice: "Şablon metin: bu kurulumu işleten taraf veri sorumlusudur ve bu metni kendi durumuna göre uyarlamalıdır."
+  controller: "Veri sorumlusu: bu Entegratör Status kurulumunun işletmecisi. İletişim: {contact}"
+  data: "İşlenen veriler: ad, e-posta adresi, parolanın tek yönlü özeti, oturum kayıtları, güvenlik kayıtları (IP adresinin kısaltılmış hali); uyarı alıcısı ya da durum sayfası abonesi olarak bildirilen e-posta adresi veya Telegram sohbet kimliği; düzeltme talebiyle gönderilen bilgiler."
   purposes: "Amaçlar: hesabın oluşturulması ve güvenliği, hizmetin sunulması, yasal yükümlülüklerin yerine getirilmesi."
   legal_basis: "Hukuki sebep: sözleşmenin kurulması ve ifası, veri sorumlusunun meşru menfaati (güvenlik), hukuki yükümlülük (KVKK md. 5/2)."
-  retention: "Saklama: doğrulanmayan kayıtlar 48 saat, kapatılan organizasyonlar 30 gün sonra silinir; hesaba bağlı olmayan güvenlik kayıtları 1 yıl saklanır. Hesabını sildiğinde kişisel verilerin silinir, organizasyon kayıtlarındaki işlemler kişiye bağlanmadan kalır."
+  retention: "Saklama: doğrulanmayan hesaplar ile onaylanmayan uyarı alıcıları ve aboneler 48 saat, abonelikten çıkanlar 30 gün, uyarı geçmişi 180 gün, sonuçlanan düzeltme talepleri 1 yıl sonra; kapatılan organizasyonlar 30 gün sonra silinir; hesaba bağlı olmayan güvenlik kayıtları 1 yıl saklanır. Hesabını sildiğinde kişisel verilerin silinir, organizasyon kayıtlarındaki işlemler kişiye bağlanmadan kalır. Abonelikler çift onayla başlar ve her mesajdaki bağlantıyla tek tıkla sona erer."
   export_title: "Verilerim"
   export_body: "KVKK kapsamında hakkında tuttuğumuz verilerin bir kopyasını indirebilirsin."
   export_link: "Verilerimi indir (JSON)"
