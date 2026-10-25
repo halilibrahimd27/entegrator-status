@@ -418,7 +418,7 @@ Acceptance
 
 ---
 
-## Phase 11 — Release (self-hosted, [ADR 0012](adr/0012-distribution.md))
+## Phase 11 — Release (self-hosted, [ADR 0012](adr/0012-distribution.md)) ✅
 
 Goal: anyone can run their own instance safely; the project site lives on GitHub Pages.
 
@@ -446,8 +446,10 @@ Tasks
 - [x] Public repository (public since it was created) with a history and placeholder
       audit (no secrets in 50 commits, no real addresses or credentials in the tree,
       `legacy/` gone); project site on GitHub Pages.
-- [ ] v0.1.0: CHANGELOG dated; the maintainer pushes the tag, the release workflow
-      publishes the images and the GitHub release.
+- [x] v0.1.0 released (2026-10-25): `ghcr.io/halilibrahimd27/entegrator-status:0.1.0`
+      for amd64 and arm64 with SBOM and provenance, public; GitHub release from the
+      CHANGELOG. A fresh install from the image following SELF_HOSTING.md was checked end
+      to end (HTTPS, catalog import, key check, backup and restore drill).
 
 Acceptance
 - Fresh VM: follow README → stack up with HTTPS in < 30 minutes. (The production stack
