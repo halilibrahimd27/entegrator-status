@@ -443,9 +443,11 @@ Tasks
 - [x] Project site on GitHub Pages from `docs/` (workflow ready, runs once the
       repository is public), KVKK templates for operators ([KVKK.md](KVKK.md)).
 - [x] README (EN + TR) with screenshots, an architecture diagram and "How it was built".
-- [ ] Going public: history and placeholder audit done (no secrets in 50 commits,
-      no real addresses or credentials in the tree, `legacy/` gone); waiting for the
-      maintainer's go-ahead, then v0.1.0 is tagged.
+- [x] Public repository (public since it was created) with a history and placeholder
+      audit (no secrets in 50 commits, no real addresses or credentials in the tree,
+      `legacy/` gone); project site on GitHub Pages.
+- [ ] v0.1.0: CHANGELOG dated; the maintainer pushes the tag, the release workflow
+      publishes the images and the GitHub release.
 
 Acceptance
 - Fresh VM: follow README → stack up with HTTPS in < 30 minutes. (The production stack

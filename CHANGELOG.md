@@ -4,7 +4,7 @@ All notable changes. The format follows [Keep a Changelog](https://keepachangelo
 and versions follow [Semantic Versioning](https://semver.org/). Upgrade steps for each
 version are in [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md#upgrading).
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-10-25
 
 The first release: everything in Phases 0–11 of [docs/PLAN.md](docs/PLAN.md).
 
@@ -30,3 +30,5 @@ The first release: everything in Phases 0–11 of [docs/PLAN.md](docs/PLAN.md).
   ([docs/STATIC_EXPORT.md](docs/STATIC_EXPORT.md)), methodology, bot and correction pages.
 - Self-hosting: `compose.prod.yml` with Caddy, Redis ACL, per-organization source
   quotas, platform administration, `/metrics`, backups and key rotation.
+
+[0.1.0]: https://github.com/halilibrahimd27/entegrator-status/releases/tag/v0.1.0
